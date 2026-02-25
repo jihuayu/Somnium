@@ -18,7 +18,7 @@ const SearchLayout = ({ tags, posts, currentTag, useNotionSearch = false }: Sear
   const [remotePosts, setRemotePosts] = useState<PostData[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [searchError, setSearchError] = useState('')
-  const shouldUseNotionSearch = useNotionSearch && !currentTag
+  const shouldUseNotionSearch = useNotionSearch
 
   useEffect(() => {
     if (!shouldUseNotionSearch) return
@@ -36,7 +36,14 @@ const SearchLayout = ({ tags, posts, currentTag, useNotionSearch = false }: Sear
       setIsSearching(true)
       setSearchError('')
       try {
-        const response = await fetch(`/api/search?q=${encodeURIComponent(keyword)}&limit=20`, {
+        const searchParams = new URLSearchParams({
+          q: keyword,
+          limit: '20'
+        })
+        if (currentTag) {
+          searchParams.set('tag', currentTag)
+        }
+        const response = await fetch(`/api/search?${searchParams.toString()}`, {
           method: 'GET',
           signal: controller.signal
         })
@@ -60,18 +67,18 @@ const SearchLayout = ({ tags, posts, currentTag, useNotionSearch = false }: Sear
       window.clearTimeout(timer)
       controller.abort()
     }
-  }, [searchValue, shouldUseNotionSearch])
+  }, [searchValue, shouldUseNotionSearch, currentTag])
 
+  const isQueryEmpty = !searchValue.trim()
   const filteredBlogPosts = shouldUseNotionSearch
-    ? remotePosts
+    ? (isQueryEmpty ? posts : remotePosts)
     : posts.filter(post => {
       const tagContent = post.tags ? post.tags.join(' ') : ''
       const searchContent = post.title + post.summary + tagContent
       return searchContent.toLowerCase().includes(searchValue.toLowerCase())
     })
 
-  const isQueryEmpty = !searchValue.trim()
-  const showNotionSearchHint = shouldUseNotionSearch && isQueryEmpty && !isSearching && !searchError
+  const showNotionSearchHint = shouldUseNotionSearch && !posts.length && isQueryEmpty && !isSearching && !searchError
   const showEmptyState = !showNotionSearchHint && !isSearching && !searchError && !filteredBlogPosts.length
 
   return (
