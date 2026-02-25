@@ -3,8 +3,7 @@ const BLOG = {
   author: '纪华裕',
   email: 'jihuayu123@gmail.com',
   link: 'https://example.com',
-  tagline: '大梦一场，浮生尽歇',
-  description: 'This gonna be an awesome website.',
+  description: '大梦一场，浮生尽歇',
   lang: 'zh-CN', // ['en-US', 'zh-CN', 'zh-HK', 'zh-TW', 'ja-JP', 'es-ES']
   timezone: 'Asia/Shanghai', // Your Notion posts' date will be interpreted as this timezone. See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for all options.
   appearance: 'auto', // ['light', 'dark', 'auto'],

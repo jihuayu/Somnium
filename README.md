@@ -44,7 +44,7 @@ NOTION_API_VERSION=2025-09-03
 编辑 `blog.config.js`，重点修改：
 
 - `title` / `author` / `link`
-- `tagline` / `description`
+- `description`
 - `seo.keywords`
 - `analytics`（如 GA）
 - `comment`（如 Utterances）
