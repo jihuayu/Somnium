@@ -1,6 +1,11 @@
 'use client'
 
 import cn from 'classnames'
+import {
+  ARTICLE_CONTENT_MAX_WIDTH_CLASS,
+  ARTICLE_TOC_LEFT,
+  ARTICLE_TOC_WIDTH_PX
+} from '@/consts'
 import { useConfig } from '@/lib/config'
 import FormattedDate from '@/components/FormattedDate'
 import TagItem from '@/components/TagItem'
@@ -23,14 +28,14 @@ export default function Post(props: PostProps) {
     <article className={cn('flex flex-col', fullWidth ? 'md:px-24' : 'items-center')}>
       <h1 className={cn(
         'w-full font-bold text-3xl text-black dark:text-white',
-        { 'max-w-2xl px-4': !fullWidth }
+        !fullWidth && `${ARTICLE_CONTENT_MAX_WIDTH_CLASS} px-4`
       )}>
         {post.title}
       </h1>
       {post.type[0] !== 'Page' && (
         <nav className={cn(
           'w-full flex mt-7 items-start text-gray-500 dark:text-gray-400',
-          { 'max-w-2xl px-4': !fullWidth }
+          !fullWidth && `${ARTICLE_CONTENT_MAX_WIDTH_CLASS} px-4`
         )}>
           <div className="flex mb-4">
             <a href={BLOG.socialLink || '#'} className="flex">
@@ -51,11 +56,14 @@ export default function Post(props: PostProps) {
         </nav>
       )}
       <div className="self-stretch -mt-4 relative">
-        <div className={fullWidth ? 'w-full px-4 md:px-24' : 'mx-auto w-full max-w-2xl px-4'}>
+        <div className={fullWidth ? 'w-full px-4 md:px-24' : `mx-auto w-full ${ARTICLE_CONTENT_MAX_WIDTH_CLASS} px-4`}>
           <NotionRenderer document={document} />
         </div>
         {!fullWidth && (
-          <div className="hidden xl:block absolute top-0 left-[calc(50%+22rem)] w-[220px]">
+          <div
+            className="hidden xl:block absolute top-0"
+            style={{ left: ARTICLE_TOC_LEFT, width: `${ARTICLE_TOC_WIDTH_PX}px` }}
+          >
             <TableOfContents toc={document?.toc || []} className="pt-3 sticky" style={{ top: '65px' }} />
           </div>
         )}

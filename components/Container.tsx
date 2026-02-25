@@ -2,6 +2,7 @@
 
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import { ARTICLE_CONTENT_MAX_WIDTH_CLASS } from '@/consts'
 import { useConfig } from '@/lib/config'
 import cn from 'classnames'
 import { ReactNode } from 'react'
@@ -38,7 +39,7 @@ const Container = ({ children, layout, fullWidth, ...customMeta }: ContainerProp
         />
         <main className={cn(
           'flex-grow transition-all',
-          layout !== 'blog' && ['self-center px-4', fullWidth ? 'md:px-24' : 'w-full max-w-2xl']
+          layout !== 'blog' && ['self-center px-4', fullWidth ? 'md:px-24' : `w-full ${ARTICLE_CONTENT_MAX_WIDTH_CLASS}`]
         )}>
           {children}
         </main>

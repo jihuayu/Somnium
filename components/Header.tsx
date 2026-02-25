@@ -3,6 +3,7 @@
 import { forwardRef, useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { ARTICLE_CONTENT_MAX_WIDTH_CLASS } from '@/consts'
 import { useConfig } from '@/lib/config'
 import { useLocale } from '@/lib/locale'
 import useTheme from '@/lib/theme'
@@ -92,7 +93,7 @@ export default function Header({ navBarTitle, fullWidth }: HeaderProps) {
       <div className="observer-element h-4 md:h-12" ref={sentinelRef}></div>
       <div
         className={`sticky-nav group m-auto w-full h-6 flex flex-row justify-between items-center mb-2 md:mb-12 py-8 bg-opacity-60 ${
-          !fullWidth ? 'max-w-3xl px-4' : 'px-4 md:px-24'
+          !fullWidth ? `${ARTICLE_CONTENT_MAX_WIDTH_CLASS} px-4` : 'px-4 md:px-24'
         }`}
         id="sticky-nav"
         ref={navRef}

@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import cn from 'classnames'
+import { ARTICLE_CONTENT_MAX_WIDTH_CLASS } from '@/consts'
 import { useLocale } from '@/lib/locale'
 import { useConfig } from '@/lib/config'
 import Post from '@/components/Post'
@@ -31,7 +32,7 @@ export default function SlugPostClient({ post, document, fullWidth }: SlugPostCl
       <div
         className={cn(
           'px-4 flex justify-between font-medium text-gray-500 dark:text-gray-400 my-5',
-          fullWidth ? 'md:px-24' : 'mx-auto max-w-2xl'
+          fullWidth ? 'md:px-24' : `mx-auto ${ARTICLE_CONTENT_MAX_WIDTH_CLASS}`
         )}
       >
         <a>

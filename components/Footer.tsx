@@ -1,5 +1,6 @@
 'use client'
 
+import { ARTICLE_CONTENT_MAX_WIDTH_CLASS } from '@/consts'
 import { useConfig } from '@/lib/config'
 
 interface FooterProps {
@@ -15,7 +16,7 @@ const Footer = ({ fullWidth }: FooterProps) => {
   return (
     <div
       className={`mt-6 flex-shrink-0 m-auto w-full text-gray-500 dark:text-gray-400 transition-all ${
-        !fullWidth ? 'max-w-2xl px-4' : 'px-4 md:px-24'
+        !fullWidth ? `${ARTICLE_CONTENT_MAX_WIDTH_CLASS} px-4` : 'px-4 md:px-24'
       }`}
     >
       <hr className="border-gray-200 dark:border-gray-600" />

@@ -4,6 +4,7 @@ import 'gitalk/dist/gitalk.css'
 import { usePathname } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import cn from 'classnames'
+import { ARTICLE_CONTENT_MAX_WIDTH_CLASS } from '@/consts'
 import { fetchCusdisLang } from '@/lib/cusdisLang'
 import { useConfig } from '@/lib/config'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
@@ -35,7 +36,7 @@ const Comments = ({ frontMatter }: CommentsProps) => {
     <div
       className={cn(
         'px-4 font-medium text-gray-500 dark:text-gray-400 my-5',
-        fullWidth ? 'md:px-24' : 'mx-auto max-w-2xl',
+        fullWidth ? 'md:px-24' : `mx-auto ${ARTICLE_CONTENT_MAX_WIDTH_CLASS}`,
       )}
     >
       {BLOG.comment && BLOG.comment.provider === 'gitalk' && (

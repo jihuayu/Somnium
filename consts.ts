@@ -25,6 +25,7 @@ export const FONTS_SANS = [
   '"WenQuanYi Zen Hei Sharp"',
   'sans-serif'
 ]
+
 export const FONTS_SERIF = [
   '"Source Serif"',
   'ui-serif',
@@ -49,3 +50,9 @@ export const FONTS_SERIF = [
   'MingLiU',
   'serif'
 ]
+
+export const ARTICLE_CONTENT_MAX_WIDTH_CLASS = 'max-w-3xl'
+export const ARTICLE_CONTENT_HALF_WIDTH_REM = 24
+export const ARTICLE_TOC_GAP_REM = 1
+export const ARTICLE_TOC_WIDTH_PX = 220
+export const ARTICLE_TOC_LEFT = `calc(50% + ${ARTICLE_CONTENT_HALF_WIDTH_REM + ARTICLE_TOC_GAP_REM}rem)`

@@ -20,9 +20,8 @@ const FONTS_SERIF = [
   '"AR PL UMing TW MBE"', 'PMingLiU', 'MingLiU', 'serif'
 ]
 
-// eslint-disable-next-line import/no-anonymous-default-export
 module.exports = {
-  content: ['./app/**/*.{js,ts,jsx,tsx}', './pages/**/*.{js,ts,jsx,tsx}', './components/**/*.{js,ts,jsx,tsx}', './layouts/**/*.{js,ts,jsx,tsx}'],
+  content: ['./*.{js,ts,jsx,tsx}', './app/**/*.{js,ts,jsx,tsx}', './pages/**/*.{js,ts,jsx,tsx}', './components/**/*.{js,ts,jsx,tsx}', './layouts/**/*.{js,ts,jsx,tsx}'],
   darkMode: 'class',
   theme: {
     extend: {
