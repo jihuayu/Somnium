@@ -51,16 +51,17 @@ export default function Post (props) {
           )}
         </nav>
       )}
-      <div className="self-stretch -mt-4 flex flex-col items-center lg:flex-row lg:items-stretch">
-        {!fullWidth && <div className="flex-1 hidden lg:block" />}
-        <div className={fullWidth ? 'flex-1 pr-4' : 'flex-none w-full max-w-2xl px-4'}>
+      <div className="self-stretch -mt-4 relative">
+        <div className={fullWidth ? 'w-full px-4 md:px-24' : 'mx-auto w-full max-w-2xl px-4'}>
           <NotionRenderer document={document} />
         </div>
-        <div className={cn('order-first lg:order-[unset] w-full lg:w-auto max-w-2xl lg:max-w-[unset] lg:min-w-[160px]', fullWidth ? 'flex-none' : 'flex-1')}>
-          {/* `65px` is the height of expanded nav */}
-          {/* TODO: Remove the magic number */}
-          <TableOfContents toc={document?.toc || []} className="pt-3 sticky" style={{ top: '65px' }} />
-        </div>
+        {!fullWidth && (
+          <div className="hidden xl:block absolute top-0 left-[calc(50%+22rem)] w-[220px]">
+            {/* `65px` is the height of expanded nav */}
+            {/* TODO: Remove the magic number */}
+            <TableOfContents toc={document?.toc || []} className="pt-3 sticky" style={{ top: '65px' }} />
+          </div>
+        )}
       </div>
     </article>
   )

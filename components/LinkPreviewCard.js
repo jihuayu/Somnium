@@ -1,0 +1,150 @@
+import { useEffect, useMemo, useState } from 'react'
+import cn from 'classnames'
+
+const previewCache = new Map()
+
+function buildFallback(url) {
+  if (!url) {
+    return {
+      url: '',
+      hostname: '',
+      title: '',
+      description: '',
+      image: '',
+      icon: ''
+    }
+  }
+
+  try {
+    const parsed = new URL(url)
+    const hostname = parsed.hostname
+    return {
+      url: parsed.toString(),
+      hostname,
+      title: hostname,
+      description: '',
+      image: '',
+      icon: `https://www.google.com/s2/favicons?domain=${encodeURIComponent(hostname)}&sz=32`
+    }
+  } catch {
+    return {
+      url,
+      hostname: '',
+      title: url,
+      description: '',
+      image: '',
+      icon: ''
+    }
+  }
+}
+
+export default function LinkPreviewCard ({ url, className }) {
+  const normalizedUrl = useMemo(() => {
+    try {
+      return new URL(url).toString()
+    } catch {
+      return ''
+    }
+  }, [url])
+  const fallback = useMemo(() => buildFallback(normalizedUrl), [normalizedUrl])
+  const cached = useMemo(
+    () => (normalizedUrl ? previewCache.get(normalizedUrl) : null),
+    [normalizedUrl]
+  )
+  const [previewState, setPreviewState] = useState({
+    url: '',
+    data: null
+  })
+
+  useEffect(() => {
+    if (!normalizedUrl) return
+    if (previewCache.has(normalizedUrl)) return
+
+    const controller = new AbortController()
+
+    fetch(`/api/link-preview?url=${encodeURIComponent(normalizedUrl)}`, {
+      signal: controller.signal
+    })
+      .then(async response => {
+        if (!response.ok) return fallback
+        return response.json()
+      })
+      .then(data => {
+        const next = {
+          ...fallback,
+          ...(data || {})
+        }
+        previewCache.set(normalizedUrl, next)
+        setPreviewState({
+          url: normalizedUrl,
+          data: next
+        })
+      })
+      .catch(() => {
+        previewCache.set(normalizedUrl, fallback)
+      })
+
+    return () => controller.abort()
+  }, [normalizedUrl, fallback])
+
+  const preview = (
+    previewState.url === normalizedUrl && previewState.data
+      ? previewState.data
+      : cached || fallback
+  )
+
+  const displayUrl = preview.url || normalizedUrl
+  if (!displayUrl) return null
+
+  return (
+    <a
+      href={displayUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={cn(
+        'group block my-4 rounded-md border border-blue-400/70 hover:border-blue-500 transition-colors overflow-hidden bg-transparent',
+        className
+      )}
+    >
+      <div className="flex items-stretch">
+        <div className="min-w-0 flex-1 px-5 py-4">
+          <p className="text-2xl text-zinc-900 dark:text-zinc-100 font-medium truncate">
+            {preview.title || preview.hostname || displayUrl}
+          </p>
+          {preview.description && (
+            <p className="mt-2 text-zinc-600 dark:text-zinc-300 text-lg leading-8 max-h-16 overflow-hidden">
+              {preview.description}
+            </p>
+          )}
+          <div className="mt-3 flex items-center gap-2 text-zinc-800 dark:text-zinc-200 text-sm">
+            {preview.icon ? (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={preview.icon}
+                  alt=""
+                  className="h-5 w-5 sm:h-4 sm:w-4 rounded-sm flex-none"
+                  loading="lazy"
+                />
+              </>
+            ) : (
+              <span className="h-5 w-5 sm:h-4 sm:w-4 rounded-sm bg-zinc-300 dark:bg-zinc-700 flex-none" />
+            )}
+            <span className="truncate">{displayUrl}</span>
+          </div>
+        </div>
+        {preview.image && (
+          <div className="hidden sm:block w-48 md:w-72 border-l border-zinc-200/70 dark:border-zinc-700/70">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={preview.image}
+              alt={preview.title || preview.hostname || 'Link preview'}
+              className="h-full w-full object-cover"
+              loading="lazy"
+            />
+          </div>
+        )}
+      </div>
+    </a>
+  )
+}

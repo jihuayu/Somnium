@@ -2,6 +2,7 @@ import { Fragment } from 'react'
 import cn from 'classnames'
 import { FONTS_SANS, FONTS_SERIF } from '@/consts'
 import { useConfig } from '@/lib/config'
+import LinkPreviewCard from '@/components/LinkPreviewCard'
 
 function getPlainTextFromRichText(richText = []) {
   return richText.map(item => item?.plain_text || '').join('')
@@ -288,14 +289,7 @@ export default function NotionRenderer ({ document }) {
                   Unsupported embed block
                 </div>
               ) : (
-                <a
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 dark:text-blue-400 underline underline-offset-4 break-all"
-                >
-                  {url}
-                </a>
+                <LinkPreviewCard url={url} />
               )}
               {caption.length > 0 && (
                 <div className="notion-asset-caption mt-2 whitespace-pre-wrap">
@@ -318,14 +312,7 @@ export default function NotionRenderer ({ document }) {
                 Unsupported bookmark block
               </div>
             ) : (
-              <a
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="notion-bookmark block rounded-md p-3 my-4 text-sm break-all"
-              >
-                {url}
-              </a>
+              <LinkPreviewCard url={url} />
             )}
             {caption.length > 0 && (
               <div className="notion-asset-caption mt-2 whitespace-pre-wrap">
