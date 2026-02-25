@@ -2,19 +2,11 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import cn from 'classnames'
+import type { LinkPreviewData } from '@/lib/link-preview/types'
 
-interface PreviewData {
-  url: string
-  hostname: string
-  title: string
-  description: string
-  image: string
-  icon: string
-}
+const previewCache = new Map<string, LinkPreviewData>()
 
-const previewCache = new Map<string, PreviewData>()
-
-function buildFallback(url: string): PreviewData {
+function buildFallback(url: string): LinkPreviewData {
   if (!url) {
     return { url: '', hostname: '', title: '', description: '', image: '', icon: '' }
   }
@@ -38,9 +30,10 @@ function buildFallback(url: string): PreviewData {
 interface LinkPreviewCardProps {
   url: string
   className?: string
+  initialData?: LinkPreviewData
 }
 
-export default function LinkPreviewCard({ url, className }: LinkPreviewCardProps) {
+export default function LinkPreviewCard({ url, className, initialData }: LinkPreviewCardProps) {
   const normalizedUrl = useMemo(() => {
     try { return new URL(url).toString() } catch { return '' }
   }, [url])
@@ -49,14 +42,29 @@ export default function LinkPreviewCard({ url, className }: LinkPreviewCardProps
     () => (normalizedUrl ? previewCache.get(normalizedUrl) : null),
     [normalizedUrl]
   )
-  const [previewState, setPreviewState] = useState<{ url: string; data: PreviewData | null }>({
-    url: '',
+  const seeded = useMemo(() => {
+    if (!normalizedUrl) return null
+    if (initialData) {
+      return {
+        ...fallback,
+        ...initialData,
+        url: initialData.url || normalizedUrl
+      }
+    }
+    return cached || null
+  }, [normalizedUrl, initialData, fallback, cached])
+
+  const [fetchedState, setFetchedState] = useState<{ url: string; data: LinkPreviewData | null }>(() => ({
+    url: normalizedUrl,
     data: null
-  })
+  }))
 
   useEffect(() => {
     if (!normalizedUrl) return
-    if (previewCache.has(normalizedUrl)) return
+    if (seeded) {
+      previewCache.set(normalizedUrl, seeded)
+      return
+    }
     const controller = new AbortController()
     fetch(`/api/link-preview?url=${encodeURIComponent(normalizedUrl)}`, {
       signal: controller.signal
@@ -66,20 +74,21 @@ export default function LinkPreviewCard({ url, className }: LinkPreviewCardProps
         return response.json()
       })
       .then(data => {
-        const next: PreviewData = { ...fallback, ...(data || {}) }
+        const next: LinkPreviewData = { ...fallback, ...(data || {}) }
         previewCache.set(normalizedUrl, next)
-        setPreviewState({ url: normalizedUrl, data: next })
+        setFetchedState({ url: normalizedUrl, data: next })
       })
       .catch(() => {
         previewCache.set(normalizedUrl, fallback)
+        setFetchedState({ url: normalizedUrl, data: fallback })
       })
     return () => controller.abort()
-  }, [normalizedUrl, fallback])
+  }, [normalizedUrl, seeded, fallback])
 
   const preview = (
-    previewState.url === normalizedUrl && previewState.data
-      ? previewState.data
-      : cached || fallback
+    fetchedState.url === normalizedUrl && fetchedState.data
+      ? fetchedState.data
+      : seeded || fallback
   )
   const displayUrl = preview.url || normalizedUrl
   if (!displayUrl) return null
@@ -120,12 +129,12 @@ export default function LinkPreviewCard({ url, className }: LinkPreviewCardProps
           </div>
         </div>
         {preview.image && (
-          <div className="hidden sm:block w-32 md:w-48 border-l border-zinc-200/70 dark:border-zinc-700/70">
+          <div className="hidden sm:flex shrink-0 items-center justify-center border-l border-zinc-200/70 dark:border-zinc-700/70 px-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={preview.image}
               alt={preview.title || preview.hostname || 'Link preview'}
-              className="h-full w-full object-cover"
+              className="h-36 w-24 md:h-44 md:w-28 lg:h-48 lg:w-32 rounded-sm object-cover"
               loading="lazy"
             />
           </div>

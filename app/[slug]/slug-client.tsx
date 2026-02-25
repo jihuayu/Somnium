@@ -9,14 +9,16 @@ import Post from '@/components/Post'
 import Comments from '@/components/Comments'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
 import type { NotionDocument } from '@/lib/notion/getPostBlocks'
+import type { LinkPreviewMap } from '@/lib/link-preview/types'
 
 interface SlugPostClientProps {
   post: PostData
   document: NotionDocument
   fullWidth: boolean
+  linkPreviewMap?: LinkPreviewMap
 }
 
-export default function SlugPostClient({ post, document, fullWidth }: SlugPostClientProps) {
+export default function SlugPostClient({ post, document, fullWidth, linkPreviewMap = {} }: SlugPostClientProps) {
   const router = useRouter()
   const BLOG = useConfig()
   const locale = useLocale()
@@ -27,6 +29,7 @@ export default function SlugPostClient({ post, document, fullWidth }: SlugPostCl
         post={post}
         document={document}
         fullWidth={fullWidth}
+        linkPreviewMap={linkPreviewMap}
       />
 
       <div

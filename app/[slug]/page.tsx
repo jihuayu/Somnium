@@ -4,6 +4,8 @@ import { cache } from 'react'
 import { getAllPosts, getPostBlocks } from '@/lib/notion'
 import Container from '@/components/Container'
 import { buildPageMetadata } from '@/lib/server/metadata'
+import { getLinkPreviewMap } from '@/lib/server/linkPreview'
+import { getLinkPreviewTargets } from '@/lib/notion/linkPreviewTargets'
 import SlugPostClient from './slug-client'
 
 export const revalidate = 1
@@ -44,6 +46,8 @@ export default async function SlugPage({ params }: SlugPageProps) {
   if (!post) notFound()
 
   const document = await getPostBlocks(post.id)
+  if (!document) notFound()
+  const linkPreviewMap = await getLinkPreviewMap(getLinkPreviewTargets(document))
 
   const fullWidth = post.fullWidth ?? false
 
@@ -53,7 +57,7 @@ export default async function SlugPage({ params }: SlugPageProps) {
       title={post.title}
       fullWidth={fullWidth}
     >
-      <SlugPostClient post={post} document={document!} fullWidth={fullWidth} />
+      <SlugPostClient post={post} document={document} fullWidth={fullWidth} linkPreviewMap={linkPreviewMap} />
     </Container>
   )
 }

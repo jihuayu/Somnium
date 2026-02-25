@@ -4,7 +4,9 @@ import { Fragment } from 'react'
 import cn from 'classnames'
 import { FONTS_SANS, FONTS_SERIF } from '@/consts'
 import { useConfig } from '@/lib/config'
+import { resolveEmbedIframeUrl } from '@/lib/notion/embed'
 import LinkPreviewCard from '@/components/LinkPreviewCard'
+import type { LinkPreviewMap } from '@/lib/link-preview/types'
 import type { NotionDocument } from '@/lib/notion/getPostBlocks'
 
 function getPlainTextFromRichText(richText: any[] = []): string {
@@ -15,24 +17,9 @@ function getBlockClassName(blockId: string): string {
   return `notion-block-${blockId.replaceAll('-', '')}`
 }
 
-function getEmbedUrl(url: string | null): string | null {
-  if (!url) return null
-  try {
-    const parsed = new URL(url)
-    const host = parsed.hostname.replace('www.', '')
-    if (host === 'youtu.be') {
-      const id = parsed.pathname.split('/').filter(Boolean)[0]
-      return id ? `https://www.youtube.com/embed/${id}` : null
-    }
-    if (host.includes('youtube.com')) {
-      const id = parsed.searchParams.get('v')
-      if (id) return `https://www.youtube.com/embed/${id}`
-      if (parsed.pathname.startsWith('/embed/')) return url
-    }
-  } catch {
-    return null
-  }
-  return null
+function normalizeUrl(url: string | null): string {
+  if (!url) return ''
+  try { return new URL(url).toString() } catch { return '' }
 }
 
 function RichText({ richText = [] }: { richText: any[] }) {
@@ -83,9 +70,10 @@ function RichText({ richText = [] }: { richText: any[] }) {
 
 interface NotionRendererProps {
   document: NotionDocument | null
+  linkPreviewMap?: LinkPreviewMap
 }
 
-export default function NotionRenderer({ document }: NotionRendererProps) {
+export default function NotionRenderer({ document, linkPreviewMap = {} }: NotionRendererProps) {
   const config = useConfig()
   const font = {
     'sans-serif': FONTS_SANS,
@@ -257,7 +245,8 @@ export default function NotionRenderer({ document }: NotionRendererProps) {
       case 'embed': {
         const embed = block?.embed || {}
         const embedUrl = embed.url
-        const iframeUrl = getEmbedUrl(embedUrl)
+        const iframeUrl = resolveEmbedIframeUrl(embedUrl)
+        const previewKey = normalizeUrl(embedUrl)
         const caption = embed.caption || []
         return (
           <div key={block.id} className={className}>
@@ -277,7 +266,7 @@ export default function NotionRenderer({ document }: NotionRendererProps) {
                   Unsupported embed block
                 </div>
               ) : (
-                <LinkPreviewCard url={embedUrl} />
+                <LinkPreviewCard url={embedUrl} initialData={linkPreviewMap[previewKey]} />
               )}
               {caption.length > 0 && (
                 <div className="notion-asset-caption mt-2 whitespace-pre-wrap">
@@ -292,6 +281,7 @@ export default function NotionRenderer({ document }: NotionRendererProps) {
       case 'bookmark': {
         const bookmark = block?.bookmark || {}
         const bookmarkUrl = bookmark.url
+        const previewKey = normalizeUrl(bookmarkUrl)
         const caption = bookmark.caption || []
         return (
           <div key={block.id} className={className}>
@@ -300,7 +290,7 @@ export default function NotionRenderer({ document }: NotionRendererProps) {
                 Unsupported bookmark block
               </div>
             ) : (
-              <LinkPreviewCard url={bookmarkUrl} />
+              <LinkPreviewCard url={bookmarkUrl} initialData={linkPreviewMap[previewKey]} />
             )}
             {caption.length > 0 && (
               <div className="notion-asset-caption mt-2 whitespace-pre-wrap">
