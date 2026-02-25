@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import net from 'node:net'
+import { toLinkPreviewImageProxyUrl } from '@/lib/server/linkPreviewImageProxy'
 
 const CACHE_TTL_MS = 1000 * 60 * 60 * 6
-const CACHE_VERSION = 'og-only-v1'
+const CACHE_VERSION = 'og-only-v2'
 
 const globalObj = globalThis as any
 if (!globalObj.__NOBELIUM_LINK_PREVIEW_CACHE__) {
@@ -183,7 +184,7 @@ export async function GET(req: NextRequest) {
       hostname,
       title: metadata.title || fallback.title,
       description: metadata.description || '',
-      image: metadata.image || '',
+      image: toLinkPreviewImageProxyUrl(metadata.image || ''),
       icon: metadata.icon || fallback.icon
     }
 
