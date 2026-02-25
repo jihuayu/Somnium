@@ -100,8 +100,15 @@ export default function LinkPreviewCard({ url, className, initialData }: LinkPre
       : seeded || fallback
   )
   const displayUrl = preview.url || normalizedUrl
+  const generatedImageUrl = displayUrl ? buildLinkPreviewOgImageUrl(preview, displayUrl) : ''
+  const [loadedCoverSrc, setLoadedCoverSrc] = useState('')
+  const [failedCoverSrc, setFailedCoverSrc] = useState('')
+  const [loadedIconSrc, setLoadedIconSrc] = useState('')
+  const isCoverLoaded = !!generatedImageUrl && loadedCoverSrc === generatedImageUrl
+  const isCoverError = !!generatedImageUrl && failedCoverSrc === generatedImageUrl
+  const isIconLoaded = !!preview.icon && loadedIconSrc === preview.icon
+
   if (!displayUrl) return null
-  const generatedImageUrl = buildLinkPreviewOgImageUrl(preview, displayUrl)
 
   return (
     <a
@@ -132,13 +139,26 @@ export default function LinkPreviewCard({ url, className, initialData }: LinkPre
           )}
           <div className="mt-auto pt-2 flex items-center gap-2 text-zinc-800 dark:text-zinc-200 text-xs">
             {preview.icon ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={preview.icon}
-                alt=""
-                className="h-4 w-4 rounded-sm flex-none"
-                loading="lazy"
-              />
+              <span className="relative h-4 w-4 rounded-sm flex-none overflow-hidden">
+                <span
+                  className={cn(
+                    'absolute inset-0 bg-zinc-300 dark:bg-zinc-700 transition-opacity duration-200',
+                    isIconLoaded ? 'opacity-0' : 'opacity-100'
+                  )}
+                />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={preview.icon}
+                  alt=""
+                  className={cn(
+                    'h-4 w-4 rounded-sm transition-opacity duration-200',
+                    isIconLoaded ? 'opacity-100' : 'opacity-0'
+                  )}
+                  loading="lazy"
+                  onLoad={() => setLoadedIconSrc(preview.icon)}
+                  onError={() => setLoadedIconSrc('')}
+                />
+              </span>
             ) : (
               <span className="h-4 w-4 rounded-sm bg-zinc-300 dark:bg-zinc-700 flex-none" />
             )}
@@ -147,13 +167,32 @@ export default function LinkPreviewCard({ url, className, initialData }: LinkPre
         </div>
         {generatedImageUrl && (
           <div className="hidden sm:flex shrink-0 items-center justify-center border-l border-zinc-200/70 dark:border-zinc-700/70 px-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={generatedImageUrl}
-              alt={preview.title || preview.hostname || 'Link preview'}
-              className="h-28 w-auto max-w-40 md:h-36 md:max-w-52 lg:h-40 lg:max-w-56 rounded-sm object-cover"
-              loading="lazy"
-            />
+            <div className="relative h-28 w-40 md:h-36 md:w-52 lg:h-40 lg:w-56 overflow-hidden rounded-sm">
+              <span
+                className={cn(
+                  'absolute inset-0 bg-zinc-200/80 dark:bg-zinc-700/70 transition-opacity duration-200',
+                  isCoverLoaded ? 'opacity-0' : 'opacity-100',
+                  !isCoverError && 'animate-pulse'
+                )}
+              />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={generatedImageUrl}
+                alt={preview.title || preview.hostname || 'Link preview'}
+                className={cn(
+                  'h-full w-full rounded-sm object-cover transition-opacity duration-200',
+                  isCoverLoaded ? 'opacity-100' : 'opacity-0'
+                )}
+                loading="lazy"
+                onLoad={() => {
+                  setLoadedCoverSrc(generatedImageUrl)
+                  setFailedCoverSrc('')
+                }}
+                onError={() => {
+                  setFailedCoverSrc(generatedImageUrl)
+                }}
+              />
+            </div>
           </div>
         )}
       </div>

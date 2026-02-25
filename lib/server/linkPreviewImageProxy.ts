@@ -7,10 +7,14 @@ interface LinkPreviewImageProxyRule {
 
 const IMAGE_PROXY_RULES: LinkPreviewImageProxyRule[] = [
   {
-    id: 'douban-img3',
+    id: 'douban',
     match: (url: URL) =>
       url.protocol === 'https:' &&
-      url.hostname.toLowerCase() === 'img3.doubanio.com' &&
+      (
+        url.hostname.toLowerCase() === 'img1.doubanio.com' || 
+        url.hostname.toLowerCase() === 'img2.doubanio.com' || 
+        url.hostname.toLowerCase() === 'img3.doubanio.com'
+      ) &&
       url.pathname.startsWith('/'),
     referer: 'https://book.douban.com/',
     cacheTtlSeconds: 60 * 60 * 24
