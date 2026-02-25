@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { searchPosts } from '@/lib/notion/searchPosts'
+import { decodePossiblyEncoded } from '@/lib/url/decodePossiblyEncoded'
 
 const DEFAULT_LIMIT = 20
 const MAX_LIMIT = 50
@@ -17,19 +18,7 @@ function parseTag(raw: string | null): string {
   if (!raw) return ''
   const trimmed = raw.trim()
   if (!trimmed) return ''
-
-  let decoded = trimmed
-  for (let i = 0; i < 2; i += 1) {
-    try {
-      const next = decodeURIComponent(decoded)
-      if (next === decoded) break
-      decoded = next
-    } catch {
-      break
-    }
-  }
-
-  return decoded.trim()
+  return decodePossiblyEncoded(trimmed).trim()
 }
 
 export async function GET(req: NextRequest) {

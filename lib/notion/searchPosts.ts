@@ -31,12 +31,24 @@ let cachedSearchPropertyRefs: {
   refs: SearchPropertyRefs
 } | null = null
 
-function normalizeKeyword(value: string): string {
+function normalizeForMatch(value: string): string {
   return value.trim().toLowerCase()
 }
 
-function normalizeTag(value: string): string {
-  return value.trim().toLowerCase()
+function tokenizeKeyword(value: string): string[] {
+  if (!value) return []
+
+  const seen = new Set<string>()
+  const tokens: string[] = []
+
+  for (const item of value.split(/\s+/)) {
+    const token = item.trim()
+    if (!token || seen.has(token)) continue
+    seen.add(token)
+    tokens.push(token)
+  }
+
+  return tokens
 }
 
 function findDataSourceProperty(
@@ -93,7 +105,11 @@ async function getSearchPropertyRefs(dataSourceId: string): Promise<SearchProper
   return refs
 }
 
-function buildSearchFilter(keyword: string, tag: string, refs: SearchPropertyRefs): Record<string, unknown> | null {
+function buildSearchFilter(
+  keywordTokens: string[],
+  tag: string,
+  refs: SearchPropertyRefs
+): Record<string, unknown> | null {
   const andFilters: Record<string, unknown>[] = []
 
   if (tag && refs.tags) {
@@ -105,38 +121,51 @@ function buildSearchFilter(keyword: string, tag: string, refs: SearchPropertyRef
     })
   }
 
-  if (keyword) {
-    const keywordFilters: Record<string, unknown>[] = []
-    if (refs.title) {
-      keywordFilters.push({
-        property: refs.title.id,
-        title: {
-          contains: keyword
-        }
-      })
-    }
-    if (refs.summary) {
-      keywordFilters.push({
-        property: refs.summary.id,
-        rich_text: {
-          contains: keyword
-        }
-      })
-    }
-    if (refs.tags) {
-      keywordFilters.push({
-        property: refs.tags.id,
-        multi_select: {
-          contains: keyword
-        }
-      })
+  if (keywordTokens.length) {
+    const tokenFilters: Record<string, unknown>[] = []
+
+    for (const token of keywordTokens) {
+      const fieldFilters: Record<string, unknown>[] = []
+
+      if (refs.title) {
+        fieldFilters.push({
+          property: refs.title.id,
+          title: {
+            contains: token
+          }
+        })
+      }
+      if (refs.summary) {
+        fieldFilters.push({
+          property: refs.summary.id,
+          rich_text: {
+            contains: token
+          }
+        })
+      }
+      if (refs.tags) {
+        fieldFilters.push({
+          property: refs.tags.id,
+          multi_select: {
+            contains: token
+          }
+        })
+      }
+
+      if (fieldFilters.length === 1) {
+        tokenFilters.push(fieldFilters[0])
+      } else if (fieldFilters.length > 1) {
+        tokenFilters.push({
+          or: fieldFilters
+        })
+      }
     }
 
-    if (keywordFilters.length === 1) {
-      andFilters.push(keywordFilters[0])
-    } else if (keywordFilters.length > 1) {
+    if (tokenFilters.length === 1) {
+      andFilters.push(tokenFilters[0])
+    } else if (tokenFilters.length > 1) {
       andFilters.push({
-        or: keywordFilters
+        and: tokenFilters
       })
     }
   }
@@ -146,20 +175,20 @@ function buildSearchFilter(keyword: string, tag: string, refs: SearchPropertyRef
   return { and: andFilters }
 }
 
-function matchesKeywordAndTag(post: PostData, keyword: string, tag: string): boolean {
-  if (tag) {
-    const postTags = (post.tags || []).map(item => normalizeTag(item))
-    if (!postTags.includes(tag)) {
+function matchesKeywordAndTag(post: PostData, keywordTokens: string[], normalizedTag: string): boolean {
+  if (normalizedTag) {
+    const postTags = (post.tags || []).map(item => normalizeForMatch(item))
+    if (!postTags.includes(normalizedTag)) {
       return false
     }
   }
 
-  if (!keyword) {
+  if (!keywordTokens.length) {
     return true
   }
 
-  const combined = `${post.title || ''} ${post.summary || ''} ${(post.tags || []).join(' ')}`.toLowerCase()
-  return combined.includes(keyword)
+  const combined = normalizeForMatch(`${post.title || ''} ${post.summary || ''} ${(post.tags || []).join(' ')}`)
+  return keywordTokens.every(token => combined.includes(token))
 }
 
 export async function searchPosts({
@@ -168,9 +197,11 @@ export async function searchPosts({
   includePages = false,
   limit = 20
 }: SearchPostsOptions): Promise<PostData[]> {
-  const keyword = normalizeKeyword(query)
-  const normalizedTag = normalizeTag(tag)
-  if (!keyword && !normalizedTag) return []
+  const keywordTokensRaw = tokenizeKeyword(query.trim())
+  const keywordTokens = keywordTokensRaw.map(token => normalizeForMatch(token))
+  const tagValue = tag.trim()
+  const normalizedTag = normalizeForMatch(tagValue)
+  if (!keywordTokensRaw.length && !tagValue) return []
 
   const dataSourceId = normalizeNotionUuid(process.env.NOTION_DATA_SOURCE_ID)
   if (!dataSourceId) {
@@ -178,7 +209,7 @@ export async function searchPosts({
   }
 
   const refs = await getSearchPropertyRefs(dataSourceId)
-  const filter = buildSearchFilter(keyword, normalizedTag, refs)
+  const filter = buildSearchFilter(keywordTokensRaw, tagValue, refs)
   const safeLimit = Math.max(1, Math.min(limit, MAX_LIMIT))
   const results: PostData[] = []
   const seenIds = new Set<string>()
@@ -203,7 +234,7 @@ export async function searchPosts({
     const filtered = filterPublishedPosts({ posts: mapped, includePages })
 
     for (const post of filtered) {
-      if (!matchesKeywordAndTag(post, keyword, normalizedTag)) continue
+      if (!matchesKeywordAndTag(post, keywordTokens, normalizedTag)) continue
       if (seenIds.has(post.id)) continue
       seenIds.add(post.id)
       results.push(post)
