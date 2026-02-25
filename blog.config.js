@@ -2,7 +2,8 @@ const BLOG = {
   title: '浮生纪梦',
   author: '纪华裕',
   email: 'jihuayu123@gmail.com',
-  link: 'https://blog.jihuayu.com',
+  link: 'https://example.com',
+  tagline: '大梦一场，浮生尽歇',
   description: 'This gonna be an awesome website.',
   lang: 'zh-CN', // ['en-US', 'zh-CN', 'zh-HK', 'zh-TW', 'ja-JP', 'es-ES']
   timezone: 'Asia/Shanghai', // Your Notion posts' date will be interpreted as this timezone. See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for all options.
@@ -11,9 +12,9 @@ const BLOG = {
   lightBackground: '#ffffff', // use hex value, don't forget '#' e.g #fffefc
   darkBackground: '#18181B', // use hex value, don't forget '#'
   path: '', // leave this empty unless you want to deploy Nobelium in a folder
-  since: 2023, // If leave this empty, current year will be used.
+  since: 2024, // If leave this empty, current year will be used.
   postsPerPage: 7,
-  sortByDate: false,
+  sortByDate: true,
   showAbout: true,
   showArchive: true,
   autoCollapsedNavBar: false, // The automatically collapsed navigation bar
@@ -23,8 +24,8 @@ const BLOG = {
     keywords: ['Blog', 'Website', 'Notion'],
     googleSiteVerification: '' // Remove the value or replace it with your own google site verification code
   },
-  notionPageId: process.env.NOTION_PAGE_ID, // DO NOT CHANGE THIS！！！
-  notionAccessToken: process.env.NOTION_ACCESS_TOKEN, // Useful if you prefer not to make your database public
+  notionDataSourceId: process.env.NOTION_DATA_SOURCE_ID, // Notion data source ID for official API mode
+  notionApiVersion: process.env.NOTION_API_VERSION || '2025-09-03',
   analytics: {
     provider: 'ga', // Currently we support Google Analytics and Ackee, please fill with 'ga' or 'ackee', leave it empty to disable it.
     ackeeConfig: {

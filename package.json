@@ -30,36 +30,30 @@
     "katex": "^0.16.33",
     "mermaid": "^11.12.3",
     "next": "^16.1.6",
-    "notion-client": "^6.16.0",
-    "notion-utils": "6.16.0",
     "preact": "^10.28.4",
     "prismjs": "^1.30.0",
     "prop-types": "^15.8.1",
     "react": "^18.2.0",
     "react-cusdis": "^2.1.3",
     "react-dom": "^18.2.0",
-    "react-notion-x": "6.16.0",
     "react-tweet-embed": "^2.0.0",
     "react-use": "^17.4.0",
     "use-ackee": "^3.0.1"
   },
   "devDependencies": {
+    "@types/node": "^25.3.0",
+    "@types/react": "^19.2.14",
     "autoprefixer": "^10.4.24",
     "eslint": "^9.39.3",
     "eslint-config-next": "^16.1.6",
     "next-sitemap": "^4.2.3",
     "postcss": "^8.4.49",
-    "tailwindcss": "^3.4.17"
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.9.3"
   },
   "bugs": {
     "url": "https://github.com/craigary/nobelium/issues",
     "email": "i@craigary.net"
   },
-  "packageManager": "pnpm@10.11.0",
-  "pnpm": {
-    "patchedDependencies": {
-      "notion-utils@6.16.0": "patches/notion-utils@6.16.0.patch",
-      "react-notion-x@6.16.0": "patches/react-notion-x@6.16.0.patch"
-    }
-  }
+  "packageManager": "pnpm@10.11.0"
 }

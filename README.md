@@ -57,9 +57,9 @@ Demo: [https://nobelium.vercel.app/](https://nobelium.vercel.app/)
 - Customize `blog.config.js`
 - _(Optional)_ Replace `favicon.svg`, and `favicon.ico` in `/public` folder with your own
 - Deploy on [Vercel](https://vercel.com), set following environment variables：
-  - `NOTION_PAGE_ID` (Required): The ID of the Notion page you previously shared to the web, usually has 32 digits after your workspace address
-  - `NOTION_ACCESS_TOKEN` (Optional, not recommended): If you decide not to share your database, you can use token to let Nobelium grab data from Notion database. You can find it in your browser cookies called `token_v2`
-    - Keep in mind Notion token is only valid for 180 days, make sure to update manually in vercel dashboard, we probably switch to Official API to resolve this issue in the future. Also, images in Notion database will not properly rendered
+  - `NOTION_INTEGRATION_TOKEN` (Required): Your Notion internal integration token
+  - `NOTION_DATA_SOURCE_ID` (Required): Your Notion data source ID (under the new Data Source model)
+  - `NOTION_API_VERSION` (Optional): Notion API version, defaults to `2025-09-03`
 - **That's it!** Easy-peasy?
 
 <details><summary>Wait for a sec, what is Page ID？</summary>
@@ -73,14 +73,18 @@ Unofficial, thanks to [@Vaayne](https://github.com/craigary/nobelium/pull/157)'s
 ### Build Docker image yourself
 ```
 # set env
-export NOTION_PAGE_ID=xxx # your NOTION_PAGE_ID
+export NOTION_INTEGRATION_TOKEN=xxx # your Notion integration token
+export NOTION_DATA_SOURCE_ID=xxx # your Notion data source ID
 export IMAGE=nobelium:latest
 
 # build with docker
-docker build -t ${IMAGE} --build-arg NOTION_PAGE_ID .
+docker build -t ${IMAGE} --build-arg NOTION_DATA_SOURCE_ID .
 
 # run with docker
-docker run -d --name nobelium -p 3000:3000 -e NOTION_PAGE_ID=${NOTION_PAGE_ID} nobelium:latest
+docker run -d --name nobelium -p 3000:3000 \
+  -e NOTION_INTEGRATION_TOKEN=${NOTION_INTEGRATION_TOKEN} \
+  -e NOTION_DATA_SOURCE_ID=${NOTION_DATA_SOURCE_ID} \
+  nobelium:latest
 ```
 
 ### Use default docker image
@@ -89,7 +93,10 @@ docker run -d --name nobelium -p 3000:3000 -e NOTION_PAGE_ID=${NOTION_PAGE_ID} n
 docker pull ghcr.io/craigary/nobelium:main
 
 # run with docker
-docker run -d --name nobelium -p 3000:3000 -e NOTION_PAGE_ID=${NOTION_PAGE_ID} ghcr.io/craigary/nobelium:main
+docker run -d --name nobelium -p 3000:3000 \
+  -e NOTION_INTEGRATION_TOKEN=${NOTION_INTEGRATION_TOKEN} \
+  -e NOTION_DATA_SOURCE_ID=${NOTION_DATA_SOURCE_ID} \
+  ghcr.io/craigary/nobelium:main
 ```
 
 ## Roadmap

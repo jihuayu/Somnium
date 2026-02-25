@@ -1,0 +1,76 @@
+'use client'
+
+import 'gitalk/dist/gitalk.css'
+import { usePathname } from 'next/navigation'
+import dynamic from 'next/dynamic'
+import cn from 'classnames'
+import { ARTICLE_CONTENT_MAX_WIDTH_CLASS } from '@/consts'
+import { fetchCusdisLang } from '@/lib/cusdisLang'
+import { useConfig } from '@/lib/config'
+import type { PostData } from '@/lib/notion/filterPublishedPosts'
+
+const GitalkComponent = dynamic(
+  () => import('gitalk/dist/gitalk-component'),
+  { ssr: false }
+)
+const UtterancesComponent = dynamic(
+  () => import('@/components/Utterances'),
+  { ssr: false }
+)
+const CusdisComponent = dynamic(
+  () => import('react-cusdis').then(m => m.ReactCusdis),
+  { ssr: false }
+)
+
+interface CommentsProps {
+  frontMatter: PostData
+}
+
+const Comments = ({ frontMatter }: CommentsProps) => {
+  const pathname = usePathname()
+  const BLOG = useConfig()
+
+  const fullWidth = frontMatter.fullWidth ?? false
+
+  return (
+    <div
+      className={cn(
+        'px-4 font-medium text-gray-500 dark:text-gray-400 my-5',
+        fullWidth ? 'md:px-24' : `mx-auto ${ARTICLE_CONTENT_MAX_WIDTH_CLASS}`,
+      )}
+    >
+      {BLOG.comment && BLOG.comment.provider === 'gitalk' && (
+        <GitalkComponent
+          options={{
+            id: frontMatter.id,
+            title: frontMatter.title,
+            clientID: BLOG.comment.gitalkConfig.clientID,
+            clientSecret: BLOG.comment.gitalkConfig.clientSecret,
+            repo: BLOG.comment.gitalkConfig.repo,
+            owner: BLOG.comment.gitalkConfig.owner,
+            admin: BLOG.comment.gitalkConfig.admin,
+            distractionFreeMode: BLOG.comment.gitalkConfig.distractionFreeMode
+          }}
+        />
+      )}
+      {BLOG.comment && BLOG.comment.provider === 'utterances' && (
+        <UtterancesComponent issueTerm={frontMatter.id} />
+      )}
+      {BLOG.comment && BLOG.comment.provider === 'cusdis' && (
+        <CusdisComponent
+          lang={fetchCusdisLang(BLOG.lang)}
+          attrs={{
+            host: BLOG.comment.cusdisConfig.host,
+            appId: BLOG.comment.cusdisConfig.appId,
+            pageId: frontMatter.id,
+            pageTitle: frontMatter.title,
+            pageUrl: BLOG.link + pathname,
+            theme: BLOG.appearance
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+export default Comments
