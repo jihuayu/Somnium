@@ -55,9 +55,6 @@
     "url": "https://github.com/craigary/nobelium/issues",
     "email": "i@craigary.net"
   },
-  "engines": {
-    "node": ">=20.9.0"
-  },
   "packageManager": "pnpm@10.11.0",
   "pnpm": {
     "patchedDependencies": {
