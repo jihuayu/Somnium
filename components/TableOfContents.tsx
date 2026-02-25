@@ -25,7 +25,7 @@ export default function TableOfContents({ toc, className, style }: TableOfConten
 
   return (
     <aside
-      className={cn(className, 'pl-4 text-sm text-zinc-700/70 dark:text-neutral-400')}
+      className={cn(className, 'pl-2 text-sm text-zinc-700/70 dark:text-neutral-400')}
       style={style}
     >
       {toc.map(node => (
@@ -33,9 +33,10 @@ export default function TableOfContents({ toc, className, style }: TableOfConten
           <button
             type="button"
             data-target-id={node.id}
-            className="block py-1 hover:text-black dark:hover:text-white cursor-pointer transition duration-100"
-            style={{ paddingLeft: (node.indentLevel * 24) + 'px' }}
+            className="block w-full py-1 text-left whitespace-nowrap overflow-hidden text-ellipsis hover:text-black dark:hover:text-white cursor-pointer transition duration-100"
+            style={{ paddingLeft: (node.indentLevel * 16) + 'px' }}
             onClick={() => scrollTo(node.id)}
+            title={node.text}
           >
             {node.text}
           </button>

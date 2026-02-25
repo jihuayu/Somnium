@@ -4,6 +4,8 @@ import cn from 'classnames'
 import {
   ARTICLE_CONTENT_MAX_WIDTH_CLASS,
   ARTICLE_TOC_LEFT,
+  ARTICLE_TOC_MAX_HEIGHT,
+  ARTICLE_TOC_TOP_PX,
   ARTICLE_TOC_WIDTH_PX
 } from '@/consts'
 import { useConfig } from '@/lib/config'
@@ -61,10 +63,17 @@ export default function Post(props: PostProps) {
         </div>
         {!fullWidth && (
           <div
-            className="hidden xl:block absolute top-0"
-            style={{ left: ARTICLE_TOC_LEFT, width: `${ARTICLE_TOC_WIDTH_PX}px` }}
+            className="hidden xl:block absolute top-0 bottom-0"
+            style={{
+              left: ARTICLE_TOC_LEFT,
+              width: `${ARTICLE_TOC_WIDTH_PX}px`
+            }}
           >
-            <TableOfContents toc={document?.toc || []} className="pt-3 sticky" style={{ top: '65px' }} />
+            <TableOfContents
+              toc={document?.toc || []}
+              className="sticky pt-3 overflow-y-auto"
+              style={{ top: `${ARTICLE_TOC_TOP_PX}px`, maxHeight: `min(${ARTICLE_TOC_MAX_HEIGHT}, 100%)` }}
+            />
           </div>
         )}
       </div>
