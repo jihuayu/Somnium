@@ -117,7 +117,7 @@ export default function LinkPreviewCard({ url, className, initialData }: LinkPre
           </p>
           {preview.description && (
             <p
-              className="mt-2 pl-[3ch] text-zinc-600 dark:text-zinc-300 text-[13px] italic leading-5 overflow-hidden"
+              className="mt-1 text-zinc-600 dark:text-zinc-300 text-sm leading-6 overflow-hidden"
               style={{
                 display: '-webkit-box',
                 WebkitLineClamp: 3,
