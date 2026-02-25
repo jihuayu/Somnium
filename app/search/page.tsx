@@ -4,8 +4,8 @@ import SearchLayout from '@/layouts/search'
 export const revalidate = 1
 
 export default async function SearchPage() {
-  const posts = await getAllPosts({ includePages: false })
-  const tags = getAllTagsFromPosts(posts)
+  const allPosts = await getAllPosts({ includePages: false })
+  const tags = getAllTagsFromPosts(allPosts)
 
-  return <SearchLayout tags={tags} posts={posts} />
+  return <SearchLayout tags={tags} posts={[]} useNotionSearch />
 }

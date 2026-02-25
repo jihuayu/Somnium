@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import BlogPost from '@/components/BlogPost'
 import Container from '@/components/Container'
 import Tags from '@/components/Tags'
@@ -10,18 +10,69 @@ interface SearchLayoutProps {
   tags: Record<string, number>
   posts: PostData[]
   currentTag?: string
+  useNotionSearch?: boolean
 }
 
-const SearchLayout = ({ tags, posts, currentTag }: SearchLayoutProps) => {
+const SearchLayout = ({ tags, posts, currentTag, useNotionSearch = false }: SearchLayoutProps) => {
   const [searchValue, setSearchValue] = useState('')
-  let filteredBlogPosts: PostData[] = []
-  if (posts) {
-    filteredBlogPosts = posts.filter(post => {
+  const [remotePosts, setRemotePosts] = useState<PostData[]>([])
+  const [isSearching, setIsSearching] = useState(false)
+  const [searchError, setSearchError] = useState('')
+  const shouldUseNotionSearch = useNotionSearch && !currentTag
+
+  useEffect(() => {
+    if (!shouldUseNotionSearch) return
+
+    const keyword = searchValue.trim()
+    if (!keyword) {
+      setRemotePosts([])
+      setIsSearching(false)
+      setSearchError('')
+      return
+    }
+
+    const controller = new AbortController()
+    const timer = window.setTimeout(async () => {
+      setIsSearching(true)
+      setSearchError('')
+      try {
+        const response = await fetch(`/api/search?q=${encodeURIComponent(keyword)}&limit=20`, {
+          method: 'GET',
+          signal: controller.signal
+        })
+        const payload = await response.json().catch(() => null)
+        if (!response.ok) {
+          throw new Error(payload?.error || 'Search request failed')
+        }
+        setRemotePosts(Array.isArray(payload?.posts) ? payload.posts : [])
+      } catch (error: any) {
+        if (controller.signal.aborted) return
+        setRemotePosts([])
+        setSearchError(error?.message || 'Search failed')
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsSearching(false)
+        }
+      }
+    }, 300)
+
+    return () => {
+      window.clearTimeout(timer)
+      controller.abort()
+    }
+  }, [searchValue, shouldUseNotionSearch])
+
+  const filteredBlogPosts = shouldUseNotionSearch
+    ? remotePosts
+    : posts.filter(post => {
       const tagContent = post.tags ? post.tags.join(' ') : ''
       const searchContent = post.title + post.summary + tagContent
       return searchContent.toLowerCase().includes(searchValue.toLowerCase())
     })
-  }
+
+  const isQueryEmpty = !searchValue.trim()
+  const showNotionSearchHint = shouldUseNotionSearch && isQueryEmpty && !isSearching && !searchError
+  const showEmptyState = !showNotionSearchHint && !isSearching && !searchError && !filteredBlogPosts.length
 
   return (
     <Container>
@@ -54,7 +105,16 @@ const SearchLayout = ({ tags, posts, currentTag }: SearchLayoutProps) => {
         currentTag={currentTag}
       />
       <div className="article-container my-8">
-        {!filteredBlogPosts.length && (
+        {showNotionSearchHint && (
+          <p className="text-gray-500 dark:text-gray-300">Type keywords to search posts in Notion.</p>
+        )}
+        {isSearching && (
+          <p className="text-gray-500 dark:text-gray-300">Searching...</p>
+        )}
+        {!isSearching && !!searchError && (
+          <p className="text-red-500 dark:text-red-400">{searchError}</p>
+        )}
+        {showEmptyState && (
           <p className="text-gray-500 dark:text-gray-300">No posts found.</p>
         )}
         {filteredBlogPosts.slice(0, 20).map(post => (

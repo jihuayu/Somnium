@@ -106,6 +106,13 @@ async function queryAllDataSourcePages(dataSourceId: string, body: Record<string
   return results
 }
 
+async function search(body: Record<string, unknown> = {}): Promise<any> {
+  return notionRequest('/search', {
+    method: 'POST',
+    body
+  })
+}
+
 async function listBlockChildren(blockId: string, startCursor: string | null = null): Promise<any> {
   const searchParams = new URLSearchParams({
     page_size: '100'
@@ -133,6 +140,7 @@ const notionApi = {
   retrieveDataSource,
   queryDataSource,
   queryAllDataSourcePages,
+  search,
   listBlockChildren,
   listAllBlockChildren
 }
