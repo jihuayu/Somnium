@@ -1,0 +1,3 @@
+export const MIN_SEARCH_QUERY_LENGTH = 2
+export const MAX_SEARCH_KEYWORD_TOKENS = 6
+export const MAX_SEARCH_TOKEN_LENGTH = 64

@@ -1,4 +1,5 @@
 import api from '@/lib/server/notion-api'
+import { unstable_cache } from 'next/cache'
 
 export interface TocItem {
   id: string
@@ -91,19 +92,13 @@ async function buildDocument(pageId: string): Promise<NotionDocument> {
   }
 }
 
-const documentCache = new Map<string, Promise<NotionDocument>>()
+const getCachedDocument = unstable_cache(
+  async (pageId: string) => buildDocument(pageId),
+  ['notion-post-blocks'],
+  { revalidate: 30, tags: ['notion-post-blocks'] }
+)
 
 export async function getPostBlocks(id: string): Promise<NotionDocument | null> {
   if (!id) return null
-  if (documentCache.has(id)) {
-    return documentCache.get(id)!
-  }
-
-  const promise = buildDocument(id).catch(error => {
-    documentCache.delete(id)
-    throw error
-  })
-
-  documentCache.set(id, promise)
-  return promise
+  return getCachedDocument(id)
 }

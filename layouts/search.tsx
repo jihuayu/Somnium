@@ -5,26 +5,69 @@ import BlogPost from '@/components/BlogPost'
 import Container from '@/components/Container'
 import Tags from '@/components/Tags'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
+import { MIN_SEARCH_QUERY_LENGTH } from '@/lib/search/constants'
 
 interface SearchLayoutProps {
   tags: Record<string, number>
   posts: PostData[]
   currentTag?: string
   useNotionSearch?: boolean
+  loadTagsRemotely?: boolean
 }
 
-const SearchLayout = ({ tags, posts, currentTag, useNotionSearch = false }: SearchLayoutProps) => {
+function hasMinQueryLength(value: string): boolean {
+  return Array.from(value).length >= MIN_SEARCH_QUERY_LENGTH
+}
+
+const SearchLayout = ({
+  tags,
+  posts,
+  currentTag,
+  useNotionSearch = false,
+  loadTagsRemotely = false
+}: SearchLayoutProps) => {
   const [searchValue, setSearchValue] = useState('')
+  const [displayTags, setDisplayTags] = useState<Record<string, number>>(tags || {})
   const [remotePosts, setRemotePosts] = useState<PostData[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [searchError, setSearchError] = useState('')
   const shouldUseNotionSearch = useNotionSearch
 
   useEffect(() => {
+    setDisplayTags(tags || {})
+  }, [tags])
+
+  useEffect(() => {
+    if (!loadTagsRemotely) return
+    if (Object.keys(tags || {}).length > 0) return
+
+    const controller = new AbortController()
+    fetch('/api/tags', {
+      method: 'GET',
+      signal: controller.signal
+    })
+      .then(async response => {
+        const payload = await response.json().catch(() => null)
+        if (!response.ok) {
+          throw new Error(payload?.error || 'Failed to load tags')
+        }
+        const nextTags = payload?.tags
+        if (nextTags && typeof nextTags === 'object' && !Array.isArray(nextTags)) {
+          setDisplayTags(nextTags)
+        }
+      })
+      .catch(() => {
+        if (controller.signal.aborted) return
+      })
+
+    return () => controller.abort()
+  }, [loadTagsRemotely, tags])
+
+  useEffect(() => {
     if (!shouldUseNotionSearch) return
 
     const keyword = searchValue.trim()
-    if (!keyword) {
+    if (!keyword || !hasMinQueryLength(keyword)) {
       setRemotePosts([])
       setIsSearching(false)
       setSearchError('')
@@ -69,17 +112,22 @@ const SearchLayout = ({ tags, posts, currentTag, useNotionSearch = false }: Sear
     }
   }, [searchValue, shouldUseNotionSearch, currentTag])
 
-  const isQueryEmpty = !searchValue.trim()
+  const trimmedQuery = searchValue.trim()
+  const isQueryEmpty = !trimmedQuery
+  const isQueryTooShort = !isQueryEmpty && !hasMinQueryLength(trimmedQuery)
   const filteredBlogPosts = shouldUseNotionSearch
-    ? (isQueryEmpty ? posts : remotePosts)
+    ? (isQueryEmpty || isQueryTooShort ? posts : remotePosts)
     : posts.filter(post => {
       const tagContent = post.tags ? post.tags.join(' ') : ''
       const searchContent = post.title + post.summary + tagContent
       return searchContent.toLowerCase().includes(searchValue.toLowerCase())
     })
 
-  const showNotionSearchHint = shouldUseNotionSearch && !posts.length && isQueryEmpty && !isSearching && !searchError
+  const showNotionSearchHint = shouldUseNotionSearch && !posts.length && (isQueryEmpty || isQueryTooShort) && !isSearching && !searchError
   const showEmptyState = !showNotionSearchHint && !isSearching && !searchError && !filteredBlogPosts.length
+  const notionSearchHint = isQueryTooShort
+    ? `Type at least ${MIN_SEARCH_QUERY_LENGTH} characters to search posts in Notion.`
+    : 'Type keywords to search posts in Notion.'
 
   return (
     <Container>
@@ -108,12 +156,12 @@ const SearchLayout = ({ tags, posts, currentTag, useNotionSearch = false }: Sear
         </svg>
       </div>
       <Tags
-        tags={tags}
+        tags={displayTags}
         currentTag={currentTag}
       />
       <div className="article-container my-8">
         {showNotionSearchHint && (
-          <p className="text-gray-500 dark:text-gray-300">Type keywords to search posts in Notion.</p>
+          <p className="text-gray-500 dark:text-gray-300">{notionSearchHint}</p>
         )}
         {isSearching && (
           <p className="text-gray-500 dark:text-gray-300">Searching...</p>

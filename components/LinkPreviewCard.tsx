@@ -4,8 +4,6 @@ import { useEffect, useMemo, useState } from 'react'
 import cn from 'classnames'
 import type { LinkPreviewData } from '@/lib/link-preview/types'
 
-const previewCache = new Map<string, LinkPreviewData>()
-
 function buildFallback(url: string): LinkPreviewData {
   if (!url) {
     return { url: '', hostname: '', title: '', description: '', image: '', icon: '' }
@@ -47,10 +45,6 @@ export default function LinkPreviewCard({ url, className, initialData }: LinkPre
     try { return new URL(url).toString() } catch { return '' }
   }, [url])
   const fallback = useMemo(() => buildFallback(normalizedUrl), [normalizedUrl])
-  const cached = useMemo(
-    () => (normalizedUrl ? previewCache.get(normalizedUrl) : null),
-    [normalizedUrl]
-  )
   const seeded = useMemo(() => {
     if (!normalizedUrl) return null
     if (initialData) {
@@ -60,8 +54,8 @@ export default function LinkPreviewCard({ url, className, initialData }: LinkPre
         url: initialData.url || normalizedUrl
       }
     }
-    return cached || null
-  }, [normalizedUrl, initialData, fallback, cached])
+    return null
+  }, [normalizedUrl, initialData, fallback])
 
   const [fetchedState, setFetchedState] = useState<{ url: string; data: LinkPreviewData | null }>(() => ({
     url: normalizedUrl,
@@ -70,10 +64,7 @@ export default function LinkPreviewCard({ url, className, initialData }: LinkPre
 
   useEffect(() => {
     if (!normalizedUrl) return
-    if (seeded) {
-      previewCache.set(normalizedUrl, seeded)
-      return
-    }
+    if (seeded) return
     const controller = new AbortController()
     fetch(`/api/link-preview?url=${encodeURIComponent(normalizedUrl)}`, {
       signal: controller.signal
@@ -84,11 +75,9 @@ export default function LinkPreviewCard({ url, className, initialData }: LinkPre
       })
       .then(data => {
         const next: LinkPreviewData = { ...fallback, ...(data || {}) }
-        previewCache.set(normalizedUrl, next)
         setFetchedState({ url: normalizedUrl, data: next })
       })
       .catch(() => {
-        previewCache.set(normalizedUrl, fallback)
         setFetchedState({ url: normalizedUrl, data: fallback })
       })
     return () => controller.abort()
@@ -116,9 +105,10 @@ export default function LinkPreviewCard({ url, className, initialData }: LinkPre
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
-        'block my-4 rounded-md border border-blue-400/70 hover:border-blue-500 transition-colors overflow-hidden bg-transparent',
+        'block my-4 rounded-md border border-blue-400/70 hover:border-blue-500 transition-colors overflow-hidden bg-transparent opacity-100 hover:opacity-100',
         className
       )}
+      style={{ opacity: 1 }}
     >
       <div className="flex items-stretch">
         <div className="min-w-0 flex flex-1 flex-col px-4 py-3">
@@ -127,7 +117,7 @@ export default function LinkPreviewCard({ url, className, initialData }: LinkPre
           </p>
           {preview.description && (
             <p
-              className="mt-1 text-zinc-600 dark:text-zinc-300 text-sm leading-6 overflow-hidden"
+              className="mt-2 pl-[3ch] text-zinc-600 dark:text-zinc-300 text-[13px] italic leading-5 overflow-hidden"
               style={{
                 display: '-webkit-box',
                 WebkitLineClamp: 3,

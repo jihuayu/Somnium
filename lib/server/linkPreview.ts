@@ -1,15 +1,9 @@
 import net from 'node:net'
+import { unstable_cache } from 'next/cache'
 import { toLinkPreviewImageProxyUrl } from '@/lib/server/linkPreviewImageProxy'
 import type { LinkPreviewData, LinkPreviewMap } from '@/lib/link-preview/types'
 
-const CACHE_TTL_MS = 1000 * 60 * 60 * 6
-const CACHE_VERSION = 'og-only-v3'
-
-const globalObj = globalThis as any
-if (!globalObj.__NOBELIUM_LINK_PREVIEW_CACHE__) {
-  globalObj.__NOBELIUM_LINK_PREVIEW_CACHE__ = new Map<string, { expiresAt: number; data: LinkPreviewData }>()
-}
-const cache: Map<string, { expiresAt: number; data: LinkPreviewData }> = globalObj.__NOBELIUM_LINK_PREVIEW_CACHE__
+const LINK_PREVIEW_CACHE_REVALIDATE_SECONDS = 60 * 60 * 6
 
 function decodeEntities(input = ''): string {
   return input
@@ -134,16 +128,7 @@ export function normalizePreviewUrl(rawUrl: string): string | null {
   }
 }
 
-export async function getLinkPreview(rawUrl: string): Promise<LinkPreviewData | null> {
-  const normalizedUrl = normalizePreviewUrl(rawUrl)
-  if (!normalizedUrl) return null
-
-  const cacheKey = `${CACHE_VERSION}:${normalizedUrl}`
-  const cacheEntry = cache.get(cacheKey)
-  if (cacheEntry && cacheEntry.expiresAt > Date.now()) {
-    return cacheEntry.data
-  }
-
+async function fetchLinkPreview(normalizedUrl: string): Promise<LinkPreviewData> {
   const fallback = createFallback(normalizedUrl)
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 8000)
@@ -159,13 +144,11 @@ export async function getLinkPreview(rawUrl: string): Promise<LinkPreviewData | 
     })
 
     if (!response.ok) {
-      cache.set(cacheKey, { expiresAt: Date.now() + CACHE_TTL_MS, data: fallback })
       return fallback
     }
 
     const contentType = (response.headers.get('content-type') || '').toLowerCase()
     if (!contentType.includes('text/html')) {
-      cache.set(cacheKey, { expiresAt: Date.now() + CACHE_TTL_MS, data: fallback })
       return fallback
     }
 
@@ -183,14 +166,27 @@ export async function getLinkPreview(rawUrl: string): Promise<LinkPreviewData | 
       icon: toLinkPreviewImageProxyUrl(metadata.icon || fallback.icon)
     }
 
-    cache.set(cacheKey, { expiresAt: Date.now() + CACHE_TTL_MS, data })
     return data
   } catch {
-    cache.set(cacheKey, { expiresAt: Date.now() + CACHE_TTL_MS, data: fallback })
     return fallback
   } finally {
     clearTimeout(timeout)
   }
+}
+
+const getCachedLinkPreview = unstable_cache(
+  async (normalizedUrl: string): Promise<LinkPreviewData> => fetchLinkPreview(normalizedUrl),
+  ['link-preview-metadata-v4'],
+  {
+    revalidate: LINK_PREVIEW_CACHE_REVALIDATE_SECONDS,
+    tags: ['link-preview-metadata']
+  }
+)
+
+export async function getLinkPreview(rawUrl: string): Promise<LinkPreviewData | null> {
+  const normalizedUrl = normalizePreviewUrl(rawUrl)
+  if (!normalizedUrl) return null
+  return getCachedLinkPreview(normalizedUrl)
 }
 
 export async function getLinkPreviewMap(urls: string[]): Promise<LinkPreviewMap> {

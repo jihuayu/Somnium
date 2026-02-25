@@ -77,18 +77,27 @@ async function notionRequest(path: string, { method = 'GET', body, signal }: Req
   }
 }
 
-async function retrieveDataSource(dataSourceId: string): Promise<any> {
-  return notionRequest(`/data_sources/${dataSourceId}`)
+async function retrieveDataSource(dataSourceId: string, signal?: AbortSignal): Promise<any> {
+  return notionRequest(`/data_sources/${dataSourceId}`, { signal })
 }
 
-async function queryDataSource(dataSourceId: string, body: Record<string, unknown> = {}): Promise<any> {
+async function queryDataSource(
+  dataSourceId: string,
+  body: Record<string, unknown> = {},
+  signal?: AbortSignal
+): Promise<any> {
   return notionRequest(`/data_sources/${dataSourceId}/query`, {
     method: 'POST',
-    body
+    body,
+    signal
   })
 }
 
-async function queryAllDataSourcePages(dataSourceId: string, body: Record<string, unknown> = {}): Promise<any[]> {
+async function queryAllDataSourcePages(
+  dataSourceId: string,
+  body: Record<string, unknown> = {},
+  signal?: AbortSignal
+): Promise<any[]> {
   const results: any[] = []
   let nextCursor: string | null = null
 
@@ -97,7 +106,7 @@ async function queryAllDataSourcePages(dataSourceId: string, body: Record<string
       page_size: 100,
       ...body,
       ...(nextCursor ? { start_cursor: nextCursor } : {})
-    })
+    }, signal)
 
     results.push(...(response?.results || []))
     nextCursor = response?.has_more ? response?.next_cursor : null
@@ -106,29 +115,34 @@ async function queryAllDataSourcePages(dataSourceId: string, body: Record<string
   return results
 }
 
-async function search(body: Record<string, unknown> = {}): Promise<any> {
+async function search(body: Record<string, unknown> = {}, signal?: AbortSignal): Promise<any> {
   return notionRequest('/search', {
     method: 'POST',
-    body
+    body,
+    signal
   })
 }
 
-async function listBlockChildren(blockId: string, startCursor: string | null = null): Promise<any> {
+async function listBlockChildren(
+  blockId: string,
+  startCursor: string | null = null,
+  signal?: AbortSignal
+): Promise<any> {
   const searchParams = new URLSearchParams({
     page_size: '100'
   })
   if (startCursor) {
     searchParams.set('start_cursor', startCursor)
   }
-  return notionRequest(`/blocks/${blockId}/children?${searchParams.toString()}`)
+  return notionRequest(`/blocks/${blockId}/children?${searchParams.toString()}`, { signal })
 }
 
-async function listAllBlockChildren(blockId: string): Promise<any[]> {
+async function listAllBlockChildren(blockId: string, signal?: AbortSignal): Promise<any[]> {
   const results: any[] = []
   let nextCursor: string | null = null
 
   do {
-    const response = await listBlockChildren(blockId, nextCursor)
+    const response = await listBlockChildren(blockId, nextCursor, signal)
     results.push(...(response?.results || []))
     nextCursor = response?.has_more ? response?.next_cursor : null
   } while (nextCursor)
