@@ -27,6 +27,15 @@ function buildFallback(url: string): LinkPreviewData {
   }
 }
 
+function buildLinkPreviewOgImageUrl(preview: LinkPreviewData, fallbackUrl: string): string {
+  const params = new URLSearchParams()
+  params.set('title', preview.title || preview.hostname || fallbackUrl)
+  if (preview.description) params.set('description', preview.description)
+  params.set('url', preview.url || fallbackUrl)
+  if (preview.hostname) params.set('hostname', preview.hostname)
+  return `/api/link-preview/og?${params.toString()}`
+}
+
 interface LinkPreviewCardProps {
   url: string
   className?: string
@@ -92,6 +101,7 @@ export default function LinkPreviewCard({ url, className, initialData }: LinkPre
   )
   const displayUrl = preview.url || normalizedUrl
   if (!displayUrl) return null
+  const generatedImageUrl = buildLinkPreviewOgImageUrl(preview, displayUrl)
 
   return (
     <a
@@ -128,13 +138,13 @@ export default function LinkPreviewCard({ url, className, initialData }: LinkPre
             <span className="truncate">{displayUrl}</span>
           </div>
         </div>
-        {preview.image && (
+        {generatedImageUrl && (
           <div className="hidden sm:flex shrink-0 items-center justify-center border-l border-zinc-200/70 dark:border-zinc-700/70 px-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={preview.image}
+              src={generatedImageUrl}
               alt={preview.title || preview.hostname || 'Link preview'}
-              className="h-36 w-24 md:h-44 md:w-28 lg:h-48 lg:w-32 rounded-sm object-cover"
+              className="h-28 w-36 md:h-36 md:w-44 lg:h-40 lg:w-52 rounded-sm object-cover"
               loading="lazy"
             />
           </div>
