@@ -1,97 +1,94 @@
 import { ImageResponse } from '@vercel/og'
+import { imageSize } from 'image-size'
 
 export const runtime = 'nodejs'
+const TARGET_HEIGHT = 440
+const MIN_WIDTH = 180
+const MAX_WIDTH = 900
+const FALLBACK_WIDTH = 520
 
-const CARD_WIDTH = 560
-const CARD_HEIGHT = 440
-
-function trimText(input: string | null, maxLength: number): string {
-  const value = (input || '').trim()
-  if (!value) return ''
-  if (value.length <= maxLength) return value
-  return `${value.slice(0, Math.max(0, maxLength - 1))}…`
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value))
 }
 
-function toDisplayUrl(rawUrl: string | null, hostname: string | null): string {
-  const raw = (rawUrl || '').trim()
-  if (!raw) return (hostname || '').trim()
+function toAbsoluteImageUrl(rawUrl: string, requestUrl: string): string {
+  if (!rawUrl) return ''
   try {
-    const parsed = new URL(raw)
-    const path = parsed.pathname === '/' ? '' : parsed.pathname
-    return `${parsed.hostname}${path}`.slice(0, 120)
+    const requestBase = new URL(requestUrl)
+    const parsed = new URL(rawUrl, requestBase)
+    if (parsed.origin !== requestBase.origin) return ''
+    if (parsed.pathname !== '/api/link-preview/image') return ''
+    return parsed.toString()
   } catch {
-    return raw.slice(0, 120)
+    return ''
   }
 }
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
+  const rawImageUrl = searchParams.get('image')?.trim() || ''
+  const sourceImageUrl = toAbsoluteImageUrl(rawImageUrl, req.url)
+  if (!sourceImageUrl) {
+    return new Response('Missing image', { status: 400 })
+  }
 
-  const hostname = trimText(searchParams.get('hostname'), 80)
-  const title = trimText(searchParams.get('title'), 64) || hostname || 'Link Preview'
-  const description = trimText(searchParams.get('description'), 140)
-  const displayUrl = toDisplayUrl(searchParams.get('url'), hostname)
+  let outputWidth = FALLBACK_WIDTH
+  try {
+    const response = await fetch(sourceImageUrl, {
+      headers: {
+        Accept: 'image/*,*/*;q=0.8',
+        'User-Agent': 'Mozilla/5.0 (compatible; NobeliumOgImage/1.0)'
+      },
+      redirect: 'follow'
+    })
+    if (response.ok) {
+      const bytes = Buffer.from(await response.arrayBuffer())
+      const dimensions = imageSize(bytes)
+      if (dimensions.width && dimensions.height && dimensions.height > 0) {
+        outputWidth = clamp(
+          Math.round((TARGET_HEIGHT * dimensions.width) / dimensions.height),
+          MIN_WIDTH,
+          MAX_WIDTH
+        )
+      }
+    }
+  } catch {
+    outputWidth = FALLBACK_WIDTH
+  }
 
-  const image = new ImageResponse(
+  const result = new ImageResponse(
     (
       <div
         style={{
           width: '100%',
           height: '100%',
           display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'flex-start',
-          background: 'linear-gradient(160deg, #f8fafc 0%, #e2e8f0 100%)',
-          color: '#0f172a',
-          padding: '30px 32px',
+          background: '#f8fafc',
           boxSizing: 'border-box'
         }}
       >
-        <div
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={sourceImageUrl}
+          alt="Link preview image"
           style={{
-            fontSize: 52,
-            lineHeight: 1.15,
-            fontWeight: 700,
-            letterSpacing: '-0.02em'
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover'
           }}
-        >
-          {title}
-        </div>
-
-        <div
-          style={{
-            marginTop: 18,
-            fontSize: 30,
-            lineHeight: 1.4,
-            color: '#334155'
-          }}
-        >
-          {description || 'No description available.'}
-        </div>
-
-        <div
-          style={{
-            marginTop: 'auto',
-            paddingTop: 14,
-            borderTop: '1px solid #94a3b8',
-            fontSize: 24,
-            color: '#1e293b'
-          }}
-        >
-          {displayUrl}
-        </div>
+        />
       </div>
     ),
     {
-      width: CARD_WIDTH,
-      height: CARD_HEIGHT
+      width: outputWidth,
+      height: TARGET_HEIGHT
     }
   )
 
-  image.headers.set(
+  result.headers.set(
     'Cache-Control',
     'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400'
   )
 
-  return image
+  return result
 }

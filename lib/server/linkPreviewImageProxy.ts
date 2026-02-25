@@ -1,8 +1,8 @@
 interface LinkPreviewImageProxyRule {
   id: string
   match: (url: URL) => boolean
-  referer: string
-  cacheTtlSeconds: number
+  referer?: string
+  cacheTtlSeconds?: number
 }
 
 const IMAGE_PROXY_RULES: LinkPreviewImageProxyRule[] = [
@@ -17,7 +17,13 @@ const IMAGE_PROXY_RULES: LinkPreviewImageProxyRule[] = [
   }
 ]
 
-function normalizeHttpUrl(rawUrl: string): URL | null {
+const DEFAULT_PROXY_RULE = {
+  id: 'default',
+  referer: '',
+  cacheTtlSeconds: 60 * 60 * 24
+}
+
+export function normalizeHttpUrl(rawUrl: string): URL | null {
   if (!rawUrl) return null
   try {
     const parsed = new URL(rawUrl)
@@ -30,7 +36,11 @@ function normalizeHttpUrl(rawUrl: string): URL | null {
 
 export function resolveLinkPreviewImageProxy(rawUrl: string): {
   normalizedUrl: string
-  rule: LinkPreviewImageProxyRule
+  rule: {
+    id: string
+    referer: string
+    cacheTtlSeconds: number
+  }
 } | null {
   const parsed = normalizeHttpUrl(rawUrl)
   if (!parsed) return null
@@ -39,12 +49,19 @@ export function resolveLinkPreviewImageProxy(rawUrl: string): {
     if (rule.match(parsed)) {
       return {
         normalizedUrl: parsed.toString(),
-        rule
+        rule: {
+          id: rule.id,
+          referer: rule.referer || '',
+          cacheTtlSeconds: rule.cacheTtlSeconds || DEFAULT_PROXY_RULE.cacheTtlSeconds
+        }
       }
     }
   }
 
-  return null
+  return {
+    normalizedUrl: parsed.toString(),
+    rule: DEFAULT_PROXY_RULE
+  }
 }
 
 export function toLinkPreviewImageProxyUrl(rawImageUrl: string): string {

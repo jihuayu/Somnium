@@ -107,13 +107,16 @@ function parseMetadata(html: string, sourceUrl: string) {
 
 function createFallback(url: string): LinkPreviewData {
   const hostname = getHostname(url)
+  const defaultIcon = hostname
+    ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(hostname)}&sz=32`
+    : ''
   return {
     url,
     hostname,
     title: hostname || url,
     description: '',
     image: '',
-    icon: hostname ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(hostname)}&sz=32` : ''
+    icon: toLinkPreviewImageProxyUrl(defaultIcon)
   }
 }
 
@@ -177,7 +180,7 @@ export async function getLinkPreview(rawUrl: string): Promise<LinkPreviewData | 
       title: metadata.title || fallback.title,
       description: metadata.description || '',
       image: toLinkPreviewImageProxyUrl(metadata.image || ''),
-      icon: metadata.icon || fallback.icon
+      icon: toLinkPreviewImageProxyUrl(metadata.icon || fallback.icon)
     }
 
     cache.set(cacheKey, { expiresAt: Date.now() + CACHE_TTL_MS, data })

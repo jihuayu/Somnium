@@ -14,13 +14,14 @@ function buildFallback(url: string): LinkPreviewData {
   try {
     const parsed = new URL(url)
     const hostname = parsed.hostname
+    const iconSource = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(hostname)}&sz=32`
     return {
       url: parsed.toString(),
       hostname,
       title: hostname,
       description: '',
       image: '',
-      icon: `https://www.google.com/s2/favicons?domain=${encodeURIComponent(hostname)}&sz=32`
+      icon: `/api/link-preview/image?url=${encodeURIComponent(iconSource)}`
     }
   } catch {
     return { url, hostname: '', title: url, description: '', image: '', icon: '' }
@@ -28,11 +29,10 @@ function buildFallback(url: string): LinkPreviewData {
 }
 
 function buildLinkPreviewOgImageUrl(preview: LinkPreviewData, fallbackUrl: string): string {
+  if (!preview.image) return ''
   const params = new URLSearchParams()
-  params.set('title', preview.title || preview.hostname || fallbackUrl)
-  if (preview.description) params.set('description', preview.description)
+  params.set('image', preview.image)
   params.set('url', preview.url || fallbackUrl)
-  if (preview.hostname) params.set('hostname', preview.hostname)
   return `/api/link-preview/og?${params.toString()}`
 }
 
@@ -114,16 +114,23 @@ export default function LinkPreviewCard({ url, className, initialData }: LinkPre
       )}
     >
       <div className="flex items-stretch">
-        <div className="min-w-0 flex-1 px-4 py-3">
+        <div className="min-w-0 flex flex-1 flex-col px-4 py-3">
           <p className="text-base text-zinc-900 dark:text-zinc-100 font-medium truncate">
             {preview.title || preview.hostname || displayUrl}
           </p>
           {preview.description && (
-            <p className="mt-1 text-zinc-600 dark:text-zinc-300 text-sm leading-6 max-h-12 overflow-hidden">
+            <p
+              className="mt-1 text-zinc-600 dark:text-zinc-300 text-sm leading-6 overflow-hidden"
+              style={{
+                display: '-webkit-box',
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: 'vertical'
+              }}
+            >
               {preview.description}
             </p>
           )}
-          <div className="mt-2 flex items-center gap-2 text-zinc-800 dark:text-zinc-200 text-xs">
+          <div className="mt-auto pt-2 flex items-center gap-2 text-zinc-800 dark:text-zinc-200 text-xs">
             {preview.icon ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -144,7 +151,7 @@ export default function LinkPreviewCard({ url, className, initialData }: LinkPre
             <img
               src={generatedImageUrl}
               alt={preview.title || preview.hostname || 'Link preview'}
-              className="h-28 w-36 md:h-36 md:w-44 lg:h-40 lg:w-52 rounded-sm object-cover"
+              className="h-28 w-auto max-w-40 md:h-36 md:max-w-52 lg:h-40 lg:max-w-56 rounded-sm object-cover"
               loading="lazy"
             />
           </div>

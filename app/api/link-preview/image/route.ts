@@ -85,7 +85,7 @@ export async function GET(req: NextRequest) {
   const rawUrl = req.nextUrl.searchParams.get('url')?.trim() || ''
   const resolved = resolveLinkPreviewImageProxy(rawUrl)
   if (!resolved) {
-    return NextResponse.json({ error: 'Image URL is not allowed for proxying' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid image URL' }, { status: 400 })
   }
 
   const { normalizedUrl, rule } = resolved
@@ -109,14 +109,18 @@ export async function GET(req: NextRequest) {
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
 
   try {
+    const requestHeaders: Record<string, string> = {
+      Accept: 'image/*,*/*;q=0.8',
+      'User-Agent': 'Mozilla/5.0 (compatible; NobeliumImageProxy/1.0)'
+    }
+    if (rule.referer) {
+      requestHeaders.Referer = rule.referer
+    }
+
     const response = await fetch(normalizedUrl, {
       redirect: 'follow',
       signal: controller.signal,
-      headers: {
-        Referer: rule.referer,
-        Accept: 'image/*,*/*;q=0.8',
-        'User-Agent': 'Mozilla/5.0 (compatible; NobeliumImageProxy/1.0)'
-      }
+      headers: requestHeaders
     })
 
     if (!response.ok) {
