@@ -13,7 +13,7 @@ export default async function HomePage() {
   const showNext = totalPosts > clientConfig.postsPerPage
 
   return (
-    <Container title={clientConfig.title} description={clientConfig.description}>
+    <Container>
       {postsToShow.map(post => (
         <BlogPost key={post.id} post={post} />
       ))}

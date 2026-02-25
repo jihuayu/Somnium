@@ -4,6 +4,7 @@ import '@/styles/globals.css'
 import '@/styles/notion.css'
 import { Metadata } from 'next'
 import { config, clientConfig } from '@/lib/server/config'
+import { buildPageMetadata } from '@/lib/server/metadata'
 import loadLocale from '@/assets/i18n'
 import { prepareDayjs } from '@/lib/dayjs'
 import cn from 'classnames'
@@ -11,13 +12,15 @@ import cjk from '@/lib/cjk'
 import { FONTS_SANS, FONTS_SERIF } from '@/consts'
 import ClientProviders from './providers'
 
+const defaultMetadata = buildPageMetadata()
+
 export const metadata: Metadata = {
-  title: config.title,
-  description: config.description,
+  ...defaultMetadata,
   icons: {
     icon: '/favicon.png'
   },
   alternates: {
+    ...defaultMetadata.alternates,
     types: {
       'application/rss+xml': '/feed'
     }

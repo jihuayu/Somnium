@@ -1,9 +1,8 @@
-import fs from 'fs'
-import { resolve } from 'path'
+import { createRequire } from 'module'
 import type { BlogConfig } from '@/lib/config'
 
-const raw = fs.readFileSync(resolve(process.cwd(), 'blog.config.js'), 'utf-8')
-const config: BlogConfig = eval(`((module = { exports: {} }) => { ${raw}; return module.exports })()`)
+const require = createRequire(import.meta.url)
+const config = require('../../blog.config.js') as BlogConfig
 
 // If we need to strip out some private fields
 const clientConfig: BlogConfig = { ...config }

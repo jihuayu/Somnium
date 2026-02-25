@@ -12,21 +12,11 @@ interface ContainerProps {
   layout?: string
   fullWidth?: boolean
   title?: string
-  description?: string
-  slug?: string
-  date?: string
-  type?: string
-  [key: string]: unknown
 }
 
-const Container = ({ children, layout, fullWidth, ...customMeta }: ContainerProps) => {
+const Container = ({ children, layout, fullWidth, title }: ContainerProps) => {
   const BLOG = useConfig()
 
-  const meta = {
-    title: BLOG.title,
-    type: 'website',
-    ...customMeta
-  }
   return (
     <div>
       <div
@@ -34,7 +24,7 @@ const Container = ({ children, layout, fullWidth, ...customMeta }: ContainerProp
           }`}
       >
         <Header
-          navBarTitle={layout === 'blog' ? (meta.title as string) : null}
+          navBarTitle={layout === 'blog' ? title || BLOG.title : null}
           fullWidth={fullWidth}
         />
         <main className={cn(

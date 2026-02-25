@@ -10,11 +10,11 @@ export async function generateStaticParams() {
 }
 
 interface TagPageProps {
-  params: { tag: string }
+  params: Promise<{ tag: string }>
 }
 
 export default async function TagPage({ params }: TagPageProps) {
-  const { tag: currentTag } = params
+  const { tag: currentTag } = await params
   const posts = await getAllPosts({ includePages: false })
   const tags = getAllTagsFromPosts(posts)
   const filteredPosts = posts.filter(

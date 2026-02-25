@@ -17,11 +17,11 @@ export async function generateStaticParams() {
 }
 
 interface PageProps {
-  params: { page: string }
+  params: Promise<{ page: string }>
 }
 
 export default async function PaginationPage({ params }: PageProps) {
-  const { page } = params
+  const { page } = await params
   const pageNum = Number(page)
   const posts = await getAllPosts({ includePages: false })
   const postsToShow = posts.slice(

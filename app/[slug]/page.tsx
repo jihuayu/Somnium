@@ -1,25 +1,44 @@
-import { clientConfig } from '@/lib/server/config'
 import { notFound } from 'next/navigation'
+import type { Metadata } from 'next'
+import { cache } from 'react'
 import { getAllPosts, getPostBlocks } from '@/lib/notion'
 import Container from '@/components/Container'
+import { buildPageMetadata } from '@/lib/server/metadata'
 import SlugPostClient from './slug-client'
 
 export const revalidate = 1
+const getPosts = cache(async () => getAllPosts({ includePages: true }))
 
 export async function generateStaticParams() {
-  const posts = await getAllPosts({ includePages: true })
+  const posts = await getPosts()
   return posts.map(row => ({
     slug: row.slug
   }))
 }
 
 interface SlugPageProps {
-  params: { slug: string }
+  params: Promise<{ slug: string }>
+}
+
+export async function generateMetadata({ params }: SlugPageProps): Promise<Metadata> {
+  const { slug } = await params
+  const posts = await getPosts()
+  const post = posts.find(t => t.slug === slug)
+
+  if (!post) return buildPageMetadata()
+
+  return buildPageMetadata({
+    title: post.title,
+    description: post.summary,
+    slug: post.slug,
+    type: 'article',
+    date: post.date
+  })
 }
 
 export default async function SlugPage({ params }: SlugPageProps) {
-  const { slug } = params
-  const posts = await getAllPosts({ includePages: true })
+  const { slug } = await params
+  const posts = await getPosts()
   const post = posts.find(t => t.slug === slug)
 
   if (!post) notFound()
@@ -32,9 +51,6 @@ export default async function SlugPage({ params }: SlugPageProps) {
     <Container
       layout="blog"
       title={post.title}
-      description={post.summary}
-      slug={post.slug}
-      type="article"
       fullWidth={fullWidth}
     >
       <SlugPostClient post={post} document={document!} fullWidth={fullWidth} />
