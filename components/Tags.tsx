@@ -26,10 +26,7 @@ const Tags = ({ tags, currentTag }: TagsProps) => {
                 href={
                   selected
                     ? '/search'
-                    : {
-                      pathname: '/tag/[tag]',
-                      query: { tag: key }
-                    }
+                    : `/tag/${encodeURIComponent(key)}`
                 }
                 className="px-4 py-2 block"
               >
