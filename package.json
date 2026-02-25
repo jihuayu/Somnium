@@ -58,10 +58,11 @@
   "engines": {
     "node": ">=20.9.0"
   },
+  "packageManager": "pnpm@10.11.0",
   "pnpm": {
     "patchedDependencies": {
-      "react-notion-x@6.16.0": "patches/react-notion-x@6.16.0.patch",
-      "notion-utils@6.16.0": "patches/notion-utils@6.16.0.patch"
+      "notion-utils@6.16.0": "patches/notion-utils@6.16.0.patch",
+      "react-notion-x@6.16.0": "patches/react-notion-x@6.16.0.patch"
     }
   }
 }
