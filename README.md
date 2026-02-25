@@ -1,152 +1,100 @@
-<img src="https://cdn.statically.io/gh/craigary/nobelium/main/Nobelium-Logo.svg" width="50" height="50">
+# Somnium
 
-# Nobelium
+`Somnium` 是我的个人博客项目，基于 Notion 作为内容后台，使用 Next.js 构建，并可直接部署到 Vercel。
 
-A static blog build on top of Notion and Nextjs, deployed on [Vercel](https://vercel.com?utm_source=Craigary&utm_campaign=oss).
+## 项目概览
 
-<p>
-  <a aria-label="GitHub commit activity" href="https://github.com/craigary/nobelium/commits/main" title="GitHub commit activity">
-    <img src="https://img.shields.io/github/commit-activity/m/craigary/nobelium?style=for-the-badge">
-  </a>
-  <a aria-label="GitHub contributors" href="https://github.com/craigary/nobelium/graphs/contributors" title="GitHub contributors">
-    <img src="https://img.shields.io/github/contributors/craigary/nobelium?color=orange&style=for-the-badge">
-  </a>
-  <a aria-label="Build status" href="#" title="Build status">
-    <img src="https://img.shields.io/github/deployments/craigary/nobelium/Preview?logo=Vercel&style=for-the-badge">
-  </a>
-  <a aria-label="Powered by Vercel" href="https://vercel.com?utm_source=Craigary&utm_campaign=oss" title="Powered by Vercel">
-    <img src="https://www.datocms-assets.com/31049/1618983297-powered-by-vercel.svg" height="28">
-  </a>
-</p>
+- 站点名称：Somnium（浮生纪梦）
+- 语言：中文（`zh-CN`）
+- 评论系统：Utterances
+- 数据来源：Notion Data Source（官方 API）
+- 技术栈：Next.js 16 + React 18 + Tailwind CSS
 
-Demo: [https://nobelium.vercel.app/](https://nobelium.vercel.app/)
+## 功能特性
 
-<details><summary>Screenshot</summary>
-<img src="https://github.com/craigary/nobelium/blob/main/desktop.png?raw=true">
-</details>
+- 在 Notion 中写作，网站自动拉取内容并渲染
+- 归档、标签、搜索、RSS、Sitemap
+- SEO 配置与 Open Graph 支持
+- 响应式布局，支持亮色/暗色/跟随系统
+- 支持 Google Analytics
 
-## Highlights ✨
+## 本地开发
 
-**🚀 &nbsp;Fast and responsive**
+### 1. 安装依赖
 
-- Fast page render and responsive design
-- Fast static generation with efficient compiler
-
-**🤖 &nbsp;Deploy instantly**
-
-- Deploy on Vercel in minutes
-- Incremental regeneration and no need to redeploy after update the content in notion
-
-**🚙 &nbsp;Fully functional**
-
-- Comments, full width page, quick search and tag filter
-- RSS, analytics, web vital... and much more
-
-**🎨 &nbsp;Easy for customization**
-
-- Rich config options, support English & Chinese interface
-- Built with Tailwind CSS, easy for customization
-
-**🕸 &nbsp;Pretty URLs and SEO friendly**
-
-## Quick Start
-
-- Star this repo 😉
-- Duplicate [this Notion template](https://craigary.notion.site/ee99f65a23ab44f8ac80270122ee8138), and share it to the public
-- [Fork](https://github.com/craigary/nobelium/fork) this project
-- Customize `blog.config.js`
-- _(Optional)_ Replace `favicon.svg`, and `favicon.ico` in `/public` folder with your own
-- Deploy on [Vercel](https://vercel.com), set following environment variables：
-  - `NOTION_INTEGRATION_TOKEN` (Required): Your Notion internal integration token
-  - `NOTION_DATA_SOURCE_ID` (Required): Your Notion data source ID (under the new Data Source model)
-  - `NOTION_API_VERSION` (Optional): Notion API version, defaults to `2025-09-03`
-- **That's it!** Easy-peasy?
-
-<details><summary>Wait for a sec, what is Page ID？</summary>
-  <img src="https://github.com/craigary/nobelium/blob/main/pageid.png?raw=true">
-</details>
-
-## Play With Docker
-
-Unofficial, thanks to [@Vaayne](https://github.com/craigary/nobelium/pull/157)'s work!
-
-### Build Docker image yourself
-```
-# set env
-export NOTION_INTEGRATION_TOKEN=xxx # your Notion integration token
-export NOTION_DATA_SOURCE_ID=xxx # your Notion data source ID
-export IMAGE=nobelium:latest
-
-# build with docker
-docker build -t ${IMAGE} --build-arg NOTION_DATA_SOURCE_ID .
-
-# run with docker
-docker run -d --name nobelium -p 3000:3000 \
-  -e NOTION_INTEGRATION_TOKEN=${NOTION_INTEGRATION_TOKEN} \
-  -e NOTION_DATA_SOURCE_ID=${NOTION_DATA_SOURCE_ID} \
-  nobelium:latest
+```bash
+pnpm install
 ```
 
-### Use default docker image
+### 2. 配置环境变量
+
+在项目根目录创建 `.env.local`（或使用 `.env`）：
+
+```bash
+NOTION_INTEGRATION_TOKEN=your_notion_integration_token
+NOTION_DATA_SOURCE_ID=your_notion_data_source_id
+NOTION_ACTIVE_USER=your_notion_user_id
+NOTION_PAGE_ID=your_home_page_id
+# 可选，不填时默认 2025-09-03
+NOTION_API_VERSION=2025-09-03
 ```
-# pull image
-docker pull ghcr.io/craigary/nobelium:main
 
-# run with docker
-docker run -d --name nobelium -p 3000:3000 \
-  -e NOTION_INTEGRATION_TOKEN=${NOTION_INTEGRATION_TOKEN} \
-  -e NOTION_DATA_SOURCE_ID=${NOTION_DATA_SOURCE_ID} \
-  ghcr.io/craigary/nobelium:main
+### 3. 配置站点信息
+
+编辑 `blog.config.js`，重点修改：
+
+- `title` / `author` / `link`
+- `tagline` / `description`
+- `seo.keywords`
+- `analytics`（如 GA）
+- `comment`（如 Utterances）
+
+### 4. 启动开发服务器
+
+```bash
+pnpm dev
 ```
 
-## Roadmap
+默认访问：`http://localhost:3000`
 
-Check out our roadmap [here](https://craigary.notion.site/Public-Roadmap-89d184e51653445ab5b347e4efac079e)
+## 构建与运行
 
-- [x] Better SEO
-- [x] Dark mode
-- [x] Open Graph support
-- [x] Switch to react-notion-x
-- [x] Sitemap
-- [ ] ...
+```bash
+pnpm build
+pnpm start
+```
 
-## Technical details
+## 部署到 Vercel
 
-- **Generation**: Next.js and Incremental Static Regeneration
-- **Page render**: [react-notion-x](https://github.com/NotionX/react-notion-x)
-- **Style**: Tailwind CSS and `@tailwindcss/jit` compiler
-- **Comments**: Gitalk, Cusdis and more
+1. 将仓库导入 Vercel
+2. 在 Vercel 项目中配置环境变量（与本地一致）
+3. 执行部署
+4. 后续在 Notion 更新内容后，页面会按 ISR 策略增量更新
 
-## FAQ
+## 常用脚本
 
-<details>
-  <summary>How can I change my avatar?</summary>
-  Nobelium fetches avatars from <a href="https://gravatar.com">Gravatar</a>. You need to set your avatar there with <strong>the same email address</strong> that you defined in <code>blog.config.js</code>.
-</details>
-<details>
-  <summary>My posts disappear after I set up grouping in Notion database!</summary>
-  Nobelium currently doesn’t support Notion database grouping. If you really want to manage your posts by groups, you can create views with filters instead.
-</details>
+- `pnpm dev`：本地开发
+- `pnpm build`：生产构建
+- `pnpm start`：生产模式启动
+- `pnpm lint`：代码检查
 
-## Special Thanks
+## 项目结构
 
-<table><tr align="left">
-  <td align="center"><a href="https://notion.so/cnotion" title="Notion CN Community"><img src="https://avatars.githubusercontent.com/u/4792552" width="64px;"alt="Notion CN Community"/></a><br/><a href="https://notion.so/cnotion" title="Notion CN Community">Notion CN Community</a></td>
-  <td align="center"><a href="https://twitter.com/SilentDepthCN" title="SilentDepth"><img src="https://avatars.githubusercontent.com/u/7194254" width="64px;" alt="yokinist"/></a><br/><a href="https://twitter.com/SilentDepthCN" title="SilentDepth">SilentDepth</a></td>
-  <td align="center"><a href="https://leerob.io/" title="Lee Robinson"><img src="https://avatars.githubusercontent.com/u/9113740" width="64px;" alt="Reynard"/></a><br/><a href="https://leerob.io" title="Lee Robinson">Lee Robinson</a></td>
-  <td align="center"><a href="https://spencerwoo.com/" title="Spencer Woo"><img src="https://avatars.githubusercontent.com/u/32114380" width="64px;" alt="Niin"/></a><br/><a href="https://spencerwoo.com" title="Spencer Woo">Spencer Woo</a></td>
-</tr></table>
+```text
+app/                 Next.js App Router 页面
+components/          通用组件
+layouts/             页面布局
+lib/                 数据获取与工具函数
+public/              静态资源
+styles/              全局样式
+blog.config.js       博客核心配置
+next.config.js       Next.js 配置
+```
 
-## Contributors
+## 致谢
 
-<table><tr align="left">
-  <td align="center"><a href="https://github.com/craigary"><img src="https://avatars.githubusercontent.com/u/10571717" width="64px;"alt="Craig Hart"/><br/><sub><b>Craig Hart</b></sub></a><br/><a href="https://github.com/craigary/nobelium/commits?author=craigary" title="Owner" >🎫 🔧 🎨 🐛</a></td>
-  <td align="center"><a href="https://github.com/yokinist"><img src="https://avatars.githubusercontent.com/u/19779874" width="64px;" alt="yokinist"/><br/><sub><b>yokinist</b></sub></a><br/><a href="https://github.com/craigary/nobelium/commits?author=yokinist" title="yokinist" >🔧 🐛</a></td>
-  <td align="center"><a href="https://github.com/reycn"><img src="https://avatars.githubusercontent.com/u/11225092" width="64px;" alt="Reynard"/><br/><sub><b>Reynard</b></sub></a><br/><a href="https://github.com/craigary/nobelium/commits?author=reycn" title="Reynard" > 🎨 🐛</a></td>
-  <td align="center"><a href="https://github.com/Niinjoy"><img src="https://avatars.githubusercontent.com/u/39721307" width="64px;" alt="Niin"/><br/><sub><b>Niin</b></sub></a><br/><a href="https://github.com/craigary/nobelium/commits?author=Niinjoy" title="Niin" >🔧 🐛</a></td>
-  <td align="center"><a href="https://github.com/ruter"><img src="https://avatars.githubusercontent.com/u/8568876" width="64px;" alt="Ruter"/><br/><sub><b>Ruter</b></sub></a><br/><a href="https://github.com/craigary/nobelium/commits?author=ruter" title="Ruter" >🔧 🐛</a></td>
-</tr></table>
+本项目基于 [craigary/nobelium](https://github.com/craigary/nobelium) 二次开发，感谢原作者与社区贡献者。
 
 ## License
 
-The MIT License.
+[MIT](./LICENSE)
