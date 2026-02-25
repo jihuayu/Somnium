@@ -20,9 +20,10 @@ const Scripts = () => {
           <Script
             src={`https://www.googletagmanager.com/gtag/js?id=${BLOG.analytics.gaConfig.measurementId}`}
           />
-          <Script strategy="lazyOnload" id="ga">
+          <Script strategy="afterInteractive" id="ga">
             {`window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
+              window.gtag = gtag;
               gtag('js', new Date());
               gtag('config', '${BLOG.analytics.gaConfig.measurementId}', {
                 page_path: window.location.pathname,
