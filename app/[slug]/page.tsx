@@ -14,11 +14,11 @@ export async function generateStaticParams() {
 }
 
 interface SlugPageProps {
-  params: Promise<{ slug: string }>
+  params: { slug: string }
 }
 
 export default async function SlugPage({ params }: SlugPageProps) {
-  const { slug } = await params
+  const { slug } = params
   const posts = await getAllPosts({ includePages: true })
   const post = posts.find(t => t.slug === slug)
 

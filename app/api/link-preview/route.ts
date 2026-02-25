@@ -30,12 +30,23 @@ function isPrivateHostname(hostname: string): boolean {
 
   const ipVersion = net.isIP(hostname)
   if (ipVersion === 4) {
+    // RFC1918 private IPv4 ranges
     if (hostname.startsWith('10.')) return true
-    if (hostname.startsWith('127.')) return true
+    if (hostname.startsWith('127.')) return true // loopback
     if (hostname.startsWith('192.168.')) return true
     if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname)) return true
+    // Link-local and other non-routable IPv4 ranges commonly treated as private
+    if (hostname.startsWith('169.254.')) return true // link-local 169.254.0.0/16
   }
-  if (ipVersion === 6 && (hostname === '::1' || hostname.startsWith('fe80:'))) return true
+  if (ipVersion === 6) {
+    const lower = hostname.toLowerCase()
+    // Loopback
+    if (lower === '::1') return true
+    // IPv6 link-local fe80::/10 (we conservatively match common textual prefixes)
+    if (lower.startsWith('fe8') || lower.startsWith('fe9') || lower.startsWith('fea') || lower.startsWith('feb')) return true
+    // IPv6 unique local addresses fc00::/7 (fc00::/8 and fd00::/8)
+    if (lower.startsWith('fc') || lower.startsWith('fd')) return true
+  }
   return false
 }
 
