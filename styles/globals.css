@@ -182,6 +182,10 @@ nav {
     transform: scale(1.5);
   }
 
+  .sticky-nav:not(.sticky-nav-full) .header-name-no-post-title .site-title {
+    transform: scale(1.5) translateY(0.75px);
+  }
+
   .sticky-nav-full .site-title {
     transform: scale(1);
   }

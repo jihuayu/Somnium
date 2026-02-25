@@ -144,7 +144,7 @@ const HeaderName = forwardRef<HTMLParagraphElement, HeaderNameProps>(function He
   return (
     <p
       ref={ref}
-      className="header-name font-medium text-gray-600 dark:text-gray-300 capture-pointer-events grid-rows-1 grid-cols-1 items-end leading-none"
+      className={`header-name ${!postTitle ? 'header-name-no-post-title' : ''} font-medium text-gray-600 dark:text-gray-300 capture-pointer-events grid-rows-1 grid-cols-1 items-end leading-none`}
       onClick={onClick as any}
     >
       {postTitle && <span className="post-title row-start-1 col-start-1">{postTitle}</span>}
