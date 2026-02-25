@@ -57,9 +57,7 @@ export default function LinkPreviewCard({ url, className }: LinkPreviewCardProps
   useEffect(() => {
     if (!normalizedUrl) return
     if (previewCache.has(normalizedUrl)) return
-
     const controller = new AbortController()
-
     fetch(`/api/link-preview?url=${encodeURIComponent(normalizedUrl)}`, {
       signal: controller.signal
     })
@@ -75,7 +73,6 @@ export default function LinkPreviewCard({ url, className }: LinkPreviewCardProps
       .catch(() => {
         previewCache.set(normalizedUrl, fallback)
       })
-
     return () => controller.abort()
   }, [normalizedUrl, fallback])
 
@@ -84,7 +81,6 @@ export default function LinkPreviewCard({ url, className }: LinkPreviewCardProps
       ? previewState.data
       : cached || fallback
   )
-
   const displayUrl = preview.url || normalizedUrl
   if (!displayUrl) return null
 
@@ -99,32 +95,32 @@ export default function LinkPreviewCard({ url, className }: LinkPreviewCardProps
       )}
     >
       <div className="flex items-stretch">
-        <div className="min-w-0 flex-1 px-5 py-4">
-          <p className="text-2xl text-zinc-900 dark:text-zinc-100 font-medium truncate">
+        <div className="min-w-0 flex-1 px-4 py-3">
+          <p className="text-base text-zinc-900 dark:text-zinc-100 font-medium truncate">
             {preview.title || preview.hostname || displayUrl}
           </p>
           {preview.description && (
-            <p className="mt-2 text-zinc-600 dark:text-zinc-300 text-lg leading-8 max-h-16 overflow-hidden">
+            <p className="mt-1 text-zinc-600 dark:text-zinc-300 text-sm leading-6 max-h-12 overflow-hidden">
               {preview.description}
             </p>
           )}
-          <div className="mt-3 flex items-center gap-2 text-zinc-800 dark:text-zinc-200 text-sm">
+          <div className="mt-2 flex items-center gap-2 text-zinc-800 dark:text-zinc-200 text-xs">
             {preview.icon ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={preview.icon}
                 alt=""
-                className="h-5 w-5 sm:h-4 sm:w-4 rounded-sm flex-none"
+                className="h-4 w-4 rounded-sm flex-none"
                 loading="lazy"
               />
             ) : (
-              <span className="h-5 w-5 sm:h-4 sm:w-4 rounded-sm bg-zinc-300 dark:bg-zinc-700 flex-none" />
+              <span className="h-4 w-4 rounded-sm bg-zinc-300 dark:bg-zinc-700 flex-none" />
             )}
             <span className="truncate">{displayUrl}</span>
           </div>
         </div>
         {preview.image && (
-          <div className="hidden sm:block w-48 md:w-72 border-l border-zinc-200/70 dark:border-zinc-700/70">
+          <div className="hidden sm:block w-32 md:w-48 border-l border-zinc-200/70 dark:border-zinc-700/70">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={preview.image}
