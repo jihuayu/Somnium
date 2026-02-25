@@ -18,8 +18,8 @@ const NavBar = () => {
     { id: 3, name: locale.NAV.SEARCH, to: '/search', show: true }
   ]
   return (
-    <div className="flex-shrink-0">
-      <ul className="flex flex-row">
+    <div className="header-nav-wrap flex-shrink-0 md:self-end">
+      <ul className="header-nav-list flex flex-row items-end">
         {links.map(
           link =>
             link.show && (
@@ -92,7 +92,7 @@ export default function Header({ navBarTitle, fullWidth }: HeaderProps) {
     <>
       <div className="observer-element h-4 md:h-12" ref={sentinelRef}></div>
       <div
-        className={`sticky-nav group m-auto w-full h-6 flex flex-row justify-between items-center mb-2 md:mb-12 py-8 bg-opacity-60 ${
+        className={`sticky-nav group m-auto w-full h-6 flex flex-row justify-between items-center md:items-end mb-1 md:mb-6 py-8 bg-opacity-60 ${
           !fullWidth ? `${ARTICLE_CONTENT_MAX_WIDTH_CLASS} px-4` : 'px-4 md:px-24'
         }`}
         id="sticky-nav"
@@ -108,13 +108,14 @@ export default function Header({ navBarTitle, fullWidth }: HeaderProps) {
             className="fill-black dark:fill-white"
           />
         </svg>
-        <div className="flex items-center">
-          <Link href="/" aria-label={BLOG.title}>
+        <div className="header-main flex items-center md:items-end gap-2">
+          <Link href="/" aria-label={BLOG.title} className="header-icon-link flex items-center md:items-end justify-center shrink-0 leading-none transition-transform duration-500">
             <Image
               src={favicon}
-              width={24}
-              height={24}
+              width={26}
+              height={26}
               alt={BLOG.title}
+              className="block header-icon"
               onError={() => setFavicon(true)}
             />
           </Link>
@@ -143,7 +144,7 @@ const HeaderName = forwardRef<HTMLParagraphElement, HeaderNameProps>(function He
   return (
     <p
       ref={ref}
-      className="header-name ml-2 font-medium text-gray-600 dark:text-gray-300 capture-pointer-events grid-rows-1 grid-cols-1 items-center"
+      className="header-name font-medium text-gray-600 dark:text-gray-300 capture-pointer-events grid-rows-1 grid-cols-1 items-end leading-none"
       onClick={onClick as any}
     >
       {postTitle && <span className="post-title row-start-1 col-start-1">{postTitle}</span>}

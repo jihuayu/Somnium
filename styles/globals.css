@@ -91,7 +91,7 @@ body::-webkit-scrollbar-thumb {
 
 .header-name {
   display: none;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .sticky-nav-full .nav {
@@ -162,4 +162,47 @@ nav {
 
 .capture-pointer-events * {
   @apply pointer-events-none;
+}
+
+.sticky-nav .header-icon-link {
+  transform: translateY(-4.5px) scale(1.5);
+}
+
+.sticky-nav.sticky-nav-full .header-icon-link {
+  transform: translateY(-3.5px) scale(1);
+}
+
+@media (min-width: 768px) {
+  .site-title {
+    display: inline-block;
+    transform-origin: left bottom;
+  }
+
+  .sticky-nav:not(.sticky-nav-full) .site-title {
+    transform: scale(1.5);
+  }
+
+  .sticky-nav-full .site-title {
+    transform: scale(1);
+  }
+
+  .sticky-nav.sticky-nav-full {
+    align-items: center;
+  }
+
+  .sticky-nav.sticky-nav-full .header-main {
+    align-items: center;
+  }
+
+  .sticky-nav.sticky-nav-full .header-nav-wrap {
+    align-self: center;
+  }
+
+  .sticky-nav.sticky-nav-full .header-nav-list {
+    align-items: center;
+  }
+
+  .sticky-nav.sticky-nav-full .header-name {
+    align-items: center;
+  }
 }
