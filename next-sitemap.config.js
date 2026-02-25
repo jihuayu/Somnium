@@ -1,4 +1,7 @@
-const { config }  = require('./lib/server/config')
+const fs = require('fs')
+const path = require('path')
+const raw = fs.readFileSync(path.resolve(__dirname, 'blog.config.js'), 'utf-8')
+const config = eval(`((module = { exports: {} }) => { ${raw}; return module.exports })()`)
 
 module.exports = {
   siteUrl: config.link,

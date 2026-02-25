@@ -1,0 +1,65 @@
+'use client'
+
+import cn from 'classnames'
+import { useConfig } from '@/lib/config'
+import FormattedDate from '@/components/FormattedDate'
+import TagItem from '@/components/TagItem'
+import NotionRenderer from '@/components/NotionRenderer'
+import TableOfContents from '@/components/TableOfContents'
+import type { PostData } from '@/lib/notion/filterPublishedPosts'
+import type { NotionDocument } from '@/lib/notion/getPostBlocks'
+
+interface PostProps {
+  post: PostData
+  document: NotionDocument
+  fullWidth?: boolean
+}
+
+export default function Post(props: PostProps) {
+  const BLOG = useConfig()
+  const { post, document, fullWidth = false } = props
+
+  return (
+    <article className={cn('flex flex-col', fullWidth ? 'md:px-24' : 'items-center')}>
+      <h1 className={cn(
+        'w-full font-bold text-3xl text-black dark:text-white',
+        { 'max-w-2xl px-4': !fullWidth }
+      )}>
+        {post.title}
+      </h1>
+      {post.type[0] !== 'Page' && (
+        <nav className={cn(
+          'w-full flex mt-7 items-start text-gray-500 dark:text-gray-400',
+          { 'max-w-2xl px-4': !fullWidth }
+        )}>
+          <div className="flex mb-4">
+            <a href={BLOG.socialLink || '#'} className="flex">
+              <p className="ml-2 md:block">{BLOG.author}</p>
+            </a>
+            <span className="block">&nbsp;/&nbsp;</span>
+          </div>
+          <div className="mr-2 mb-4 md:ml-0">
+            <FormattedDate date={post.date} />
+          </div>
+          {post.tags && (
+            <div className="flex flex-nowrap max-w-full overflow-x-auto article-tags">
+              {post.tags.map(tag => (
+                <TagItem key={tag} tag={tag} />
+              ))}
+            </div>
+          )}
+        </nav>
+      )}
+      <div className="self-stretch -mt-4 relative">
+        <div className={fullWidth ? 'w-full px-4 md:px-24' : 'mx-auto w-full max-w-2xl px-4'}>
+          <NotionRenderer document={document} />
+        </div>
+        {!fullWidth && (
+          <div className="hidden xl:block absolute top-0 left-[calc(50%+22rem)] w-[220px]">
+            <TableOfContents toc={document?.toc || []} className="pt-3 sticky" style={{ top: '65px' }} />
+          </div>
+        )}
+      </div>
+    </article>
+  )
+}

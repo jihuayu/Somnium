@@ -1,4 +1,7 @@
 module.exports = {
+  typescript: {
+    tsconfigPath: './tsconfig.build.json'
+  },
   images: {
     remotePatterns: [
       {
@@ -21,16 +24,19 @@ module.exports = {
       }
     ]
   },
-  transpilePackages: ['dayjs']
-  // webpack: (config, { dev, isServer }) => {
-  //   // Replace React with Preact only in client production build
-  //   if (!dev && !isServer) {
-  //     Object.assign(config.resolve.alias, {
-  //       react: 'preact/compat',
-  //       'react-dom/test-utils': 'preact/test-utils',
-  //       'react-dom': 'preact/compat'
-  //     })
-  //   }
-  //   return config
-  // }
+  transpilePackages: ['dayjs'],
+  turbopack: {
+    resolveAlias: {
+      '@/*': './*'
+    }
+  },
+  webpack: (config) => {
+    const path = require('path')
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': path.resolve(__dirname)
+    }
+    config.resolve.extensions = ['.ts', '.tsx', '.js', '.jsx', '.json', ...config.resolve.extensions || []]
+    return config
+  }
 }
