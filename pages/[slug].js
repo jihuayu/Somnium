@@ -5,12 +5,11 @@ import cn from 'classnames'
 import { getAllPosts, getPostBlocks } from '@/lib/notion'
 import { useLocale } from '@/lib/locale'
 import { useConfig } from '@/lib/config'
-import { createHash } from 'crypto'
 import Container from '@/components/Container'
 import Post from '@/components/Post'
 import Comments from '@/components/Comments'
 
-export default function BlogPost ({ post, blockMap, emailHash }) {
+export default function BlogPost ({ post, document }) {
   const router = useRouter()
   const BLOG = useConfig()
   const locale = useLocale()
@@ -32,8 +31,7 @@ export default function BlogPost ({ post, blockMap, emailHash }) {
     >
       <Post
         post={post}
-        blockMap={blockMap}
-        emailHash={emailHash}
+        document={document}
         fullWidth={fullWidth}
       />
 
@@ -84,15 +82,10 @@ export async function getStaticProps ({ params: { slug } }) {
 
   if (!post) return { notFound: true }
 
-  const blockMap = await getPostBlocks(post.id)
-  const emailHash = createHash('md5')
-    .update(clientConfig.email)
-    .digest('hex')
-    .trim()
-    .toLowerCase()
+  const document = await getPostBlocks(post.id)
 
   return {
-    props: { post, blockMap, emailHash },
+    props: { post, document },
     revalidate: 1
   }
 }

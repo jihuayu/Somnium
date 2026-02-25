@@ -1,8 +1,6 @@
 import PropTypes from 'prop-types'
-import Image from 'next/image'
 import cn from 'classnames'
 import { useConfig } from '@/lib/config'
-import useTheme from '@/lib/theme'
 import FormattedDate from '@/components/FormattedDate'
 import TagItem from '@/components/TagItem'
 import NotionRenderer from '@/components/NotionRenderer'
@@ -15,14 +13,12 @@ import TableOfContents from '@/components/TableOfContents'
  *
  * @typedef {object} PostProps
  * @prop {object}   post       - Post metadata
- * @prop {object}   blockMap   - Post block data
- * @prop {string}   emailHash  - Author email hash (for Gravatar)
+ * @prop {object}   document   - Post document data
  * @prop {boolean} [fullWidth] - Whether in full-width mode
  */
 export default function Post (props) {
   const BLOG = useConfig()
-  const { post, blockMap, emailHash, fullWidth = false } = props
-  const { dark } = useTheme()
+  const { post, document, fullWidth = false } = props
 
   return (
     <article className={cn('flex flex-col', fullWidth ? 'md:px-24' : 'items-center')}>
@@ -58,12 +54,12 @@ export default function Post (props) {
       <div className="self-stretch -mt-4 flex flex-col items-center lg:flex-row lg:items-stretch">
         {!fullWidth && <div className="flex-1 hidden lg:block" />}
         <div className={fullWidth ? 'flex-1 pr-4' : 'flex-none w-full max-w-2xl px-4'}>
-          <NotionRenderer recordMap={blockMap} fullPage={false} darkMode={dark} />
+          <NotionRenderer document={document} />
         </div>
         <div className={cn('order-first lg:order-[unset] w-full lg:w-auto max-w-2xl lg:max-w-[unset] lg:min-w-[160px]', fullWidth ? 'flex-none' : 'flex-1')}>
           {/* `65px` is the height of expanded nav */}
           {/* TODO: Remove the magic number */}
-          <TableOfContents blockMap={blockMap} className="pt-3 sticky" style={{ top: '65px' }} />
+          <TableOfContents toc={document?.toc || []} className="pt-3 sticky" style={{ top: '65px' }} />
         </div>
       </div>
     </article>
@@ -72,7 +68,6 @@ export default function Post (props) {
 
 Post.propTypes = {
   post: PropTypes.object.isRequired,
-  blockMap: PropTypes.object.isRequired,
-  emailHash: PropTypes.string.isRequired,
+  document: PropTypes.object.isRequired,
   fullWidth: PropTypes.bool
 }
