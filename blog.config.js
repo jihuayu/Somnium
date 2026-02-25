@@ -2,7 +2,7 @@ const BLOG = {
   title: '浮生纪梦',
   author: '纪华裕',
   email: 'jihuayu123@gmail.com',
-  link: 'https://blog.jihuayu.com',
+  link: '大梦一场，浮生尽歇',
   description: 'This gonna be an awesome website.',
   lang: 'zh-CN', // ['en-US', 'zh-CN', 'zh-HK', 'zh-TW', 'ja-JP', 'es-ES']
   timezone: 'Asia/Shanghai', // Your Notion posts' date will be interpreted as this timezone. See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for all options.
@@ -11,7 +11,7 @@ const BLOG = {
   lightBackground: '#ffffff', // use hex value, don't forget '#' e.g #fffefc
   darkBackground: '#18181B', // use hex value, don't forget '#'
   path: '', // leave this empty unless you want to deploy Nobelium in a folder
-  since: 2023, // If leave this empty, current year will be used.
+  since: 2024, // If leave this empty, current year will be used.
   postsPerPage: 7,
   sortByDate: true,
   showAbout: true,
