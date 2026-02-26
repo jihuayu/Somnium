@@ -1,3 +1,5 @@
+const path = require('path')
+
 module.exports = {
   typescript: {
     tsconfigPath: './tsconfig.build.json'
@@ -27,16 +29,7 @@ module.exports = {
   transpilePackages: ['dayjs'],
   turbopack: {
     resolveAlias: {
-      '@/*': './*'
-    }
-  },
-  webpack: (config) => {
-    const path = require('path')
-    config.resolve.alias = {
-      ...config.resolve.alias,
       '@': path.resolve(__dirname)
     }
-    config.resolve.extensions = ['.ts', '.tsx', '.js', '.jsx', '.json', ...config.resolve.extensions || []]
-    return config
   }
 }
