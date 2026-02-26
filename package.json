@@ -12,7 +12,7 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint .",
-    "postbuild": "next-sitemap --config next-sitemap.config.js"
+    "postbuild": "next-sitemap --config config/next-sitemap.config.js"
   },
   "dependencies": {
     "@vercel/analytics": "^1.6.1",

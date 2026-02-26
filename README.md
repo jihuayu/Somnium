@@ -41,7 +41,7 @@ NOTION_API_VERSION=2025-09-03
 
 ### 3. 配置站点信息
 
-编辑 `blog.config.js`，重点修改：
+编辑 `config/blog.config.js`，重点修改：
 
 - `title` / `author` / `link`
 - `description`
@@ -87,7 +87,7 @@ layouts/             页面布局
 lib/                 数据获取与工具函数
 public/              静态资源
 styles/              全局样式
-blog.config.js       博客核心配置
+config/              项目配置（如 blog.config.js、next-sitemap）
 next.config.js       Next.js 配置
 ```
 

@@ -11,6 +11,7 @@
     "strict": false,
     "noEmit": true,
     "incremental": true,
+    "tsBuildInfoFile": ".cache/tsconfig.tsbuildinfo",
     "module": "esnext",
     "esModuleInterop": true,
     "moduleResolution": "bundler",
@@ -33,6 +34,8 @@
     "next-env.d.ts",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
+    ".cache/next/types/**/*.ts",
+    ".cache/next/dev/types/**/*.ts",
     "**/*.mts",
     "**/*.ts",
     "**/*.tsx"

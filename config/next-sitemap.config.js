@@ -6,6 +6,7 @@ const config = eval(`((module = { exports: {} }) => { ${raw}; return module.expo
 module.exports = {
   siteUrl: config.link,
   generateRobotsTxt: true,
+  sourceDir: '.cache/next',
   sitemapSize: 7000,
   generateIndexSitemap: false
   // ...other options
