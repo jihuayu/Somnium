@@ -23,7 +23,7 @@ const BLOG = {
     googleSiteVerification: '' // Google Search Console 验证码（不用可留空）
   },
   analytics: {
-    provider: 'ga', // 统计服务：'ga' / 'ackee' / ''
+    provider: '', // 统计服务：'ga' / 'ackee' / ''
     ackeeConfig: {
       tracker: '', // Ackee tracker.js 地址
       dataAckeeServer: '', // Ackee 服务地址（末尾不要加 /）

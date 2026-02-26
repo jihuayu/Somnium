@@ -18,7 +18,6 @@ const Utterances = ({ issueTerm, repo, appearance, layout }: UtterancesProps) =>
     if (!anchor) return
 
     if (!('IntersectionObserver' in window)) {
-      setShouldLoad(true)
       return
     }
 
@@ -37,7 +36,8 @@ const Utterances = ({ issueTerm, repo, appearance, layout }: UtterancesProps) =>
   }, [])
 
   useEffect(() => {
-    if (!repo || !shouldLoad) return
+    const shouldRenderScript = !('IntersectionObserver' in window) || shouldLoad
+    if (!repo || !shouldRenderScript) return
 
     const anchor = commentsRef.current
     if (!anchor) return

@@ -4,7 +4,7 @@ import '@/styles/globals.css'
 import '@/styles/notion.css'
 import { Metadata } from 'next'
 import Script from 'next/script'
-import { config, clientConfig } from '@/lib/server/config'
+import { config } from '@/lib/server/config'
 import { buildPageMetadata } from '@/lib/server/metadata'
 import { prepareDayjs } from '@/lib/dayjs'
 import cn from 'classnames'
@@ -47,7 +47,6 @@ export default async function RootLayout({
 
   const dayBg = config.lightBackground || '#ffffff'
   const nightBg = config.darkBackground || '#111827'
-  const analyticsEnabled = process.env.NODE_ENV === 'production'
   const themeBootstrapScript = `(() => {
     const appearance = ${JSON.stringify(config.appearance)};
     const root = document.documentElement;
@@ -120,60 +119,7 @@ export default async function RootLayout({
         </Script>
       </head>
       <body className="bg-day dark:bg-night">
-        {analyticsEnabled && config.analytics?.provider === 'ackee' && (
-          <Script
-            id="ackee-tracker"
-            src={config.analytics.ackeeConfig.tracker}
-            data-ackee-server={config.analytics.ackeeConfig.dataAckeeServer}
-            data-ackee-domain-id={config.analytics.ackeeConfig.domainId}
-            strategy="lazyOnload"
-          />
-        )}
-        {analyticsEnabled && config.analytics?.provider === 'ga' && (
-          <>
-            <Script
-              id="ga-script"
-              src={`https://www.googletagmanager.com/gtag/js?id=${config.analytics.gaConfig.measurementId}`}
-              strategy="lazyOnload"
-            />
-            <Script id="ga-init" strategy="lazyOnload">
-              {`window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                window.gtag = gtag;
-                gtag('js', new Date());
-                gtag('config', '${config.analytics.gaConfig.measurementId}', { send_page_view: false });
-                var __gaLastPath = '';
-                var __gaPagePath = function() {
-                  return window.location.pathname + window.location.search;
-                };
-                var __gaSendPageView = function() {
-                  var nextPath = __gaPagePath();
-                  if (__gaLastPath === nextPath) return;
-                  __gaLastPath = nextPath;
-                  gtag('config', '${config.analytics.gaConfig.measurementId}', { page_path: nextPath });
-                };
-                __gaSendPageView();
-                var __gaDispatchLocationChange = function() {
-                  window.dispatchEvent(new Event('locationchange'));
-                };
-                var __gaPushState = history.pushState;
-                history.pushState = function() {
-                  var result = __gaPushState.apply(this, arguments);
-                  __gaDispatchLocationChange();
-                  return result;
-                };
-                var __gaReplaceState = history.replaceState;
-                history.replaceState = function() {
-                  var result = __gaReplaceState.apply(this, arguments);
-                  __gaDispatchLocationChange();
-                  return result;
-                };
-                window.addEventListener('popstate', __gaDispatchLocationChange);
-                window.addEventListener('locationchange', __gaSendPageView);`}
-            </Script>
-          </>
-        )}
-        <ClientProviders config={clientConfig}>
+        <ClientProviders>
           {children}
         </ClientProviders>
       </body>
