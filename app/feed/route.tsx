@@ -1,28 +1,40 @@
 import { NextResponse } from 'next/server'
-import { getAllPosts } from '@/lib/notion'
+import { getFeedPosts } from '@/lib/notion/getFeedPosts'
 import { generateRss } from '@/lib/rss'
+import { config } from '@/lib/server/config'
 
-export async function GET(request: Request) {
-  const siteOrigin = new URL(request.url).origin
+const FEED_ITEM_LIMIT = 20
+const FEED_BROWSER_CACHE_SECONDS = 60 * 60 * 12
+const FEED_EDGE_CACHE_SECONDS = 60 * 60 * 24 * 7
+const FEED_STALE_SECONDS = 60 * 60 * 24 * 30
+
+export const revalidate = 86400
+export const dynamic = 'force-static'
+
+function buildFeedHeaders(): HeadersInit {
+  return {
+    'Content-Type': 'application/rss+xml; charset=utf-8',
+    'Cache-Control': `public, max-age=${FEED_BROWSER_CACHE_SECONDS}, s-maxage=${FEED_EDGE_CACHE_SECONDS}, stale-while-revalidate=${FEED_STALE_SECONDS}`
+  }
+}
+
+export async function GET() {
+  const siteOrigin = config.link
 
   try {
-    const posts = await getAllPosts({ includePages: false })
-    const latestPosts = posts.slice(0, 10)
+    const posts = await getFeedPosts()
+    const latestPosts = posts.slice(0, FEED_ITEM_LIMIT)
     const xmlFeed = await generateRss(latestPosts, siteOrigin)
 
     return new NextResponse(xmlFeed, {
-      headers: {
-        'Content-Type': 'application/atom+xml; charset=utf-8'
-      }
+      headers: buildFeedHeaders()
     })
   } catch (error) {
     console.error('[feed] Failed to generate feed:', error)
     const fallbackFeed = await generateRss([], siteOrigin)
     return new NextResponse(fallbackFeed, {
       status: 200,
-      headers: {
-        'Content-Type': 'application/atom+xml; charset=utf-8'
-      }
+      headers: buildFeedHeaders()
     })
   }
 }
