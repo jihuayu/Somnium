@@ -1,6 +1,6 @@
 import { clientConfig } from '@/lib/server/config'
-import Container from '@/components/Container'
-import BlogPost from '@/components/BlogPost'
+import ContainerServer from '@/components/ContainerServer'
+import BlogPostServer from '@/components/BlogPostServer'
 import Pagination from '@/components/Pagination'
 import { getAllPosts } from '@/lib/notion'
 
@@ -13,11 +13,11 @@ export default async function HomePage() {
   const showNext = totalPosts > clientConfig.postsPerPage
 
   return (
-    <Container>
+    <ContainerServer>
       {postsToShow.map(post => (
-        <BlogPost key={post.id} post={post} />
+        <BlogPostServer key={post.id} post={post} />
       ))}
       {showNext && <Pagination page={1} showNext={showNext} />}
-    </Container>
+    </ContainerServer>
   )
 }

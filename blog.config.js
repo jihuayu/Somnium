@@ -2,61 +2,42 @@ const BLOG = {
   title: '浮生纪梦',
   author: '纪华裕',
   email: 'jihuayu123@gmail.com',
-  link: 'https://example.com',
+  link: 'https://jihuayu.com',
   description: '大梦一场，浮生尽歇',
-  lang: 'zh-CN', // ['en-US', 'zh-CN', 'zh-HK', 'zh-TW', 'ja-JP', 'es-ES']
-  timezone: 'Asia/Shanghai', // Your Notion posts' date will be interpreted as this timezone. See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for all options.
-  appearance: 'auto', // ['light', 'dark', 'auto'],
-  font: 'sans-serif', // ['sans-serif', 'serif']
-  lightBackground: '#ffffff', // use hex value, don't forget '#' e.g #fffefc
-  darkBackground: '#18181B', // use hex value, don't forget '#'
-  path: '', // leave this empty unless you want to deploy Nobelium in a folder
-  since: 2024, // If leave this empty, current year will be used.
+  lang: 'zh-CN', // 站点语言，可选：en-US / zh-CN / zh-HK / zh-TW / ja-JP / es-ES
+  timezone: 'Asia/Shanghai', // Notion 日期解析时区
+  appearance: 'auto', // 主题模式：light / dark / auto
+  font: 'sans-serif', // 字体：sans-serif / serif
+  lightBackground: '#ffffff', // 浅色主题背景色（十六进制）
+  darkBackground: '#18181B', // 深色主题背景色（十六进制）
+  path: '', // 子路径部署时填写，例如 '/blog'
+  since: 2024, // 站点起始年份
   postsPerPage: 7,
-  sortByDate: true,
-  showAbout: true,
-  showArchive: true,
-  autoCollapsedNavBar: false, // The automatically collapsed navigation bar
-  ogImageGenerateURL: 'https://og-image-craigary.vercel.app', // The link to generate OG image, don't end with a slash
+  sortByDate: true, // 是否按日期倒序
+  showAbout: true, // 是否显示 About 导航
+  autoCollapsedNavBar: false, // 是否关闭吸顶折叠导航（true 为不吸顶）
+  ogImageGenerateURL: 'https://og-image-craigary.vercel.app', // OG 图片生成服务地址（末尾不要加 /）
   socialLink: 'https://twitter.com/jihuayu123',
   seo: {
     keywords: ['Blog', 'Website', 'Notion'],
-    googleSiteVerification: '' // Remove the value or replace it with your own google site verification code
+    googleSiteVerification: '' // Google Search Console 验证码（不用可留空）
   },
-  notionDataSourceId: process.env.NOTION_DATA_SOURCE_ID, // Notion data source ID for official API mode
-  notionApiVersion: process.env.NOTION_API_VERSION || '2025-09-03',
   analytics: {
-    provider: 'ga', // Currently we support Google Analytics and Ackee, please fill with 'ga' or 'ackee', leave it empty to disable it.
+    provider: 'ga', // 统计服务：'ga' / 'ackee' / ''
     ackeeConfig: {
-      tracker: '', // e.g 'https://ackee.craigary.net/tracker.js'
-      dataAckeeServer: '', // e.g https://ackee.craigary.net , don't end with a slash
-      domainId: '' // e.g '0e2257a8-54d4-4847-91a1-0311ea48cc7b'
+      tracker: '', // Ackee tracker.js 地址
+      dataAckeeServer: '', // Ackee 服务地址（末尾不要加 /）
+      domainId: '' // Ackee domainId
     },
     gaConfig: {
-      measurementId: 'G-PJ4FGZGEY3' // e.g: G-XXXXXXXXXX
+      measurementId: 'G-PJ4FGZGEY3' // GA4 Measurement ID（例如：G-XXXXXXXXXX）
     }
   },
   comment: {
-    // support provider: gitalk, utterances, cusdis
-    provider: 'utterances', // leave it empty if you don't need any comment plugin
-    gitalkConfig: {
-      repo: '', // The repository of store comments
-      owner: '',
-      admin: [],
-      clientID: '',
-      clientSecret: '',
-      distractionFreeMode: false
-    },
+    provider: 'utterances', // 评论系统：'utterances' / ''
     utterancesConfig: {
-      repo: 'jihuayu/blog-gitalk'
-    },
-    cusdisConfig: {
-      appId: '', // data-app-id
-      host: 'https://cusdis.com', // data-host, change this if you're using self-hosted version
-      scriptSrc: 'https://cusdis.com/js/cusdis.es.js' // change this if you're using self-hosted version
+      repo: 'jihuayu/blog-gitalk' // utterances 对应的 GitHub 仓库
     }
-  },
-  isProd: process.env.VERCEL_ENV === 'production' // distinguish between development and production environment (ref: https://vercel.com/docs/environment-variables#system-environment-variables)
+  }
 }
-// export default BLOG
 module.exports = BLOG

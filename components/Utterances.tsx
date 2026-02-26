@@ -1,54 +1,69 @@
 'use client'
 
-import { useConfig } from '@/lib/config'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 interface UtterancesProps {
   issueTerm: string
+  repo: string
+  appearance: 'light' | 'dark' | 'auto'
   layout?: string
 }
 
-const Utterances = ({ issueTerm, layout }: UtterancesProps) => {
-  const BLOG = useConfig()
+const Utterances = ({ issueTerm, repo, appearance, layout }: UtterancesProps) => {
   const commentsRef = useRef<HTMLDivElement>(null)
+  const [shouldLoad, setShouldLoad] = useState(false)
 
   useEffect(() => {
-    const provider = BLOG.comment?.provider
-    const repo = BLOG.comment?.utterancesConfig?.repo
-    if (provider !== 'utterances' || !repo) return
+    const anchor = commentsRef.current
+    if (!anchor) return
+
+    if (!('IntersectionObserver' in window)) {
+      setShouldLoad(true)
+      return
+    }
+
+    const observer = new window.IntersectionObserver(
+      entries => {
+        const isVisible = entries.some(entry => entry.isIntersecting)
+        if (!isVisible) return
+        setShouldLoad(true)
+        observer.disconnect()
+      },
+      { rootMargin: '300px 0px' }
+    )
+
+    observer.observe(anchor)
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    if (!repo || !shouldLoad) return
 
     const anchor = commentsRef.current
     if (!anchor) return
 
     const theme =
-      BLOG.appearance === 'auto'
+      appearance === 'auto'
         ? 'preferred-color-scheme'
-        : BLOG.appearance === 'light'
+        : appearance === 'light'
           ? 'github-light'
           : 'github-dark'
 
-    let cancelled = false
-    const timer = window.setTimeout(() => {
-      if (cancelled || !anchor.isConnected) return
-
-      const script = document.createElement('script')
-      script.src = 'https://utteranc.es/client.js'
-      script.crossOrigin = 'anonymous'
-      script.async = true
-      script.setAttribute('repo', repo)
-      script.setAttribute('issue-term', issueTerm)
-      script.setAttribute('theme', theme)
-      anchor.replaceChildren(script)
-    }, 0)
+    const script = document.createElement('script')
+    script.src = 'https://utteranc.es/client.js'
+    script.crossOrigin = 'anonymous'
+    script.async = true
+    script.setAttribute('repo', repo)
+    script.setAttribute('issue-term', issueTerm)
+    script.setAttribute('theme', theme)
+    anchor.replaceChildren(script)
 
     return () => {
-      cancelled = true
-      window.clearTimeout(timer)
       if (anchor.isConnected) {
         anchor.replaceChildren()
       }
     }
-  }, [BLOG.appearance, BLOG.comment?.provider, BLOG.comment?.utterancesConfig?.repo, issueTerm])
+  }, [appearance, repo, issueTerm, shouldLoad])
 
   return (
     <div

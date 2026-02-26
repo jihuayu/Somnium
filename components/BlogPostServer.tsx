@@ -1,15 +1,15 @@
 import Link from 'next/link'
+import { config } from '@/lib/server/config'
 import { formatDate } from '@/lib/formatDate'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
 
-interface BlogPostProps {
+interface BlogPostServerProps {
   post: PostData
-  blogPath: string
-  lang: string
-  timezone?: string
 }
 
-const BlogPost = ({ post, blogPath, lang, timezone }: BlogPostProps) => {
+export default function BlogPostServer({ post }: BlogPostServerProps) {
+  const blogPath = config.path || ''
+
   return (
     <Link href={`${blogPath}/${post.slug}`} prefetch={false}>
       <article key={post.id} className="mb-6 md:mb-8">
@@ -18,7 +18,7 @@ const BlogPost = ({ post, blogPath, lang, timezone }: BlogPostProps) => {
             {post.title}
           </h2>
           <time className="flex-shrink-0 text-gray-600 dark:text-gray-400">
-            {formatDate(post.date, lang, timezone)}
+            {formatDate(post.date, config.lang, config.timezone)}
           </time>
         </header>
         <main>
@@ -30,5 +30,3 @@ const BlogPost = ({ post, blogPath, lang, timezone }: BlogPostProps) => {
     </Link>
   )
 }
-
-export default BlogPost

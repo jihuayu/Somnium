@@ -1,6 +1,6 @@
 import { config } from '@/lib/server/config'
-import Container from '@/components/Container'
-import BlogPost from '@/components/BlogPost'
+import ContainerServer from '@/components/ContainerServer'
+import BlogPostServer from '@/components/BlogPostServer'
 import Pagination from '@/components/Pagination'
 import { getAllPosts } from '@/lib/notion'
 
@@ -32,10 +32,10 @@ export default async function PaginationPage({ params }: PageProps) {
   const showNext = pageNum * config.postsPerPage < totalPosts
 
   return (
-    <Container>
+    <ContainerServer>
       {postsToShow &&
-        postsToShow.map(post => <BlogPost key={post.id} post={post} />)}
+        postsToShow.map(post => <BlogPostServer key={post.id} post={post} />)}
       <Pagination page={pageNum} showNext={showNext} />
-    </Container>
+    </ContainerServer>
   )
 }

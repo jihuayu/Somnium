@@ -2,10 +2,12 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { cache } from 'react'
 import { getAllPosts, getPostBlocks } from '@/lib/notion'
-import Container from '@/components/Container'
+import loadLocale from '@/assets/i18n'
+import ContainerServer from '@/components/ContainerServer'
 import { buildPageMetadata } from '@/lib/server/metadata'
 import { getLinkPreviewMap } from '@/lib/server/linkPreview'
 import { getLinkPreviewTargets } from '@/lib/notion/linkPreviewTargets'
+import { config } from '@/lib/server/config'
 import SlugPostClient from './slug-client'
 
 export const revalidate = 1
@@ -48,16 +50,25 @@ export default async function SlugPage({ params }: SlugPageProps) {
   const document = await getPostBlocks(post.id)
   if (!document) notFound()
   const linkPreviewMap = await getLinkPreviewMap(getLinkPreviewTargets(document))
+  const locale = await loadLocale('basic', config.lang)
 
   const fullWidth = post.fullWidth ?? false
 
   return (
-    <Container
+    <ContainerServer
       layout="blog"
       title={post.title}
       fullWidth={fullWidth}
     >
-      <SlugPostClient post={post} document={document} fullWidth={fullWidth} linkPreviewMap={linkPreviewMap} />
-    </Container>
+      <SlugPostClient
+        post={post}
+        document={document}
+        fullWidth={fullWidth}
+        homePath={config.path || '/'}
+        backLabel={locale.POST.BACK}
+        topLabel={locale.POST.TOP}
+        linkPreviewMap={linkPreviewMap}
+      />
+    </ContainerServer>
   )
 }

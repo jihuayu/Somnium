@@ -1,4 +1,4 @@
-import { BlogConfig } from '@/lib/config'
+import type { BlogConfig } from '@/lib/config'
 
 export default function cjk(config: BlogConfig): string | null {
   switch (config.lang.toLowerCase()) {

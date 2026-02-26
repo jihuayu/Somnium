@@ -28,6 +28,7 @@ const Tags = ({ tags, currentTag }: TagsProps) => {
                     ? '/search'
                     : `/tag/${encodeURIComponent(key)}`
                 }
+                prefetch={false}
                 className="px-4 py-2 block"
               >
                 {`${key} (${tags[key]})`}

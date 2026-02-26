@@ -1,22 +1,29 @@
-'use client'
-
-import { forwardRef, useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ARTICLE_CONTENT_MAX_WIDTH_CLASS } from '@/consts'
-import { useConfig } from '@/lib/config'
-import { useLocale } from '@/lib/locale'
-import useTheme from '@/lib/theme'
+import HeaderBehavior from '@/components/HeaderBehavior'
 
-const NavBar = () => {
-  const BLOG = useConfig()
-  const locale = useLocale()
+interface NavLocale {
+  INDEX: string
+  ABOUT: string
+  RSS: string
+  SEARCH: string
+}
+
+interface NavBarProps {
+  path: string
+  showAbout: boolean
+  locale: NavLocale
+}
+
+const NavBar = ({ path, showAbout, locale }: NavBarProps) => {
   const links = [
-    { id: 0, name: locale.NAV.INDEX, to: BLOG.path || '/', show: true },
-    { id: 1, name: locale.NAV.ABOUT, to: '/about', show: BLOG.showAbout },
-    { id: 2, name: locale.NAV.RSS, to: '/feed', show: true, external: true },
-    { id: 3, name: locale.NAV.SEARCH, to: '/search', show: true }
+    { id: 0, name: locale.INDEX, to: path || '/', show: true },
+    { id: 1, name: locale.ABOUT, to: '/about', show: showAbout },
+    { id: 2, name: locale.RSS, to: '/feed', show: true, external: true },
+    { id: 3, name: locale.SEARCH, to: '/search', show: true }
   ]
+
   return (
     <div className="header-nav-wrap flex-shrink-0 md:self-end">
       <ul className="header-nav-list flex flex-row items-end">
@@ -39,79 +46,54 @@ const NavBar = () => {
 interface HeaderProps {
   navBarTitle?: string | null
   fullWidth?: boolean
+  siteTitle: string
+  siteDescription: string
+  path: string
+  showAbout: boolean
+  autoCollapsedNavBar: boolean
+  navLocale: NavLocale
 }
 
-export default function Header({ navBarTitle, fullWidth }: HeaderProps) {
-  const BLOG = useConfig()
-  const { dark } = useTheme()
+interface HeaderNameProps {
+  siteTitle: string
+  siteDescription: string
+  postTitle?: string | null
+}
 
-  const resolveFavicon = (fallback?: boolean) => !fallback && dark ? '/favicon.png' : '/favicon.png'
-  const [favicon, _setFavicon] = useState(resolveFavicon())
-  const setFavicon = (fallback?: boolean) => _setFavicon(resolveFavicon(fallback))
-
-  useEffect(
-    () => setFavicon(),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [dark]
+function HeaderName({ siteTitle, siteDescription, postTitle }: HeaderNameProps) {
+  return (
+    <p
+      id="header-title"
+      className={`header-name ${!postTitle ? 'header-name-no-post-title' : ''} font-medium text-gray-600 dark:text-gray-300 capture-pointer-events grid-rows-1 grid-cols-1 items-end leading-none`}
+    >
+      {postTitle && <span className="post-title row-start-1 col-start-1">{postTitle}</span>}
+      <span className="row-start-1 col-start-1">
+        <span className="site-title">{siteTitle}</span>
+        <span className="site-description ml-2 text-xs font-normal">{siteDescription}</span>
+      </span>
+    </p>
   )
+}
 
-  const useSticky = !BLOG.autoCollapsedNavBar
-  const navRef = useRef<HTMLDivElement>(null)
-  const sentinelRef = useRef<HTMLDivElement>(null)
-  const collapseRafRef = useRef<number | null>(null)
-  const handler = useCallback(([entry]: IntersectionObserverEntry[]) => {
-    if (!useSticky || !navRef.current) {
-      navRef.current?.classList.add('remove-sticky')
-      return
-    }
-
-    if (collapseRafRef.current !== null) {
-      window.cancelAnimationFrame(collapseRafRef.current)
-    }
-
-    collapseRafRef.current = window.requestAnimationFrame(() => {
-      const sentinelBottom = sentinelRef.current?.getBoundingClientRect().bottom ?? 0
-      const shouldCollapse = sentinelBottom <= 0 && window.scrollY > 0 && !entry.isIntersecting
-      navRef.current?.classList.toggle('sticky-nav-full', shouldCollapse)
-      collapseRafRef.current = null
-    })
-  }, [useSticky])
-
-  useEffect(() => {
-    const sentinelEl = sentinelRef.current
-    if (!sentinelEl) return
-    const observer = new window.IntersectionObserver(handler)
-    observer.observe(sentinelEl)
-
-    return () => {
-      if (collapseRafRef.current !== null) {
-        window.cancelAnimationFrame(collapseRafRef.current)
-      }
-      sentinelEl && observer.unobserve(sentinelEl)
-    }
-  }, [handler, sentinelRef])
-
-  const titleRef = useRef<HTMLParagraphElement>(null)
-
-  function handleClickHeader(ev: React.MouseEvent<HTMLDivElement>) {
-    if (![navRef.current, titleRef.current].includes(ev.target as any)) return
-
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    })
-  }
-
+export default function Header({
+  navBarTitle,
+  fullWidth,
+  siteTitle,
+  siteDescription,
+  path,
+  showAbout,
+  autoCollapsedNavBar,
+  navLocale
+}: HeaderProps) {
   return (
     <>
-      <div className="observer-element h-4 md:h-12" ref={sentinelRef}></div>
+      <HeaderBehavior useSticky={!autoCollapsedNavBar} />
+      <div className="observer-element h-4 md:h-12" id="header-sentinel" />
       <div
         className={`sticky-nav group m-auto w-full h-6 flex flex-row justify-between items-center md:items-end mb-1 md:mb-6 py-8 bg-opacity-60 ${
           !fullWidth ? `${ARTICLE_CONTENT_MAX_WIDTH_CLASS} px-4` : 'px-4 md:px-24'
         }`}
         id="sticky-nav"
-        ref={navRef}
-        onClick={handleClickHeader}
       >
         <svg
           viewBox="0 0 24 24"
@@ -123,49 +105,23 @@ export default function Header({ navBarTitle, fullWidth }: HeaderProps) {
           />
         </svg>
         <div className="header-main flex items-center md:items-end gap-2">
-          <Link href="/" aria-label={BLOG.title} className="header-icon-link flex items-center md:items-end justify-center shrink-0 leading-none transition-transform duration-500">
+          <Link href={path || '/'} aria-label={siteTitle} className="header-icon-link flex items-center md:items-end justify-center shrink-0 leading-none transition-transform duration-500">
             <Image
-              src={favicon}
+              src="/favicon.png"
               width={26}
               height={26}
-              alt={BLOG.title}
+              alt={siteTitle}
               className="block header-icon"
-              onError={() => setFavicon(true)}
             />
           </Link>
           <HeaderName
-            ref={titleRef}
-            siteTitle={BLOG.title}
-            siteDescription={BLOG.description}
+            siteTitle={siteTitle}
+            siteDescription={siteDescription}
             postTitle={navBarTitle}
-            onClick={handleClickHeader}
           />
         </div>
-        <NavBar />
+        <NavBar path={path} showAbout={showAbout} locale={navLocale} />
       </div>
     </>
   )
 }
-
-interface HeaderNameProps {
-  siteTitle: string
-  siteDescription: string
-  postTitle?: string | null
-  onClick: (ev: React.MouseEvent<HTMLDivElement>) => void
-}
-
-const HeaderName = forwardRef<HTMLParagraphElement, HeaderNameProps>(function HeaderName({ siteTitle, siteDescription, postTitle, onClick }, ref) {
-  return (
-    <p
-      ref={ref}
-      className={`header-name ${!postTitle ? 'header-name-no-post-title' : ''} font-medium text-gray-600 dark:text-gray-300 capture-pointer-events grid-rows-1 grid-cols-1 items-end leading-none`}
-      onClick={onClick as any}
-    >
-      {postTitle && <span className="post-title row-start-1 col-start-1">{postTitle}</span>}
-      <span className="row-start-1 col-start-1">
-        <span className="site-title">{siteTitle}</span>
-        <span className="site-description ml-2 text-xs font-normal">{siteDescription}</span>
-      </span>
-    </p>
-  )
-})

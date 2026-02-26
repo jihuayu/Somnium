@@ -1,18 +1,14 @@
-'use client'
-
 import { ARTICLE_CONTENT_MAX_WIDTH_CLASS } from '@/consts'
-import { useConfig } from '@/lib/config'
+import { config } from '@/lib/server/config'
 
-interface FooterProps {
+interface FooterServerProps {
   fullWidth?: boolean
 }
 
-const Footer = ({ fullWidth }: FooterProps) => {
-  const BLOG = useConfig()
+export default function FooterServer({ fullWidth }: FooterServerProps) {
+  const currentYear = new Date().getFullYear()
+  const since = +config.since
 
-  const d = new Date()
-  const y = d.getFullYear()
-  const from = +BLOG.since
   return (
     <div
       className={`mt-6 flex-shrink-0 m-auto w-full text-gray-500 dark:text-gray-400 transition-all ${
@@ -23,12 +19,10 @@ const Footer = ({ fullWidth }: FooterProps) => {
       <div className="my-4 text-sm leading-6">
         <div className="flex align-baseline justify-between flex-wrap">
           <p>
-            © {BLOG.author} {from === y || !from ? y : `${from} - ${y}`}
+            © {config.author} {since === currentYear || !since ? currentYear : `${since} - ${currentYear}`}
           </p>
         </div>
       </div>
     </div>
   )
 }
-
-export default Footer

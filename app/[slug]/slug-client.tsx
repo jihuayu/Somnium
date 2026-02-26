@@ -1,12 +1,9 @@
-'use client'
-
-import { useRouter } from 'next/navigation'
 import cn from 'classnames'
+import Link from 'next/link'
 import { ARTICLE_CONTENT_MAX_WIDTH_CLASS } from '@/consts'
-import { useLocale } from '@/lib/locale'
-import { useConfig } from '@/lib/config'
 import Post from '@/components/Post'
 import Comments from '@/components/Comments'
+import { config } from '@/lib/server/config'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
 import type { NotionDocument } from '@/lib/notion/getPostBlocks'
 import type { LinkPreviewMap } from '@/lib/link-preview/types'
@@ -15,14 +12,21 @@ interface SlugPostClientProps {
   post: PostData
   document: NotionDocument
   fullWidth: boolean
+  homePath: string
+  backLabel: string
+  topLabel: string
   linkPreviewMap?: LinkPreviewMap
 }
 
-export default function SlugPostClient({ post, document, fullWidth, linkPreviewMap = {} }: SlugPostClientProps) {
-  const router = useRouter()
-  const BLOG = useConfig()
-  const locale = useLocale()
-
+export default function SlugPostClient({
+  post,
+  document,
+  fullWidth,
+  homePath,
+  backLabel,
+  topLabel,
+  linkPreviewMap = {}
+}: SlugPostClientProps) {
   return (
     <>
       <Post
@@ -38,28 +42,19 @@ export default function SlugPostClient({ post, document, fullWidth, linkPreviewM
           fullWidth ? 'md:px-24' : `mx-auto ${ARTICLE_CONTENT_MAX_WIDTH_CLASS}`
         )}
       >
-        <a>
-          <button
-            onClick={() => router.push(BLOG.path || '/')}
-            className="mt-2 cursor-pointer hover:text-black dark:hover:text-gray-100"
-          >
-            ← {locale.POST.BACK}
-          </button>
-        </a>
-        <a>
-          <button
-            onClick={() => window.scrollTo({
-              top: 0,
-              behavior: 'smooth'
-            })}
-            className="mt-2 cursor-pointer hover:text-black dark:hover:text-gray-100"
-          >
-            ↑ {locale.POST.TOP}
-          </button>
+        <Link href={homePath || '/'} className="mt-2 cursor-pointer hover:text-black dark:hover:text-gray-100">
+          ← {backLabel}
+        </Link>
+        <a href="#top" className="mt-2 cursor-pointer hover:text-black dark:hover:text-gray-100">
+          ↑ {topLabel}
         </a>
       </div>
 
-      <Comments frontMatter={post} />
+      <Comments
+        frontMatter={post}
+        comment={config.comment}
+        appearance={config.appearance}
+      />
     </>
   )
 }

@@ -1,41 +1,27 @@
-'use client'
-
-import { ReactNode } from 'react'
-import dynamic from 'next/dynamic'
-import { ConfigProvider, BlogConfig } from '@/lib/config'
-import { LocaleProvider, Locale } from '@/lib/locale'
-import { ThemeProvider } from '@/lib/theme'
-import Scripts from '@/components/Scripts'
+import type { ReactNode } from 'react'
+import type { BlogConfig } from '@/lib/config'
 import { Analytics } from '@vercel/analytics/next'
-
-const Ackee = dynamic(() => import('@/components/Ackee'), { ssr: false })
-const Gtag = dynamic(() => import('@/components/Gtag'), { ssr: false })
+import AnalyticsRuntime from '@/components/AnalyticsRuntime'
 
 interface ClientProvidersProps {
   config: BlogConfig
-  locale: Locale
   children: ReactNode
 }
 
-export default function ClientProviders({ config, locale, children }: ClientProvidersProps) {
+export default function ClientProviders({ config, children }: ClientProvidersProps) {
+  const analyticsEnabled = process.env.NODE_ENV === 'production'
+
   return (
-    <ConfigProvider value={config}>
-      <Scripts />
-      <LocaleProvider value={locale}>
-        <ThemeProvider>
-          <>
-            {process.env.NEXT_PUBLIC_VERCEL_ENV === 'production' && config?.analytics?.provider === 'ackee' && (
-              <Ackee
-                ackeeServerUrl={config.analytics.ackeeConfig.dataAckeeServer}
-                ackeeDomainId={config.analytics.ackeeConfig.domainId}
-              />
-            )}
-            {process.env.NEXT_PUBLIC_VERCEL_ENV === 'production' && config?.analytics?.provider === 'ga' && <Gtag />}
-            {children}
-            <Analytics />
-          </>
-        </ThemeProvider>
-      </LocaleProvider>
-    </ConfigProvider>
+    <>
+      {analyticsEnabled && config?.analytics?.provider === 'ackee' && (
+        <AnalyticsRuntime
+          provider={config?.analytics?.provider}
+          ackeeServerUrl={config?.analytics?.ackeeConfig?.dataAckeeServer}
+          ackeeDomainId={config?.analytics?.ackeeConfig?.domainId}
+        />
+      )}
+      {children}
+      <Analytics />
+    </>
   )
 }

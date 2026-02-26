@@ -1,11 +1,9 @@
-'use client'
-
-import { Fragment } from 'react'
+import { Fragment, Suspense } from 'react'
 import cn from 'classnames'
 import { FONTS_SANS, FONTS_SERIF } from '@/consts'
-import { useConfig } from '@/lib/config'
+import { config } from '@/lib/server/config'
 import { resolveEmbedIframeUrl } from '@/lib/notion/embed'
-import LinkPreviewCard from '@/components/LinkPreviewCard'
+import LinkPreviewCard, { LinkPreviewCardFallback } from '@/components/LinkPreviewCard'
 import type { LinkPreviewMap } from '@/lib/link-preview/types'
 import type { NotionDocument } from '@/lib/notion/getPostBlocks'
 
@@ -15,6 +13,10 @@ function getPlainTextFromRichText(richText: any[] = []): string {
 
 function getBlockClassName(blockId: string): string {
   return `notion-block-${blockId.replaceAll('-', '')}`
+}
+
+function getHeadingAnchorId(blockId: string): string {
+  return `notion-heading-${blockId.replaceAll('-', '')}`
 }
 
 function normalizeUrl(url: string | null): string {
@@ -74,11 +76,11 @@ interface NotionRendererProps {
 }
 
 export default function NotionRenderer({ document, linkPreviewMap = {} }: NotionRendererProps) {
-  const config = useConfig()
   const font = {
     'sans-serif': FONTS_SANS,
     serif: FONTS_SERIF
-  }[config?.font] || FONTS_SANS
+  }[config.font] || FONTS_SANS
+  const fontFamily = font.join(', ')
 
   if (!document) return null
 
@@ -149,7 +151,7 @@ export default function NotionRenderer({ document, linkPreviewMap = {} }: Notion
             ? <h2 className={headingClass}><RichText richText={richText} /></h2>
             : <h3 className={headingClass}><RichText richText={richText} /></h3>
         return (
-          <div key={block.id} className={className}>
+          <div key={block.id} id={getHeadingAnchorId(block.id)} className={className}>
             {headingNode}
             {renderChildren(block.id)}
           </div>
@@ -266,7 +268,9 @@ export default function NotionRenderer({ document, linkPreviewMap = {} }: Notion
                   Unsupported embed block
                 </div>
               ) : (
-                <LinkPreviewCard url={embedUrl} initialData={linkPreviewMap[previewKey]} />
+                <Suspense fallback={<LinkPreviewCardFallback />}>
+                  <LinkPreviewCard url={embedUrl} initialData={linkPreviewMap[previewKey]} />
+                </Suspense>
               )}
               {caption.length > 0 && (
                 <div className="notion-asset-caption mt-2 whitespace-pre-wrap">
@@ -290,7 +294,9 @@ export default function NotionRenderer({ document, linkPreviewMap = {} }: Notion
                 Unsupported bookmark block
               </div>
             ) : (
-              <LinkPreviewCard url={bookmarkUrl} initialData={linkPreviewMap[previewKey]} />
+              <Suspense fallback={<LinkPreviewCardFallback />}>
+                <LinkPreviewCard url={bookmarkUrl} initialData={linkPreviewMap[previewKey]} />
+              </Suspense>
             )}
             {caption.length > 0 && (
               <div className="notion-asset-caption mt-2 whitespace-pre-wrap">
@@ -348,18 +354,8 @@ export default function NotionRenderer({ document, linkPreviewMap = {} }: Notion
   }
 
   return (
-    <>
-      <style jsx global>
-        {`
-        .notion {
-          --notion-font: ${font};
-          font-family: var(--notion-font);
-        }
-        `}
-      </style>
-      <div className="notion">
-        {renderBlockList(rootIds)}
-      </div>
-    </>
+    <div className="notion" style={{ fontFamily }}>
+      {renderBlockList(rootIds)}
+    </div>
   )
 }

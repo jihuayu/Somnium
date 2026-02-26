@@ -1,7 +1,6 @@
 import { Feed } from 'feed'
-import { clientConfig, config } from '@/lib/server/config'
+import { config } from '@/lib/server/config'
 import { getPostBlocks } from '@/lib/notion'
-import { ConfigProvider } from '@/lib/config'
 import NotionRenderer from '@/components/NotionRenderer'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
 
@@ -33,11 +32,7 @@ function buildUrl(baseUrl: string, path?: string): string {
 const createFeedContent = async (post: PostData): Promise<string> => {
   const { renderToString } = await (import('react-dom/server') as any)
   const document = await getPostBlocks(post.id)
-  const content = renderToString(
-    <ConfigProvider value={clientConfig}>
-      <NotionRenderer document={document} />
-    </ConfigProvider>
-  )
+  const content = renderToString(<NotionRenderer document={document} />)
   return content
 }
 

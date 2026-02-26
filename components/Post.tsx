@@ -1,5 +1,3 @@
-'use client'
-
 import cn from 'classnames'
 import {
   ARTICLE_CONTENT_MAX_WIDTH_CLASS,
@@ -8,8 +6,8 @@ import {
   ARTICLE_TOC_TOP_PX,
   ARTICLE_TOC_WIDTH_PX
 } from '@/consts'
-import { useConfig } from '@/lib/config'
-import FormattedDate from '@/components/FormattedDate'
+import { config } from '@/lib/server/config'
+import { formatDate } from '@/lib/formatDate'
 import TagItem from '@/components/TagItem'
 import NotionRenderer from '@/components/NotionRenderer'
 import TableOfContents from '@/components/TableOfContents'
@@ -25,7 +23,6 @@ interface PostProps {
 }
 
 export default function Post(props: PostProps) {
-  const BLOG = useConfig()
   const { post, document, fullWidth = false, linkPreviewMap = {} } = props
 
   return (
@@ -42,13 +39,13 @@ export default function Post(props: PostProps) {
           !fullWidth && `${ARTICLE_CONTENT_MAX_WIDTH_CLASS} px-4`
         )}>
           <div className="flex mb-4">
-            <a href={BLOG.socialLink || '#'} className="flex">
-              <p className="ml-2 md:block">{BLOG.author}</p>
+            <a href={config.socialLink || '#'} className="flex">
+              <p className="ml-2 md:block">{config.author}</p>
             </a>
             <span className="block">&nbsp;/&nbsp;</span>
           </div>
           <div className="mr-2 mb-4 md:ml-0">
-            <FormattedDate date={post.date} />
+            {formatDate(post.date, config.lang, config.timezone)}
           </div>
           {post.tags && (
             <div className="flex flex-nowrap max-w-full overflow-x-auto article-tags">
