@@ -11,33 +11,21 @@ interface UtterancesProps {
 
 const Utterances = ({ issueTerm, repo, appearance, layout }: UtterancesProps) => {
   const commentsRef = useRef<HTMLDivElement>(null)
-  const [shouldLoad, setShouldLoad] = useState(false)
+  const [shouldLoad, setShouldLoad] = useState(() => {
+    if (typeof document === 'undefined') return false
+    return document.readyState === 'complete'
+  })
 
   useEffect(() => {
-    const anchor = commentsRef.current
-    if (!anchor) return
+    if (shouldLoad) return
 
-    if (!('IntersectionObserver' in window)) {
-      return
-    }
-
-    const observer = new window.IntersectionObserver(
-      entries => {
-        const isVisible = entries.some(entry => entry.isIntersecting)
-        if (!isVisible) return
-        setShouldLoad(true)
-        observer.disconnect()
-      },
-      { rootMargin: '300px 0px' }
-    )
-
-    observer.observe(anchor)
-    return () => observer.disconnect()
-  }, [])
+    const handleLoad = () => setShouldLoad(true)
+    window.addEventListener('load', handleLoad, { once: true })
+    return () => window.removeEventListener('load', handleLoad)
+  }, [shouldLoad])
 
   useEffect(() => {
-    const shouldRenderScript = !('IntersectionObserver' in window) || shouldLoad
-    if (!repo || !shouldRenderScript) return
+    if (!repo || !shouldLoad) return
 
     const anchor = commentsRef.current
     if (!anchor) return
