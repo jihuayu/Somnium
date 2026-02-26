@@ -104,6 +104,7 @@ export default function LinkPreviewCard({ url, className, initialData }: LinkPre
       href={displayUrl}
       target="_blank"
       rel="noopener noreferrer"
+      data-link-preview-card="true"
       className={cn(
         'block my-4 rounded-md border border-blue-400/70 hover:border-blue-500 transition-colors overflow-hidden bg-transparent opacity-100 hover:opacity-100',
         className
@@ -159,8 +160,9 @@ export default function LinkPreviewCard({ url, className, initialData }: LinkPre
           <div className="hidden sm:flex shrink-0 items-center justify-center px-2">
             <div className="relative h-28 w-40 md:h-36 md:w-52 lg:h-40 lg:w-56 overflow-hidden rounded-sm">
               <span
+                data-loaded={isCoverLoaded ? 'true' : 'false'}
                 className={cn(
-                  'absolute inset-0 bg-zinc-200/80 dark:bg-zinc-700/70 transition-opacity duration-200',
+                  'link-preview-cover-placeholder absolute inset-0 bg-zinc-200/80 dark:bg-zinc-700/70 transition-opacity duration-200',
                   isCoverLoaded ? 'opacity-0' : 'opacity-100',
                   !isCoverError && 'animate-pulse'
                 )}
@@ -170,10 +172,10 @@ export default function LinkPreviewCard({ url, className, initialData }: LinkPre
                 src={generatedImageUrl}
                 alt={preview.title || preview.hostname || 'Link preview'}
                 className={cn(
-                  'h-full w-full rounded-sm object-cover transition-opacity duration-200',
-                  isCoverLoaded ? 'opacity-100' : 'opacity-0'
+                  'link-preview-cover pointer-events-none h-full w-full rounded-sm object-cover transition-opacity duration-200'
                 )}
-                style={{ filter: 'none' }}
+                data-loaded={isCoverLoaded ? 'true' : 'false'}
+                style={{ opacity: isCoverLoaded ? 1 : 0, filter: 'none' }}
                 loading="lazy"
                 onLoad={() => {
                   setLoadedCoverSrc(generatedImageUrl)

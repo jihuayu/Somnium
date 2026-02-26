@@ -58,12 +58,23 @@ export default function Header({ navBarTitle, fullWidth }: HeaderProps) {
   const useSticky = !BLOG.autoCollapsedNavBar
   const navRef = useRef<HTMLDivElement>(null)
   const sentinelRef = useRef<HTMLDivElement>(null)
+  const collapseRafRef = useRef<number | null>(null)
   const handler = useCallback(([entry]: IntersectionObserverEntry[]) => {
-    if (useSticky && navRef.current) {
-      navRef.current?.classList.toggle('sticky-nav-full', !entry.isIntersecting)
-    } else {
+    if (!useSticky || !navRef.current) {
       navRef.current?.classList.add('remove-sticky')
+      return
     }
+
+    if (collapseRafRef.current !== null) {
+      window.cancelAnimationFrame(collapseRafRef.current)
+    }
+
+    collapseRafRef.current = window.requestAnimationFrame(() => {
+      const sentinelBottom = sentinelRef.current?.getBoundingClientRect().bottom ?? 0
+      const shouldCollapse = sentinelBottom <= 0 && window.scrollY > 0 && !entry.isIntersecting
+      navRef.current?.classList.toggle('sticky-nav-full', shouldCollapse)
+      collapseRafRef.current = null
+    })
   }, [useSticky])
 
   useEffect(() => {
@@ -73,6 +84,9 @@ export default function Header({ navBarTitle, fullWidth }: HeaderProps) {
     observer.observe(sentinelEl)
 
     return () => {
+      if (collapseRafRef.current !== null) {
+        window.cancelAnimationFrame(collapseRafRef.current)
+      }
       sentinelEl && observer.unobserve(sentinelEl)
     }
   }, [handler, sentinelRef])

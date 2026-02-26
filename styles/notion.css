@@ -113,6 +113,17 @@ pre[class*='language-'] {
 .notion-bookmark:hover {
   @apply border-blue-400;
 }
+
+a[data-link-preview-card='true'] .link-preview-cover[data-loaded='true'],
+a[data-link-preview-card='true']:hover .link-preview-cover[data-loaded='true'] {
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+a[data-link-preview-card='true']:hover .link-preview-cover-placeholder[data-loaded='true'] {
+  opacity: 0 !important;
+}
+
 .notion-viewport {
   z-index: -10;
 }
