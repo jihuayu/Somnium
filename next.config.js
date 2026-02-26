@@ -1,5 +1,4 @@
 module.exports = {
-  distDir: '.cache/next',
   typescript: {
     tsconfigPath: './tsconfig.build.json'
   },
