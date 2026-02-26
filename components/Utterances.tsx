@@ -50,7 +50,7 @@ const Utterances = ({ issueTerm, repo, appearance, layout }: UtterancesProps) =>
           : 'github-dark'
 
     const script = document.createElement('script')
-    script.src = 'https://utteranc.es/client.js'
+    script.src = 'https://utteranc.raw2.cc/client.js'
     script.crossOrigin = 'anonymous'
     script.async = true
     script.setAttribute('repo', repo)
