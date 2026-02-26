@@ -69,7 +69,6 @@ const getCachedFeedDocument = unstable_cache(
 
 interface FeedContentPayload {
   html: string
-  markdown: string
 }
 
 function escapeHtml(input: string): string {
@@ -84,32 +83,6 @@ function escapeHtml(input: string): string {
 function getPlainTextFromRichText(richText: any[] = [], trim = true): string {
   const text = richText.map(item => item?.plain_text || '').join('')
   return trim ? text.trim() : text
-}
-
-function getMarkdownFromRichText(richText: any[] = []): string {
-  return richText
-    .map(item => {
-      const raw = item?.type === 'equation'
-        ? item?.equation?.expression || ''
-        : item?.plain_text || ''
-      const text = raw.replace(/\r?\n/g, ' ').trim()
-      if (!text) return ''
-
-      const annotations = item?.annotations || {}
-      let output = text
-
-      if (annotations.code) output = `\`${output.replaceAll('`', '\\`')}\``
-      if (annotations.bold) output = `**${output}**`
-      if (annotations.italic) output = `*${output}*`
-      if (annotations.strikethrough) output = `~~${output}~~`
-      if (annotations.underline) output = `<u>${output}</u>`
-
-      const href = item?.href || item?.text?.link?.url || null
-      if (href) output = `[${output}](${href})`
-
-      return output
-    })
-    .join('')
 }
 
 function getHtmlFromRichText(richText: any[] = []): string {
@@ -135,106 +108,6 @@ function getHtmlFromRichText(richText: any[] = []): string {
       return output
     })
     .join('')
-}
-
-function renderBlockMarkdown(
-  blockId: string,
-  blocksById: Record<string, any>,
-  childrenById: Record<string, string[]>,
-  listDepth = 0
-): string {
-  const block = blocksById[blockId]
-  if (!block) return ''
-
-  const childIds = childrenById[blockId] || []
-  const renderChildren = (nextListDepth = listDepth) =>
-    childIds
-      .map(childId => renderBlockMarkdown(childId, blocksById, childrenById, nextListDepth))
-      .filter(Boolean)
-      .join('\n\n')
-
-  switch (block.type) {
-    case 'paragraph': {
-      const paragraph = getMarkdownFromRichText(block?.paragraph?.rich_text || [])
-      return [paragraph, renderChildren(listDepth)].filter(Boolean).join('\n\n')
-    }
-    case 'heading_1':
-    case 'heading_2':
-    case 'heading_3': {
-      const level = block.type === 'heading_1' ? '#' : block.type === 'heading_2' ? '##' : '###'
-      const heading = getMarkdownFromRichText(block?.[block.type]?.rich_text || [])
-      return [`${level} ${heading}`.trim(), renderChildren(listDepth)].filter(Boolean).join('\n\n')
-    }
-    case 'quote': {
-      const quoteText = getMarkdownFromRichText(block?.quote?.rich_text || [])
-      const quote = quoteText
-        ? quoteText.split('\n').map((line: string) => `> ${line}`).join('\n')
-        : ''
-      return [quote, renderChildren(listDepth)].filter(Boolean).join('\n\n')
-    }
-    case 'bulleted_list_item': {
-      const bulletText = getMarkdownFromRichText(block?.bulleted_list_item?.rich_text || [])
-      const bulletPrefix = `${'  '.repeat(listDepth)}- `
-      const bulletLine = `${bulletPrefix}${bulletText}`.trimEnd()
-      const childList = childIds
-        .map(childId => renderBlockMarkdown(childId, blocksById, childrenById, listDepth + 1))
-        .filter(Boolean)
-        .join('\n')
-      return childList ? `${bulletLine}\n${childList}` : bulletLine
-    }
-    case 'code': {
-      const code = block?.code || {}
-      const language = code.language && code.language !== 'plain text' ? code.language : ''
-      const source = getPlainTextFromRichText(code.rich_text || [], false)
-      const fenced = `\`\`\`${language}\n${source}\n\`\`\``
-      return [fenced, renderChildren(listDepth)].filter(Boolean).join('\n\n')
-    }
-    case 'image': {
-      const image = block?.image || {}
-      const source = image.type === 'external'
-        ? image?.external?.url
-        : image?.file?.url
-      const caption = getMarkdownFromRichText(image.caption || [])
-      const imageLine = source ? `![${caption || 'image'}](${source})` : ''
-      return [imageLine, renderChildren(listDepth)].filter(Boolean).join('\n\n')
-    }
-    case 'embed': {
-      const embed = block?.embed || {}
-      const url = embed.url || ''
-      const caption = getMarkdownFromRichText(embed.caption || [])
-      const link = url ? `[${url}](${url})` : ''
-      return [link, caption, renderChildren(listDepth)].filter(Boolean).join('\n\n')
-    }
-    case 'bookmark': {
-      const bookmark = block?.bookmark || {}
-      const url = bookmark.url || ''
-      const caption = getMarkdownFromRichText(bookmark.caption || [])
-      const link = url ? `[${url}](${url})` : ''
-      return [link, caption, renderChildren(listDepth)].filter(Boolean).join('\n\n')
-    }
-    case 'column':
-    case 'column_list':
-      return renderChildren(listDepth)
-    case 'divider':
-      return ['---', renderChildren(listDepth)].filter(Boolean).join('\n\n')
-    default:
-      return renderChildren(listDepth)
-  }
-}
-
-function renderDocumentMarkdown(document: NotionDocument | null): string {
-  if (!document) return ''
-
-  const rootIds = document.rootIds || []
-  const blocksById = document.blocksById || {}
-  const childrenById = document.childrenById || {}
-
-  return rootIds
-    .map(rootId => renderBlockMarkdown(rootId, blocksById, childrenById))
-    .filter(Boolean)
-    .join('\n\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim()
 }
 
 function renderBlockHtml(
@@ -329,10 +202,9 @@ function renderDocumentHtml(document: NotionDocument | null): string {
 }
 
 function fallbackFeedContent(post: PostData): FeedContentPayload {
-  const markdown = (post.summary || '').trim()
+  const summary = (post.summary || '').trim()
   return {
-    markdown,
-    html: `<p>${escapeHtml(markdown)}</p>`
+    html: `<p>${escapeHtml(summary)}</p>`
   }
 }
 
@@ -341,12 +213,10 @@ const createFeedContent = async (post: PostData): Promise<FeedContentPayload> =>
   if (!document) return fallbackFeedContent(post)
 
   const html = renderDocumentHtml(document)
-  const markdown = renderDocumentMarkdown(document)
   const fallback = fallbackFeedContent(post)
 
   return {
-    html: html || fallback.html,
-    markdown: markdown || fallback.markdown
+    html: html || fallback.html
   }
 }
 
@@ -382,7 +252,7 @@ export async function generateRss(posts: PostData[], siteOrigin?: string): Promi
       title: post.title,
       id: postUrl,
       link: postUrl,
-      description: content.markdown || post.summary || '',
+      description: (post.summary || '').trim(),
       content: content.html,
       date: new Date(post.date)
     })
