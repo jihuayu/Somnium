@@ -1,12 +1,11 @@
-import { ImageResponse } from '@vercel/og'
 import { ONE_DAY_SECONDS, SEVEN_DAYS_SECONDS } from '@/lib/server/cache'
 
-export const runtime = 'nodejs'
-const TARGET_HEIGHT = 440
-const FALLBACK_WIDTH = 520
+export const runtime = 'edge'
 const OG_IMAGE_BROWSER_CACHE_SECONDS = SEVEN_DAYS_SECONDS
 const OG_IMAGE_EDGE_CACHE_SECONDS = ONE_DAY_SECONDS
 const OG_IMAGE_STALE_SECONDS = ONE_DAY_SECONDS
+
+const DEFAULT_CACHE_CONTROL = `public, max-age=${OG_IMAGE_BROWSER_CACHE_SECONDS}, s-maxage=${OG_IMAGE_EDGE_CACHE_SECONDS}, stale-while-revalidate=${OG_IMAGE_STALE_SECONDS}`
 
 function toAbsoluteImageUrl(rawUrl: string, requestUrl: string): string {
   if (!rawUrl) return ''
@@ -24,44 +23,31 @@ function toAbsoluteImageUrl(rawUrl: string, requestUrl: string): string {
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const rawImageUrl = searchParams.get('image')?.trim() || ''
-  const sourceImageUrl = toAbsoluteImageUrl(rawImageUrl, req.url)
-  if (!sourceImageUrl) {
+  const proxyTargetUrl = toAbsoluteImageUrl(rawImageUrl, req.url)
+  if (!proxyTargetUrl) {
     return new Response('Missing image', { status: 400 })
   }
 
-  const result = new ImageResponse(
-    (
-      <div
-        style={{
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          background: '#f8fafc',
-          boxSizing: 'border-box'
-        }}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={sourceImageUrl}
-          alt="Link preview image"
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover'
-          }}
-        />
-      </div>
-    ),
-    {
-      width: FALLBACK_WIDTH,
-      height: TARGET_HEIGHT
+  try {
+    const upstream = await fetch(proxyTargetUrl, {
+      redirect: 'follow',
+      headers: {
+        Accept: 'image/*,*/*;q=0.8'
+      }
+    })
+
+    const headers = new Headers(upstream.headers)
+    if (!headers.get('Cache-Control')) {
+      headers.set('Cache-Control', DEFAULT_CACHE_CONTROL)
     }
-  )
 
-  result.headers.set(
-    'Cache-Control',
-    `public, max-age=${OG_IMAGE_BROWSER_CACHE_SECONDS}, s-maxage=${OG_IMAGE_EDGE_CACHE_SECONDS}, stale-while-revalidate=${OG_IMAGE_STALE_SECONDS}`
-  )
-
-  return result
+    return new Response(upstream.body, {
+      status: upstream.status,
+      statusText: upstream.statusText,
+      headers
+    })
+  } catch (error) {
+    console.error('[link-preview/og] proxy failed:', error)
+    return new Response('Failed to proxy image', { status: 502 })
+  }
 }
