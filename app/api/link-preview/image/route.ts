@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ONE_DAY_SECONDS, SEVEN_DAYS_SECONDS } from '@/lib/server/cache'
 import { resolveLinkPreviewImageProxy } from '@/lib/server/linkPreviewImageProxy'
-import { getHostnameFromUrl, isPrivateHostname } from '@/lib/server/networkSafety'
-import { createByteLimitedStream } from '@/lib/server/streamLimit'
 
 const FETCH_TIMEOUT_MS = 10_000
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024
@@ -82,11 +80,6 @@ export async function GET(req: NextRequest) {
 
   const { normalizedUrl, rule } = resolved
 
-  const targetHostname = getHostnameFromUrl(normalizedUrl)
-  if (isPrivateHostname(targetHostname)) {
-    return NextResponse.json({ error: 'Blocked hostname' }, { status: 400 })
-  }
-
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
 
@@ -110,11 +103,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch image' }, { status: 502 })
     }
 
-    const finalHostname = getHostnameFromUrl(response.url || normalizedUrl)
-    if (isPrivateHostname(finalHostname)) {
-      return NextResponse.json({ error: 'Blocked redirected hostname' }, { status: 400 })
-    }
-
     const contentType = (response.headers.get('content-type') || '').toLowerCase()
     if (!contentType.startsWith('image/')) {
       return NextResponse.json({ error: 'Upstream content is not an image' }, { status: 502 })
@@ -130,14 +118,10 @@ export async function GET(req: NextRequest) {
     }
 
     if (typeof contentLength === 'number') {
-      const limitedBody = createByteLimitedStream(
-        response.body,
-        MAX_IMAGE_BYTES,
-        () => controller.abort()
-      )
       return buildResponse({
         contentType,
-        body: limitedBody,
+        body: response.body,
+        contentLength,
         cacheTtlSeconds: rule.cacheTtlSeconds
       })
     }

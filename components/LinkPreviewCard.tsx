@@ -1,7 +1,7 @@
 import cn from 'classnames'
 import type { LinkPreviewData } from '@/lib/link-preview/types'
 import { getLinkPreview, normalizePreviewUrl } from '@/lib/server/linkPreview'
-import { canUseLinkPreviewOgProxy, toLinkPreviewImageProxyUrl } from '@/lib/server/linkPreviewImageProxy'
+import { toLinkPreviewImageProxyUrl } from '@/lib/server/linkPreviewImageProxy'
 
 interface LinkPreviewCardProps {
   url: string
@@ -43,15 +43,6 @@ function mergePreview(
   }
 }
 
-function buildLinkPreviewOgImageUrl(preview: LinkPreviewData): string {
-  if (!preview.image) return ''
-  if (!canUseLinkPreviewOgProxy(preview.image)) return preview.image
-
-  const params = new URLSearchParams()
-  params.set('image', preview.image)
-  return `/api/link-preview/og?${params.toString()}`
-}
-
 async function resolvePreviewData(
   normalizedUrl: string,
   fallback: LinkPreviewData,
@@ -91,7 +82,7 @@ export default async function LinkPreviewCard({ url, className, initialData }: L
   const fallback = buildFallback(normalizedUrl || url)
   const preview = await resolvePreviewData(normalizedUrl, fallback, initialData)
   const displayUrl = preview.url || normalizedUrl
-  const generatedImageUrl = displayUrl ? buildLinkPreviewOgImageUrl(preview) : ''
+  const generatedImageUrl = displayUrl ? `${preview.image || ''}`.trim() : ''
 
   if (!displayUrl) return null
 

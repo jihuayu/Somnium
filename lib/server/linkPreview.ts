@@ -2,7 +2,7 @@ import { unstable_cache } from 'next/cache'
 import { toLinkPreviewImageProxyUrl } from '@/lib/server/linkPreviewImageProxy'
 import type { LinkPreviewData, LinkPreviewMap } from '@/lib/link-preview/types'
 import { resolveLinkPreviewByAdapter, type ParsedLinkPreviewMetadata } from '@/lib/server/linkPreviewAdapters'
-import { getHostnameFromUrl, isPrivateHostname } from '@/lib/server/networkSafety'
+import { getHostnameFromUrl } from '@/lib/server/networkSafety'
 import { ONE_DAY_SECONDS } from '@/lib/server/cache'
 import { mapWithConcurrency } from '@/lib/utils/promisePool'
 
@@ -171,7 +171,6 @@ export function normalizePreviewUrl(rawUrl: string): string | null {
   try {
     const parsed = new URL(trimmed)
     if (!['http:', 'https:'].includes(parsed.protocol)) return null
-    if (isPrivateHostname(parsed.hostname.toLowerCase())) return null
     return parsed.toString()
   } catch {
     return null
@@ -204,9 +203,6 @@ async function fetchLinkPreview(normalizedUrl: string): Promise<LinkPreviewData>
 
     const resolvedUrl = response.url || normalizedUrl
     const resolvedHostname = getHostnameFromUrl(resolvedUrl)
-    if (isPrivateHostname(resolvedHostname)) {
-      return fallback
-    }
 
     const decoder = createTextDecoderForContentType(contentType)
     const html = await readTextHeadWithLimit(response, LINK_PREVIEW_MAX_HTML_BYTES, decoder)
@@ -259,10 +255,14 @@ const getCachedLinkPreview = unstable_cache(
   }
 )
 
+export async function getLinkPreviewByNormalizedUrl(normalizedUrl: string): Promise<LinkPreviewData> {
+  return getCachedLinkPreview(normalizedUrl)
+}
+
 export async function getLinkPreview(rawUrl: string): Promise<LinkPreviewData | null> {
   const normalizedUrl = normalizePreviewUrl(rawUrl)
   if (!normalizedUrl) return null
-  return getCachedLinkPreview(normalizedUrl)
+  return getLinkPreviewByNormalizedUrl(normalizedUrl)
 }
 
 export async function getLinkPreviewMap(urls: string[]): Promise<LinkPreviewMap> {

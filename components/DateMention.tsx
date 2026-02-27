@@ -89,7 +89,7 @@ function getRelativeNowSnapshot() {
 }
 
 function getRelativeNowDisabledSnapshot() {
-  return Date.now()
+  return 0
 }
 
 function getRelativeNowServerSnapshot() {

@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getLinkPreview, normalizePreviewUrl } from '@/lib/server/linkPreview'
+import {
+  getLinkPreviewByNormalizedUrl,
+  normalizePreviewUrl
+} from '@/lib/server/linkPreview'
 import { ONE_DAY_SECONDS, SEVEN_DAYS_SECONDS } from '@/lib/server/cache'
 
 const PREVIEW_BROWSER_CACHE_SECONDS = SEVEN_DAYS_SECONDS
@@ -12,11 +15,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Missing query param: url' }, { status: 400 })
   }
 
-  if (!normalizePreviewUrl(rawUrl)) {
+  const normalizedUrl = normalizePreviewUrl(rawUrl)
+  if (!normalizedUrl) {
     return NextResponse.json({ error: 'Invalid or blocked URL' }, { status: 400 })
   }
 
-  const data = await getLinkPreview(rawUrl)
+  const data = await getLinkPreviewByNormalizedUrl(normalizedUrl)
   if (!data) {
     return NextResponse.json({ error: 'Invalid or blocked URL' }, { status: 400 })
   }
