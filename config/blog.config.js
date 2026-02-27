@@ -1,9 +1,9 @@
 const BLOG = {
-  title: '\u6d6e\u751f\u7eaa\u68a6',
-  author: '\u7eaa\u534e\u88d5',
+  title: '浮生纪梦',
+  author: '纪华裕',
   email: 'jihuayu123@gmail.com',
   link: 'https://jihuayu.com',
-  description: '\u5927\u68a6\u4e00\u573a\uff0c\u6d6e\u751f\u4eca\u6b47',
+  description: '大梦一场，浮生今歇',
   lang: 'zh-CN',
   timezone: 'Asia/Shanghai',
   appearance: 'auto',
@@ -21,8 +21,8 @@ const BLOG = {
   notionDateMention: {
     display: 'relative',
     includeTime: 'always',
-    absoluteDateFormat: 'YYYY\u5e74M\u6708D\u65e5',
-    absoluteDateTimeFormat: 'YYYY\u5e74M\u6708D\u65e5 HH:mm:ss',
+    absoluteDateFormat: 'YYYY年M月D日',
+    absoluteDateTimeFormat: 'YYYY年M月D日 HH:mm:ss',
     relativeStyle: 'short'
   },
   seo: {
