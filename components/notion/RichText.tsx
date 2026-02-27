@@ -66,6 +66,36 @@ function isUrlMention(item: any): boolean {
   return isLinkPreviewMention(item) || isLinkMention(item)
 }
 
+const ANNOTATION_COLOR_CLASS_MAP: Record<string, string> = {
+  gray: 'notion-color-gray',
+  brown: 'notion-color-brown',
+  orange: 'notion-color-orange',
+  yellow: 'notion-color-yellow',
+  green: 'notion-color-green',
+  teal: 'notion-color-green',
+  blue: 'notion-color-blue',
+  purple: 'notion-color-purple',
+  pink: 'notion-color-pink',
+  red: 'notion-color-red',
+  gray_background: 'notion-color-gray-bg',
+  brown_background: 'notion-color-brown-bg',
+  orange_background: 'notion-color-orange-bg',
+  yellow_background: 'notion-color-yellow-bg',
+  green_background: 'notion-color-green-bg',
+  teal_background: 'notion-color-green-bg',
+  blue_background: 'notion-color-blue-bg',
+  purple_background: 'notion-color-purple-bg',
+  pink_background: 'notion-color-pink-bg',
+  red_background: 'notion-color-red-bg'
+}
+
+function getAnnotationColorClass(color: unknown): string {
+  if (typeof color !== 'string') return ''
+  const normalized = color.trim().toLowerCase()
+  if (!normalized || normalized === 'default') return ''
+  return ANNOTATION_COLOR_CLASS_MAP[normalized] || ''
+}
+
 const DATE_MENTION_DEFAULTS = {
   display: 'relative' as DateMentionDisplayMode,
   includeTime: 'always' as DateMentionIncludeTimeMode,
@@ -210,6 +240,7 @@ export function RichText({ richText = [], linkPreviewMap = {} }: RichTextProps) 
           : item?.plain_text || ''
         const href = getRichTextLink(item)
         const annotations = item?.annotations || {}
+        const colorClassName = getAnnotationColorClass(annotations.color)
 
         const content = (
           <span
@@ -218,6 +249,7 @@ export function RichText({ richText = [], linkPreviewMap = {} }: RichTextProps) 
               annotations.italic && 'italic',
               annotations.strikethrough && 'line-through',
               annotations.underline && 'underline',
+              colorClassName,
               annotations.code &&
                 'font-mono text-[0.9em] px-1 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800'
             )}

@@ -16,6 +16,7 @@
   --notion-orange: rgb(217, 115, 13);
   --notion-yellow: rgb(203, 145, 47);
   --notion-teal: rgb(68, 131, 97);
+  --notion-green: var(--notion-teal);
   --notion-blue: rgb(51, 126, 169);
   --notion-purple: rgb(144, 101, 176);
   --notion-pink: rgb(193, 76, 138);
@@ -26,6 +27,7 @@
   --notion-orange_background: rgb(251, 236, 221);
   --notion-yellow_background: rgb(251, 243, 219);
   --notion-teal_background: rgb(237, 243, 236);
+  --notion-green_background: var(--notion-teal_background);
   --notion-blue_background: rgb(231, 243, 248);
   --notion-purple_background: rgba(244, 240, 247, 0.8);
   --notion-pink_background: rgba(249, 238, 243, 0.8);
@@ -102,6 +104,41 @@
 .notion-page-link {
   color: inherit;
 }
+
+.notion-color-gray { color: var(--notion-gray); }
+.notion-color-brown { color: var(--notion-brown); }
+.notion-color-orange { color: var(--notion-orange); }
+.notion-color-yellow { color: var(--notion-yellow); }
+.notion-color-green { color: var(--notion-green); }
+.notion-color-blue { color: var(--notion-blue); }
+.notion-color-purple { color: var(--notion-purple); }
+.notion-color-pink { color: var(--notion-pink); }
+.notion-color-red { color: var(--notion-red); }
+
+.notion-color-gray-bg,
+.notion-color-brown-bg,
+.notion-color-orange-bg,
+.notion-color-yellow-bg,
+.notion-color-green-bg,
+.notion-color-blue-bg,
+.notion-color-purple-bg,
+.notion-color-pink-bg,
+.notion-color-red-bg {
+  border-radius: 0.2em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  padding: 0.03em 0.2em;
+}
+
+.notion-color-gray-bg { background-color: var(--notion-gray_background); }
+.notion-color-brown-bg { background-color: var(--notion-brown_background); }
+.notion-color-orange-bg { background-color: var(--notion-orange_background); }
+.notion-color-yellow-bg { background-color: var(--notion-yellow_background); }
+.notion-color-green-bg { background-color: var(--notion-green_background); }
+.notion-color-blue-bg { background-color: var(--notion-blue_background); }
+.notion-color-purple-bg { background-color: var(--notion-purple_background); }
+.notion-color-pink-bg { background-color: var(--notion-pink_background); }
+.notion-color-red-bg { background-color: var(--notion-red_background); }
 
 .notion-url-mention {
   display: inline-flex;
