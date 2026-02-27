@@ -9,6 +9,29 @@ interface LinkPreviewCardProps {
   initialData?: LinkPreviewData
 }
 
+const LINK_PREVIEW_OG_PROXY_WHITELIST = [
+  'douban.com',
+  'doubanio.com'
+] as const
+
+function isHostInOgProxyWhitelist(hostname: string): boolean {
+  const host = `${hostname || ''}`.trim().toLowerCase()
+  if (!host) return false
+  return LINK_PREVIEW_OG_PROXY_WHITELIST.some(
+    allowed => host === allowed || host.endsWith(`.${allowed}`)
+  )
+}
+
+function shouldUseLinkPreviewOgProxy(targetUrl: string): boolean {
+  if (!targetUrl) return false
+  try {
+    const parsed = new URL(targetUrl)
+    return isHostInOgProxyWhitelist(parsed.hostname)
+  } catch {
+    return false
+  }
+}
+
 function buildFallback(url: string): LinkPreviewData {
   if (!url) {
     return { url: '', hostname: '', title: '', description: '', image: '', icon: '' }
@@ -45,6 +68,9 @@ function mergePreview(
 
 function buildLinkPreviewOgImageUrl(preview: LinkPreviewData, fallbackUrl: string): string {
   if (!preview.image) return ''
+  const targetUrl = preview.url || fallbackUrl
+  if (!shouldUseLinkPreviewOgProxy(targetUrl)) return preview.image
+
   const params = new URLSearchParams()
   params.set('image', preview.image)
   params.set('url', preview.url || fallbackUrl)

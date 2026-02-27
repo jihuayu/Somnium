@@ -11,7 +11,7 @@ import { buildPageLinkMap } from '@/lib/notion/pageLinkMap'
 import { config } from '@/lib/server/config'
 import SlugPostClient from './slug-client'
 
-export const revalidate = 1
+export const revalidate = 60
 const getPosts = cache(async () => getAllPosts({ includePages: true }))
 
 export async function generateStaticParams() {

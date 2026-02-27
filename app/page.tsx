@@ -4,7 +4,7 @@ import BlogPostServer from '@/components/BlogPostServer'
 import Pagination from '@/components/Pagination'
 import { getAllPosts } from '@/lib/notion'
 
-export const revalidate = 1
+export const revalidate = 60
 
 export default async function HomePage() {
   const posts = await getAllPosts({ includePages: false })

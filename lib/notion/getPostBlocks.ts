@@ -1,6 +1,9 @@
 import api from '@/lib/server/notion-api'
 import { unstable_cache } from 'next/cache'
 
+const NOTION_BLOCK_FETCH_CONCURRENCY = 6
+const POST_BLOCKS_CACHE_REVALIDATE_SECONDS = 30
+
 export interface TocItem {
   id: string
   text: string
@@ -13,6 +16,10 @@ export interface NotionDocument {
   blocksById: Record<string, any>
   childrenById: Record<string, string[]>
   toc: TocItem[]
+}
+
+interface BuildNotionDocumentOptions {
+  includeToc?: boolean
 }
 
 function getBlockRichText(block: any): any[] {
@@ -62,26 +69,84 @@ function buildTableOfContents({ rootIds, blocksById, childrenById }: {
   return toc
 }
 
-async function buildDocument(pageId: string): Promise<NotionDocument> {
+async function collectDocumentBlocks(pageId: string): Promise<{
+  blocksById: Record<string, any>
+  childrenById: Record<string, string[]>
+}> {
   const blocksById: Record<string, any> = {}
   const childrenById: Record<string, string[]> = {}
+  const pendingParentIds: string[] = [pageId]
+  const visitedParents = new Set<string>()
+  let inFlight = 0
 
-  async function walk(parentId: string) {
-    const children = await api.listAllBlockChildren(parentId)
-    childrenById[parentId] = children.map((block: any) => block.id)
+  await new Promise<void>((resolve, reject) => {
+    let settled = false
 
-    for (const block of children) {
-      blocksById[block.id] = block
-      if (block.has_children) {
-        await walk(block.id)
+    const schedule = () => {
+      if (settled) return
+
+      if (pendingParentIds.length === 0 && inFlight === 0) {
+        settled = true
+        resolve()
+        return
+      }
+
+      while (inFlight < NOTION_BLOCK_FETCH_CONCURRENCY && pendingParentIds.length > 0) {
+        const parentId = pendingParentIds.shift()
+        if (!parentId || visitedParents.has(parentId)) continue
+
+        visitedParents.add(parentId)
+        inFlight += 1
+
+        api.listAllBlockChildren(parentId)
+          .then((children) => {
+            childrenById[parentId] = children
+              .map((block: any) => `${block?.id || ''}`.trim())
+              .filter(Boolean)
+
+            for (const block of children) {
+              const blockId = `${block?.id || ''}`.trim()
+              if (!blockId) continue
+
+              blocksById[blockId] = block
+              if (block.has_children && !visitedParents.has(blockId)) {
+                pendingParentIds.push(blockId)
+              }
+            }
+          })
+          .catch((error) => {
+            if (settled) return
+            settled = true
+            reject(error)
+          })
+          .finally(() => {
+            inFlight -= 1
+            schedule()
+          })
       }
     }
-  }
 
-  await walk(pageId)
+    schedule()
+  })
+
+  return {
+    blocksById,
+    childrenById
+  }
+}
+
+export async function buildNotionDocument(
+  pageId: string,
+  { includeToc = true }: BuildNotionDocumentOptions = {}
+): Promise<NotionDocument | null> {
+  if (!pageId) return null
+
+  const { blocksById, childrenById } = await collectDocumentBlocks(pageId)
 
   const rootIds = childrenById[pageId] || []
-  const toc = buildTableOfContents({ rootIds, blocksById, childrenById })
+  const toc = includeToc
+    ? buildTableOfContents({ rootIds, blocksById, childrenById })
+    : []
 
   return {
     pageId,
@@ -93,9 +158,9 @@ async function buildDocument(pageId: string): Promise<NotionDocument> {
 }
 
 const getCachedDocument = unstable_cache(
-  async (pageId: string) => buildDocument(pageId),
+  async (pageId: string) => buildNotionDocument(pageId, { includeToc: true }),
   ['notion-post-blocks'],
-  { revalidate: 30, tags: ['notion-post-blocks'] }
+  { revalidate: POST_BLOCKS_CACHE_REVALIDATE_SECONDS, tags: ['notion-post-blocks'] }
 )
 
 export async function getPostBlocks(id: string): Promise<NotionDocument | null> {

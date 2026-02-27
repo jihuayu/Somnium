@@ -3,6 +3,7 @@ import net from 'node:net'
 import { resolveLinkPreviewImageProxy } from '@/lib/server/linkPreviewImageProxy'
 
 const FETCH_TIMEOUT_MS = 10_000
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024
 
 function getHostname(url: string): string {
   try { return new URL(url).hostname.toLowerCase() } catch { return '' }
@@ -33,22 +34,36 @@ function isPrivateHostname(hostname: string): boolean {
 
 function buildResponse({
   contentType,
-  bytes,
-  cacheTtlSeconds
+  body,
+  cacheTtlSeconds,
+  contentLength
 }: {
   contentType: string
-  bytes: Uint8Array
+  body: ReadableStream<Uint8Array>
   cacheTtlSeconds: number
+  contentLength?: number
 }) {
   const browserMaxAge = Math.min(60 * 60, cacheTtlSeconds)
-  return new NextResponse(Buffer.from(bytes), {
+  const headers: Record<string, string> = {
+    'Content-Type': contentType,
+    'Cache-Control': `public, max-age=${browserMaxAge}, s-maxage=${cacheTtlSeconds}, stale-while-revalidate=86400`
+  }
+
+  if (typeof contentLength === 'number' && Number.isFinite(contentLength) && contentLength >= 0) {
+    headers['Content-Length'] = String(contentLength)
+  }
+
+  return new NextResponse(body, {
     status: 200,
-    headers: {
-      'Content-Type': contentType,
-      'Content-Length': String(bytes.byteLength),
-      'Cache-Control': `public, max-age=${browserMaxAge}, s-maxage=${cacheTtlSeconds}, stale-while-revalidate=86400`
-    }
+    headers
   })
+}
+
+function parseContentLength(rawValue: string | null): number | undefined {
+  if (!rawValue) return undefined
+  const value = Number(rawValue)
+  if (!Number.isFinite(value) || value < 0) return undefined
+  return Math.floor(value)
 }
 
 export async function GET(req: NextRequest) {
@@ -98,8 +113,21 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Upstream content is not an image' }, { status: 502 })
     }
 
-    const bytes = new Uint8Array(await response.arrayBuffer())
-    return buildResponse({ contentType, bytes, cacheTtlSeconds: rule.cacheTtlSeconds })
+    const contentLength = parseContentLength(response.headers.get('content-length'))
+    if (typeof contentLength === 'number' && contentLength > MAX_IMAGE_BYTES) {
+      return NextResponse.json({ error: 'Upstream image is too large' }, { status: 413 })
+    }
+
+    if (!response.body) {
+      return NextResponse.json({ error: 'Failed to read image response' }, { status: 502 })
+    }
+
+    return buildResponse({
+      contentType,
+      body: response.body,
+      contentLength,
+      cacheTtlSeconds: rule.cacheTtlSeconds
+    })
   } catch {
     return NextResponse.json({ error: 'Failed to fetch image' }, { status: 502 })
   } finally {

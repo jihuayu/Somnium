@@ -1,8 +1,7 @@
 import { Feed } from 'feed'
 import { unstable_cache } from 'next/cache'
 import { config } from '@/lib/server/config'
-import api from '@/lib/server/notion-api'
-import type { NotionDocument } from '@/lib/notion/getPostBlocks'
+import { buildNotionDocument, type NotionDocument } from '@/lib/notion/getPostBlocks'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
 
 const FEED_POST_BLOCKS_CACHE_SECONDS = 60 * 60 * 24
@@ -32,37 +31,8 @@ function buildUrl(baseUrl: string, path?: string): string {
   return suffix ? `${root}/${suffix}` : root
 }
 
-async function buildFeedDocument(pageId: string): Promise<NotionDocument | null> {
-  if (!pageId) return null
-
-  const blocksById: Record<string, any> = {}
-  const childrenById: Record<string, string[]> = {}
-
-  async function walk(parentId: string) {
-    const children = await api.listAllBlockChildren(parentId)
-    childrenById[parentId] = children.map((block: any) => block.id)
-
-    for (const block of children) {
-      blocksById[block.id] = block
-      if (block.has_children) {
-        await walk(block.id)
-      }
-    }
-  }
-
-  await walk(pageId)
-
-  return {
-    pageId,
-    rootIds: childrenById[pageId] || [],
-    blocksById,
-    childrenById,
-    toc: []
-  }
-}
-
 const getCachedFeedDocument = unstable_cache(
-  async (postId: string) => buildFeedDocument(postId),
+  async (postId: string) => buildNotionDocument(postId, { includeToc: false }),
   ['feed-post-blocks-v3'],
   { revalidate: FEED_POST_BLOCKS_CACHE_SECONDS, tags: ['feed-post-blocks'] }
 )
