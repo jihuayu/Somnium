@@ -2,7 +2,7 @@ import { unstable_cache } from 'next/cache'
 import { toLinkPreviewImageProxyUrl } from '@/lib/server/linkPreviewImageProxy'
 import type { LinkPreviewData, LinkPreviewMap } from '@/lib/link-preview/types'
 import { resolveLinkPreviewByAdapter, type ParsedLinkPreviewMetadata } from '@/lib/server/linkPreviewAdapters'
-import { getHostnameFromUrl } from '@/lib/server/networkSafety'
+import { getHostnameFromUrl } from '@/lib/server/url'
 import { ONE_DAY_SECONDS } from '@/lib/server/cache'
 import { mapWithConcurrency } from '@/lib/utils/promisePool'
 

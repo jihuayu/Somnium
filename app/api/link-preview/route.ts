@@ -17,12 +17,12 @@ export async function GET(req: NextRequest) {
 
   const normalizedUrl = normalizePreviewUrl(rawUrl)
   if (!normalizedUrl) {
-    return NextResponse.json({ error: 'Invalid or blocked URL' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid URL' }, { status: 400 })
   }
 
   const data = await getLinkPreviewByNormalizedUrl(normalizedUrl)
   if (!data) {
-    return NextResponse.json({ error: 'Invalid or blocked URL' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid URL' }, { status: 400 })
   }
 
   return NextResponse.json(

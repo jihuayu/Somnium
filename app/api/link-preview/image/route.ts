@@ -10,21 +10,15 @@ const IMAGE_STALE_SECONDS = ONE_DAY_SECONDS
 function buildResponse({
   contentType,
   body,
-  cacheTtlSeconds,
-  contentLength
+  cacheTtlSeconds
 }: {
   contentType: string
   body: BodyInit
   cacheTtlSeconds: number
-  contentLength?: number
 }) {
   const headers: Record<string, string> = {
     'Content-Type': contentType,
     'Cache-Control': `public, max-age=${IMAGE_BROWSER_CACHE_SECONDS}, s-maxage=${cacheTtlSeconds}, stale-while-revalidate=${IMAGE_STALE_SECONDS}`
-  }
-
-  if (typeof contentLength === 'number' && Number.isFinite(contentLength) && contentLength >= 0) {
-    headers['Content-Length'] = String(contentLength)
   }
 
   return new NextResponse(body, {
@@ -40,35 +34,24 @@ function parseContentLength(rawValue: string | null): number | undefined {
   return Math.floor(value)
 }
 
-async function readImageBodyWithLimit(
+function createByteLimitedStream(
   body: ReadableStream<Uint8Array>,
-  maxBytes: number
-): Promise<Uint8Array | null> {
-  const reader = body.getReader()
-  const chunks: Uint8Array[] = []
+  maxBytes: number,
+  onExceeded: () => void
+): ReadableStream<Uint8Array> {
   let total = 0
-
-  try {
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      if (!value || value.byteLength === 0) continue
-
-      total += value.byteLength
-      if (total > maxBytes) return null
-      chunks.push(value)
+  const limiter = new TransformStream<Uint8Array, Uint8Array>({
+    transform(chunk, streamController) {
+      total += chunk.byteLength
+      if (total > maxBytes) {
+        onExceeded()
+        streamController.error(new Error('Upstream image is too large'))
+        return
+      }
+      streamController.enqueue(chunk)
     }
-  } finally {
-    try { await reader.cancel() } catch {}
-  }
-
-  const merged = new Uint8Array(total)
-  let offset = 0
-  for (const chunk of chunks) {
-    merged.set(chunk, offset)
-    offset += chunk.byteLength
-  }
-  return merged
+  })
+  return body.pipeThrough(limiter)
 }
 
 export async function GET(req: NextRequest) {
@@ -117,28 +100,15 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to read image response' }, { status: 502 })
     }
 
-    if (typeof contentLength === 'number') {
-      return buildResponse({
-        contentType,
-        body: response.body,
-        contentLength,
-        cacheTtlSeconds: rule.cacheTtlSeconds
-      })
-    }
-
-    const imageBytes = await readImageBodyWithLimit(response.body, MAX_IMAGE_BYTES)
-    if (!imageBytes) {
-      return NextResponse.json({ error: 'Upstream image is too large' }, { status: 413 })
-    }
-    const imageBuffer = imageBytes.buffer.slice(
-      imageBytes.byteOffset,
-      imageBytes.byteOffset + imageBytes.byteLength
-    ) as ArrayBuffer
+    const limitedBody = createByteLimitedStream(
+      response.body,
+      MAX_IMAGE_BYTES,
+      () => controller.abort()
+    )
 
     return buildResponse({
       contentType,
-      body: new Blob([imageBuffer]),
-      contentLength: imageBytes.byteLength,
+      body: limitedBody,
       cacheTtlSeconds: rule.cacheTtlSeconds
     })
   } catch {
