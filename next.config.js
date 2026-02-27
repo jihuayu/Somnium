@@ -26,7 +26,6 @@ module.exports = {
       }
     ]
   },
-  transpilePackages: ['dayjs'],
   turbopack: {
     root: path.resolve(__dirname),
     resolveAlias: {

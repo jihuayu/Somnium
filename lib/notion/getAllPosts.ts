@@ -28,13 +28,13 @@ async function fetchAllPosts(includePages: boolean): Promise<PostData[]> {
 const getCachedPostsOnly = unstable_cache(
   async () => fetchAllPosts(false),
   ['notion-posts-only'],
-  { revalidate: POSTS_CACHE_REVALIDATE_SECONDS, tags: ['notion-posts'] }
+  { revalidate: POSTS_CACHE_REVALIDATE_SECONDS, tags: ['notion-posts', 'notion-feed-posts'] }
 )
 
 const getCachedPostsAndPages = unstable_cache(
   async () => fetchAllPosts(true),
   ['notion-posts-and-pages'],
-  { revalidate: POSTS_CACHE_REVALIDATE_SECONDS, tags: ['notion-posts'] }
+  { revalidate: POSTS_CACHE_REVALIDATE_SECONDS, tags: ['notion-posts', 'notion-feed-posts'] }
 )
 
 /**

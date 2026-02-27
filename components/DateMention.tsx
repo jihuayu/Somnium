@@ -1,17 +1,12 @@
 'use client'
 
 import {
-  useCallback,
-  useEffect,
   useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-  type CSSProperties,
-  type FocusEvent
+  useSyncExternalStore
 } from 'react'
 import { createPortal } from 'react-dom'
 import dayjs from '@/lib/dayjs'
+import { useFloatingHoverCard } from '@/components/hooks/useFloatingHoverCard'
 import 'dayjs/locale/zh-cn'
 
 export type DateMentionDisplayMode = 'notion' | 'relative' | 'absolute'
@@ -165,10 +160,6 @@ function joinRange(startText: string, endText: string): string {
   return `${left} -> ${right}`
 }
 
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value))
-}
-
 function formatAbsoluteText(
   value: dayjs.Dayjs | null,
   showTime: boolean,
@@ -200,20 +191,9 @@ export default function DateMention({
   relativeStyle,
   fallbackText = ''
 }: DateMentionProps) {
-  const triggerRef = useRef<HTMLSpanElement | null>(null)
-  const cardRef = useRef<HTMLDivElement | null>(null)
-  const closeTimerRef = useRef<number | null>(null)
-  const updateRafRef = useRef<number | null>(null)
-  const [open, setOpen] = useState(false)
   const primaryMode = displayMode === 'notion' ? 'relative' : displayMode
   const secondaryMode = primaryMode === 'relative' ? 'absolute' : 'relative'
-  const nowTs = useRelativeNow(primaryMode === 'relative' || open)
-  const [floatingStyle, setFloatingStyle] = useState<CSSProperties>({
-    position: 'fixed',
-    left: DATE_MENTION_FLOATING_CONFIG.initialOffset,
-    top: DATE_MENTION_FLOATING_CONFIG.initialOffset,
-    visibility: 'hidden'
-  })
+  const nowTs = useRelativeNow(true)
 
   // Keep dependency in API surface for compatibility; dayjs relativeTime does not use style variants.
   void relativeStyle
@@ -247,116 +227,23 @@ export default function DateMention({
   const secondaryText = ensureLeadingAt(secondaryRaw)
   const hasHoverCard = !!secondaryText && secondaryText !== primaryText
   const primaryBodyText = stripLeadingAt(primaryText)
-
-  const clearCloseTimer = () => {
-    if (closeTimerRef.current === null) return
-    window.clearTimeout(closeTimerRef.current)
-    closeTimerRef.current = null
-  }
-
-  const clearUpdateRaf = () => {
-    if (updateRafRef.current === null) return
-    window.cancelAnimationFrame(updateRafRef.current)
-    updateRafRef.current = null
-  }
-
-  const openCard = () => {
-    if (!hasHoverCard) return
-    clearCloseTimer()
-    setOpen(true)
-  }
-
-  const scheduleClose = () => {
-    clearCloseTimer()
-    closeTimerRef.current = window.setTimeout(() => {
-      setOpen(false)
-    }, DATE_MENTION_FLOATING_CONFIG.closeDelayMs)
-  }
-
-  const updatePosition = useCallback(() => {
-    if (!open || !hasHoverCard || !triggerRef.current || !cardRef.current) return
-
-    const triggerRect = triggerRef.current.getBoundingClientRect()
-    const cardElement = cardRef.current
-
-    const viewportPadding = DATE_MENTION_FLOATING_CONFIG.viewportPadding
-    const gap = DATE_MENTION_FLOATING_CONFIG.gap
-    const viewportWidth = window.innerWidth
-    const viewportHeight = window.innerHeight
-
-    const width = cardElement.offsetWidth || DATE_MENTION_FLOATING_CONFIG.fallbackWidth
-    const height = cardElement.offsetHeight || DATE_MENTION_FLOATING_CONFIG.fallbackHeight
-    const canPlaceBottom = triggerRect.bottom + gap + height + viewportPadding <= viewportHeight
-    const canPlaceTop = triggerRect.top - gap - height >= viewportPadding
-    const placeTop = !canPlaceBottom && canPlaceTop
-
-    let left = clamp(triggerRect.left, viewportPadding, viewportWidth - width - viewportPadding)
-    if (!Number.isFinite(left)) left = viewportPadding
-
-    let top = placeTop ? triggerRect.top - gap - height : triggerRect.bottom + gap
-    top = clamp(top, viewportPadding, viewportHeight - height - viewportPadding)
-    if (!Number.isFinite(top)) top = viewportPadding
-
-    setFloatingStyle(prev => {
-      if (
-        prev.position === 'fixed' &&
-        prev.left === left &&
-        prev.top === top &&
-        prev.visibility === 'visible'
-      ) {
-        return prev
-      }
-      return {
-        position: 'fixed',
-        left,
-        top,
-        visibility: 'visible'
-      }
-    })
-  }, [open, hasHoverCard])
-
-  const scheduleUpdatePosition = useCallback(() => {
-    clearUpdateRaf()
-    updateRafRef.current = window.requestAnimationFrame(() => {
-      updateRafRef.current = null
-      updatePosition()
-    })
-  }, [updatePosition])
-
-  useEffect(() => {
-    if (!open || !hasHoverCard) return
-
-    scheduleUpdatePosition()
-    const handleViewportChange = () => scheduleUpdatePosition()
-    const observer = cardRef.current
-      ? new ResizeObserver(() => scheduleUpdatePosition())
-      : null
-
-    if (cardRef.current && observer) observer.observe(cardRef.current)
-
-    window.addEventListener('resize', handleViewportChange)
-    window.addEventListener('scroll', handleViewportChange, true)
-
-    return () => {
-      clearUpdateRaf()
-      observer?.disconnect()
-      window.removeEventListener('resize', handleViewportChange)
-      window.removeEventListener('scroll', handleViewportChange, true)
-    }
-  }, [open, hasHoverCard, scheduleUpdatePosition])
-
-  useEffect(() => {
-    return () => {
-      clearCloseTimer()
-      clearUpdateRaf()
-    }
-  }, [])
-
-  const handleBlur = (event: FocusEvent<HTMLSpanElement | HTMLDivElement>) => {
-    const nextTarget = event.relatedTarget as Node | null
-    if (nextTarget && (triggerRef.current?.contains(nextTarget) || cardRef.current?.contains(nextTarget))) return
-    scheduleClose()
-  }
+  const {
+    triggerRef,
+    cardRef,
+    open,
+    floatingStyle,
+    openCard,
+    scheduleClose,
+    handleBlur
+  } = useFloatingHoverCard<HTMLSpanElement, HTMLDivElement>({
+    enabled: hasHoverCard,
+    closeDelayMs: DATE_MENTION_FLOATING_CONFIG.closeDelayMs,
+    viewportPadding: DATE_MENTION_FLOATING_CONFIG.viewportPadding,
+    gap: DATE_MENTION_FLOATING_CONFIG.gap,
+    initialOffset: DATE_MENTION_FLOATING_CONFIG.initialOffset,
+    fallbackWidth: DATE_MENTION_FLOATING_CONFIG.fallbackWidth,
+    fallbackHeight: DATE_MENTION_FLOATING_CONFIG.fallbackHeight
+  })
 
   const hoverCard = open && hasHoverCard
     ? createPortal(

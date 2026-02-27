@@ -1,13 +1,17 @@
+'use client'
+
 import cn from 'classnames'
 import type { LinkPreviewData } from '@/lib/link-preview/types'
-import { normalizePreviewUrl } from '@/lib/server/linkPreview'
-import { toLinkPreviewImageProxyUrl } from '@/lib/server/linkPreviewImageProxy'
+import { normalizePreviewUrl } from '@/lib/link-preview/normalize'
+import { useEffect, useState } from 'react'
 
 interface LinkPreviewCardProps {
   url: string
   className?: string
   initialData?: LinkPreviewData
 }
+
+const previewCache = new Map<string, LinkPreviewData>()
 
 function buildFallback(url: string): LinkPreviewData {
   if (!url) {
@@ -24,7 +28,7 @@ function buildFallback(url: string): LinkPreviewData {
       title: hostname,
       description: '',
       image: '',
-      icon: toLinkPreviewImageProxyUrl(iconSource)
+      icon: iconSource
     }
   } catch {
     return { url, hostname: '', title: url, description: '', image: '', icon: '' }
@@ -77,7 +81,79 @@ export function LinkPreviewCardFallback({ className }: { className?: string }) {
 export default function LinkPreviewCard({ url, className, initialData }: LinkPreviewCardProps) {
   const normalizedUrl = normalizePreviewUrl(url) || ''
   const fallback = buildFallback(normalizedUrl || url)
-  const preview = resolvePreviewData(normalizedUrl, fallback, initialData)
+  const fallbackUrl = fallback.url
+  const fallbackHostname = fallback.hostname
+  const fallbackTitle = fallback.title
+  const fallbackDescription = fallback.description
+  const fallbackImage = fallback.image
+  const fallbackIcon = fallback.icon
+  const initialTitle = `${initialData?.title || ''}`.trim()
+  const initialHasMedia = !!(initialData?.image || initialData?.icon || initialData?.description)
+  const [remotePreviewState, setRemotePreviewState] = useState<{ url: string, data: LinkPreviewData | null }>({
+    url: '',
+    data: null
+  })
+  const cachedPreview = normalizedUrl ? previewCache.get(normalizedUrl) || null : null
+  const remotePreview = remotePreviewState.url === normalizedUrl ? remotePreviewState.data : null
+  const preview = resolvePreviewData(
+    normalizedUrl,
+    {
+      url: fallbackUrl,
+      hostname: fallbackHostname,
+      title: fallbackTitle,
+      description: fallbackDescription,
+      image: fallbackImage,
+      icon: fallbackIcon
+    },
+    (remotePreview || cachedPreview || initialData || null) as LinkPreviewData | undefined
+  )
+
+  useEffect(() => {
+    if (!normalizedUrl) return
+    if (initialHasMedia && initialTitle && initialTitle !== fallbackTitle) return
+
+    const cached = previewCache.get(normalizedUrl)
+    if (cached) return
+
+    const controller = new AbortController()
+    fetch(`/api/link-preview?url=${encodeURIComponent(normalizedUrl)}`, {
+      method: 'GET',
+      signal: controller.signal
+    })
+      .then(async response => {
+        if (!response.ok) return null
+        return response.json().catch(() => null)
+      })
+      .then(payload => {
+        if (!payload || typeof payload !== 'object') return
+        const next = mergePreview(normalizedUrl, {
+          url: fallbackUrl,
+          hostname: fallbackHostname,
+          title: fallbackTitle,
+          description: fallbackDescription,
+          image: fallbackImage,
+          icon: fallbackIcon
+        }, payload as Partial<LinkPreviewData>)
+        previewCache.set(normalizedUrl, next)
+        setRemotePreviewState({ url: normalizedUrl, data: next })
+      })
+      .catch(() => {
+        if (controller.signal.aborted) return
+      })
+
+    return () => controller.abort()
+  }, [
+    fallbackDescription,
+    fallbackHostname,
+    fallbackIcon,
+    fallbackImage,
+    fallbackTitle,
+    fallbackUrl,
+    initialHasMedia,
+    initialTitle,
+    normalizedUrl
+  ])
+
   const displayUrl = preview.url || normalizedUrl
   const generatedImageUrl = displayUrl ? `${preview.image || ''}`.trim() : ''
 

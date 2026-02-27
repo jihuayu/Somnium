@@ -1,6 +1,7 @@
 import api from '@/lib/server/notion-api'
 import { ONE_DAY_SECONDS } from '@/lib/server/cache'
 import { unstable_cache } from 'next/cache'
+import { getPlainTextFromRichText } from '@/lib/notion/render-utils'
 
 const NOTION_BLOCK_FETCH_CONCURRENCY = 6
 const POST_BLOCKS_CACHE_REVALIDATE_SECONDS = ONE_DAY_SECONDS
@@ -30,10 +31,6 @@ function getBlockRichText(block: any): any[] {
   return payload.rich_text || []
 }
 
-function getPlainTextFromRichText(richText: any[] = []): string {
-  return richText.map(item => item?.plain_text || '').join('').trim()
-}
-
 function buildTableOfContents({ rootIds, blocksById, childrenById }: {
   rootIds: string[]
   blocksById: Record<string, any>
@@ -51,8 +48,8 @@ function buildTableOfContents({ rootIds, blocksById, childrenById }: {
       const block = blocksById[blockId]
       if (!block) continue
 
-      if (Object.hasOwn(headingLevel, block.type)) {
-        const text = getPlainTextFromRichText(getBlockRichText(block))
+      if (Object.prototype.hasOwnProperty.call(headingLevel, block.type)) {
+        const text = getPlainTextFromRichText(getBlockRichText(block), true)
         if (text) {
           toc.push({
             id: block.id,

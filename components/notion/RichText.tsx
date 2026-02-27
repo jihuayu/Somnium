@@ -9,9 +9,7 @@ import DateMention, {
 } from '@/components/DateMention'
 import type { LinkPreviewMap } from '@/lib/link-preview/types'
 
-export function getPlainTextFromRichText(richText: any[] = []): string {
-  return richText.map(item => item?.plain_text || '').join('')
-}
+export { getPlainTextFromRichText } from '@/lib/notion/render-utils'
 
 export function normalizeRichTextUrl(url: string | null): string {
   if (!url) return ''

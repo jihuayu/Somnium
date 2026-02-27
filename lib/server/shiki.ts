@@ -73,18 +73,30 @@ const SHIKI_LANGUAGE_SET = new Set<string>(SHIKI_LANGUAGES as string[])
 const SHIKI_EXTENDED_LANGUAGE_SET = new Set<string>(SHIKI_EXTENDED_LANGUAGES as string[])
 const SHIKI_HIGHLIGHT_CACHE_MAX_ENTRIES = 512
 
-let highlighterPromise: Promise<Highlighter> | null = null
+let baseHighlighterPromise: Promise<Highlighter> | null = null
+let extendedHighlighterPromise: Promise<Highlighter> | null = null
 const highlightHtmlCache = new Map<string, { html: string, language: string }>()
 
-function getHighlighter(): Promise<Highlighter> {
-  if (!highlighterPromise) {
-    highlighterPromise = createHighlighter({
+function getBaseHighlighter(): Promise<Highlighter> {
+  if (!baseHighlighterPromise) {
+    baseHighlighterPromise = createHighlighter({
+      themes: ['github-light', 'github-dark'],
+      langs: [...SHIKI_LANGUAGES]
+    })
+  }
+
+  return baseHighlighterPromise
+}
+
+function getExtendedHighlighter(): Promise<Highlighter> {
+  if (!extendedHighlighterPromise) {
+    extendedHighlighterPromise = createHighlighter({
       themes: ['github-light', 'github-dark'],
       langs: [...SHIKI_LANGUAGES, ...SHIKI_EXTENDED_LANGUAGES]
     })
   }
 
-  return highlighterPromise
+  return extendedHighlighterPromise
 }
 
 export function normalizeCodeLanguage(rawLanguage: string): string {
@@ -158,7 +170,9 @@ export async function highlightCodeToHtml(source: string, rawLanguage: string): 
   }
 
   try {
-    const highlighter = await getHighlighter()
+    const highlighter = SHIKI_EXTENDED_LANGUAGE_SET.has(language)
+      ? await getExtendedHighlighter()
+      : await getBaseHighlighter()
     const html = highlighter.codeToHtml(source, {
       lang: language as BundledLanguage | SpecialLanguage,
       themes: {

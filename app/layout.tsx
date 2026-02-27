@@ -1,6 +1,4 @@
-import 'katex/dist/katex.min.css'
 import '@/styles/globals.css'
-import '@/styles/notion.css'
 import { Metadata } from 'next'
 import Script from 'next/script'
 import { IBM_Plex_Sans } from 'next/font/google'
@@ -69,6 +67,7 @@ export default async function RootLayout({
   return (
     <html lang={config.lang} className={cn(colorSchemeClass, ibmPlexSans.variable)} suppressHydrationWarning>
       <head>
+        <link rel="preconnect" href="https://utteranc.raw2.cc" crossOrigin="" />
         {config.appearance === 'auto' ? (
           <>
             <meta name="theme-color" content={config.lightBackground} media="(prefers-color-scheme: light)" />

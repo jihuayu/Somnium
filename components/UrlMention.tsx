@@ -1,7 +1,9 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type FocusEvent } from 'react'
+import { useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { normalizePreviewUrl } from '@/lib/link-preview/normalize'
+import { useFloatingHoverCard } from '@/components/hooks/useFloatingHoverCard'
 
 export interface UrlMentionPreviewData {
   href: string
@@ -27,9 +29,12 @@ const URL_MENTION_FLOATING_CONFIG = {
   gap: 10,
   targetWidth: 280,
   minWidth: 120,
+  fallbackWidth: 280,
   fallbackHeight: 220,
   initialOffset: 12
 } as const
+
+const previewCache = new Map<string, UrlMentionPreviewData>()
 
 function renderUrlMentionIcon(href: string, iconUrl: string, isGithub: boolean) {
   if (iconUrl) {
@@ -56,8 +61,44 @@ function renderUrlMentionIcon(href: string, iconUrl: string, isGithub: boolean) 
   )
 }
 
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value))
+function getProviderFromHref(href: string): string {
+  try {
+    return new URL(href).hostname.replace(/^www\./i, '')
+  } catch {
+    return href
+  }
+}
+
+function buildFallbackPreview(href: string, label: string, iconUrl: string): UrlMentionPreviewData {
+  return {
+    href,
+    title: label || href,
+    description: '',
+    icon: iconUrl || '',
+    image: '',
+    provider: getProviderFromHref(href)
+  }
+}
+
+function mergePreviewData(
+  base: UrlMentionPreviewData,
+  incoming: Partial<UrlMentionPreviewData> | null | undefined
+): UrlMentionPreviewData {
+  if (!incoming) return base
+  return {
+    href: `${incoming.href || base.href}`.trim() || base.href,
+    title: `${incoming.title || base.title}`.trim() || base.title,
+    description: `${incoming.description || base.description}`.trim(),
+    icon: `${incoming.icon || base.icon}`.trim(),
+    image: `${incoming.image || base.image}`.trim(),
+    provider: `${incoming.provider || base.provider}`.trim() || base.provider
+  }
+}
+
+function shouldFetchRemotePreview(preview: UrlMentionPreviewData, label: string): boolean {
+  const hasRichMedia = !!(preview.image || preview.description || preview.icon)
+  const hasCustomTitle = !!preview.title && preview.title !== label
+  return !(hasRichMedia && hasCustomTitle)
 }
 
 export default function UrlMention({
@@ -67,165 +108,95 @@ export default function UrlMention({
   preview,
   isGithub
 }: UrlMentionProps) {
-  const triggerRef = useRef<HTMLAnchorElement | null>(null)
-  const cardRef = useRef<HTMLAnchorElement | null>(null)
-  const closeTimerRef = useRef<number | null>(null)
-  const updateRafRef = useRef<number | null>(null)
-  const [open, setOpen] = useState(false)
-  const [floatingStyle, setFloatingStyle] = useState<CSSProperties>({
-    position: 'fixed',
-    left: URL_MENTION_FLOATING_CONFIG.initialOffset,
-    top: URL_MENTION_FLOATING_CONFIG.initialOffset,
-    width: URL_MENTION_FLOATING_CONFIG.targetWidth,
-    visibility: 'hidden'
+  const fallbackPreview = buildFallbackPreview(href, label, iconUrl)
+  const [remotePreviewState, setRemotePreviewState] = useState<{ href: string, data: UrlMentionPreviewData | null }>({
+    href: '',
+    data: null
+  })
+  const fetchedKeyRef = useRef('')
+  const normalizedHref = normalizePreviewUrl(href)
+  const cachedPreview = normalizedHref ? previewCache.get(normalizedHref) || null : null
+  const remotePreview = remotePreviewState.href === href ? remotePreviewState.data : null
+  const resolvedPreview = mergePreviewData(fallbackPreview, remotePreview || cachedPreview || preview || null)
+  const {
+    triggerRef,
+    cardRef,
+    open,
+    floatingStyle,
+    openCard,
+    scheduleClose,
+    handleBlur
+  } = useFloatingHoverCard<HTMLAnchorElement, HTMLAnchorElement>({
+    enabled: !!resolvedPreview,
+    closeDelayMs: URL_MENTION_FLOATING_CONFIG.closeDelayMs,
+    viewportPadding: URL_MENTION_FLOATING_CONFIG.viewportPadding,
+    gap: URL_MENTION_FLOATING_CONFIG.gap,
+    initialOffset: URL_MENTION_FLOATING_CONFIG.initialOffset,
+    fallbackWidth: URL_MENTION_FLOATING_CONFIG.fallbackWidth,
+    fallbackHeight: URL_MENTION_FLOATING_CONFIG.fallbackHeight,
+    targetWidth: URL_MENTION_FLOATING_CONFIG.targetWidth,
+    minWidth: URL_MENTION_FLOATING_CONFIG.minWidth
   })
 
-  const clearCloseTimer = () => {
-    if (closeTimerRef.current === null) return
-    window.clearTimeout(closeTimerRef.current)
-    closeTimerRef.current = null
-  }
+  const fetchPreview = async () => {
+    if (!normalizedHref) return
+    if (fetchedKeyRef.current === normalizedHref) return
+    if (!shouldFetchRemotePreview(resolvedPreview, label)) return
+    fetchedKeyRef.current = normalizedHref
 
-  const clearUpdateRaf = () => {
-    if (updateRafRef.current === null) return
-    window.cancelAnimationFrame(updateRafRef.current)
-    updateRafRef.current = null
-  }
+    const cached = previewCache.get(normalizedHref)
+    if (cached) return
 
-  const openCard = () => {
-    if (!preview) return
-    clearCloseTimer()
-    setOpen(true)
-  }
+    try {
+      const response = await fetch(`/api/link-preview?url=${encodeURIComponent(normalizedHref)}`, { method: 'GET' })
+      if (!response.ok) return
+      const payload = await response.json().catch(() => null)
+      if (!payload || typeof payload !== 'object') return
 
-  const scheduleClose = () => {
-    clearCloseTimer()
-    closeTimerRef.current = window.setTimeout(() => {
-      setOpen(false)
-    }, URL_MENTION_FLOATING_CONFIG.closeDelayMs)
-  }
-
-  const updatePosition = useCallback(() => {
-    if (!open || !preview || !triggerRef.current || !cardRef.current) return
-
-    const triggerRect = triggerRef.current.getBoundingClientRect()
-    const cardElement = cardRef.current
-
-    const viewportPadding = URL_MENTION_FLOATING_CONFIG.viewportPadding
-    const gap = URL_MENTION_FLOATING_CONFIG.gap
-    const viewportWidth = window.innerWidth
-    const viewportHeight = window.innerHeight
-
-    const width = Math.min(
-      URL_MENTION_FLOATING_CONFIG.targetWidth,
-      Math.max(URL_MENTION_FLOATING_CONFIG.minWidth, viewportWidth - viewportPadding * 2)
-    )
-    const height = cardElement.offsetHeight || URL_MENTION_FLOATING_CONFIG.fallbackHeight
-    const canPlaceBottom = triggerRect.bottom + gap + height + viewportPadding <= viewportHeight
-    const canPlaceTop = triggerRect.top - gap - height >= viewportPadding
-    const placeTop = !canPlaceBottom && canPlaceTop
-
-    let left = clamp(triggerRect.left, viewportPadding, viewportWidth - width - viewportPadding)
-    if (!Number.isFinite(left)) left = viewportPadding
-
-    let top = placeTop ? triggerRect.top - gap - height : triggerRect.bottom + gap
-    top = clamp(top, viewportPadding, viewportHeight - height - viewportPadding)
-    if (!Number.isFinite(top)) top = viewportPadding
-
-    setFloatingStyle(prev => {
-      if (
-        prev.position === 'fixed' &&
-        prev.left === left &&
-        prev.top === top &&
-        prev.width === width &&
-        prev.visibility === 'visible'
-      ) {
-        return prev
-      }
-      return {
-        position: 'fixed',
-        left,
-        top,
-        width,
-        visibility: 'visible'
-      }
-    })
-  }, [open, preview])
-
-  const scheduleUpdatePosition = useCallback(() => {
-    clearUpdateRaf()
-    updateRafRef.current = window.requestAnimationFrame(() => {
-      updateRafRef.current = null
-      updatePosition()
-    })
-  }, [updatePosition])
-
-  useEffect(() => {
-    if (!open || !preview) return
-
-    scheduleUpdatePosition()
-    const handleViewportChange = () => scheduleUpdatePosition()
-    const observer = cardRef.current
-      ? new ResizeObserver(() => scheduleUpdatePosition())
-      : null
-
-    if (cardRef.current && observer) observer.observe(cardRef.current)
-
-    window.addEventListener('resize', handleViewportChange)
-    window.addEventListener('scroll', handleViewportChange, true)
-
-    return () => {
-      clearUpdateRaf()
-      observer?.disconnect()
-      window.removeEventListener('resize', handleViewportChange)
-      window.removeEventListener('scroll', handleViewportChange, true)
+      const next = mergePreviewData(fallbackPreview, payload as Partial<UrlMentionPreviewData>)
+      previewCache.set(normalizedHref, next)
+      setRemotePreviewState({ href, data: next })
+    } catch {
+      // Ignore network errors and keep fallback preview.
     }
-  }, [open, preview, scheduleUpdatePosition])
-
-  useEffect(() => {
-    return () => {
-      clearCloseTimer()
-      clearUpdateRaf()
-    }
-  }, [])
-
-  const handleBlur = (event: FocusEvent<HTMLAnchorElement>) => {
-    const nextTarget = event.relatedTarget as Node | null
-    if (nextTarget && (triggerRef.current?.contains(nextTarget) || cardRef.current?.contains(nextTarget))) return
-    scheduleClose()
   }
 
-  const floatingCard = open && preview
+  const handleOpen = () => {
+    openCard()
+    void fetchPreview()
+  }
+
+  const floatingCard = open && resolvedPreview
     ? createPortal(
       <a
         ref={cardRef}
-        href={preview.href}
+        href={resolvedPreview.href}
         target="_blank"
         rel="noopener noreferrer"
         className="notion-url-mention-hover-card"
         style={floatingStyle}
-        onMouseEnter={openCard}
+        onMouseEnter={handleOpen}
         onMouseLeave={scheduleClose}
-        onFocus={openCard}
+        onFocus={handleOpen}
         onBlur={handleBlur}
       >
-        {preview.image && (
+        {resolvedPreview.image && (
           <span className="notion-url-mention-hover-cover">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={preview.image} alt={preview.title} loading="lazy" onLoad={scheduleUpdatePosition} />
+            <img src={resolvedPreview.image} alt={resolvedPreview.title} loading="lazy" />
           </span>
         )}
 
         <span className="notion-url-mention-hover-body">
-          <span className="notion-url-mention-hover-title">{preview.title || label}</span>
-          {preview.description && (
-            <span className="notion-url-mention-hover-description">{preview.description}</span>
+          <span className="notion-url-mention-hover-title">{resolvedPreview.title || label}</span>
+          {resolvedPreview.description && (
+            <span className="notion-url-mention-hover-description">{resolvedPreview.description}</span>
           )}
           <span className="notion-url-mention-hover-footer">
             <span className="notion-url-mention-hover-provider-icon" aria-hidden="true">
-              {renderUrlMentionIcon(href, preview.icon || iconUrl, isGithub)}
+              {renderUrlMentionIcon(href, resolvedPreview.icon || iconUrl, isGithub)}
             </span>
-            <span className="notion-url-mention-hover-provider">{preview.provider}</span>
+            <span className="notion-url-mention-hover-provider">{resolvedPreview.provider}</span>
           </span>
         </span>
       </a>,
@@ -242,9 +213,9 @@ export default function UrlMention({
           target="_blank"
           rel="noopener noreferrer"
           className="notion-url-mention notion-url-mention-link-preview"
-          onMouseEnter={openCard}
+          onMouseEnter={handleOpen}
           onMouseLeave={scheduleClose}
-          onFocus={openCard}
+          onFocus={handleOpen}
           onBlur={handleBlur}
         >
           <span className="notion-url-mention-icon" aria-hidden="true">

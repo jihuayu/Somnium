@@ -1,13 +1,14 @@
 import { unstable_cache } from 'next/cache'
 import { toLinkPreviewImageProxyUrl } from '@/lib/server/linkPreviewImageProxy'
-import type { LinkPreviewData, LinkPreviewMap } from '@/lib/link-preview/types'
+import type { LinkPreviewData } from '@/lib/link-preview/types'
+import { normalizePreviewUrl } from '@/lib/link-preview/normalize'
 import { resolveLinkPreviewByAdapter, type ParsedLinkPreviewMetadata } from '@/lib/server/linkPreviewAdapters'
 import { getHostnameFromUrl } from '@/lib/server/url'
 import { ONE_DAY_SECONDS } from '@/lib/server/cache'
-import { mapWithConcurrency } from '@/lib/utils/promisePool'
+
+export { normalizePreviewUrl } from '@/lib/link-preview/normalize'
 
 const LINK_PREVIEW_CACHE_REVALIDATE_SECONDS = ONE_DAY_SECONDS
-const LINK_PREVIEW_FETCH_CONCURRENCY = 6
 const LINK_PREVIEW_MAX_HTML_BYTES = 256 * 1024
 
 const CHARSET_ALIASES: Record<string, string> = {
@@ -153,30 +154,6 @@ function createFallback(url: string): LinkPreviewData {
   }
 }
 
-function normalizeRawPreviewUrl(rawUrl: string): string {
-  const trimmed = `${rawUrl || ''}`.trim()
-  if (!trimmed) return ''
-  if (/^https?:\/\//i.test(trimmed)) return trimmed
-  if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) return trimmed
-  if (/^(?:www\.)?[a-z0-9][a-z0-9.-]*\.[a-z]{2,}(?::\d+)?(?:[/?#].*)?$/i.test(trimmed)) {
-    return `https://${trimmed}`
-  }
-  return trimmed
-}
-
-export function normalizePreviewUrl(rawUrl: string): string | null {
-  const trimmed = normalizeRawPreviewUrl(rawUrl)
-  if (!trimmed) return null
-
-  try {
-    const parsed = new URL(trimmed)
-    if (!['http:', 'https:'].includes(parsed.protocol)) return null
-    return parsed.toString()
-  } catch {
-    return null
-  }
-}
-
 async function fetchLinkPreview(normalizedUrl: string): Promise<LinkPreviewData> {
   const fallback = createFallback(normalizedUrl)
   const controller = new AbortController()
@@ -263,28 +240,4 @@ export async function getLinkPreview(rawUrl: string): Promise<LinkPreviewData | 
   const normalizedUrl = normalizePreviewUrl(rawUrl)
   if (!normalizedUrl) return null
   return getLinkPreviewByNormalizedUrl(normalizedUrl)
-}
-
-export async function getLinkPreviewMap(urls: string[]): Promise<LinkPreviewMap> {
-  const uniqueUrls = Array.from(new Set(
-    urls
-      .map(url => normalizePreviewUrl(url))
-      .filter((url): url is string => !!url)
-  ))
-  if (!uniqueUrls.length) return {}
-
-  const records = await mapWithConcurrency(
-    uniqueUrls,
-    LINK_PREVIEW_FETCH_CONCURRENCY,
-    async (normalizedUrl) => {
-      const data = await getLinkPreviewByNormalizedUrl(normalizedUrl)
-      return [normalizedUrl, data] as const
-    }
-  )
-
-  const map: LinkPreviewMap = {}
-  for (const [key, data] of records) {
-    map[key] = data
-  }
-  return map
 }

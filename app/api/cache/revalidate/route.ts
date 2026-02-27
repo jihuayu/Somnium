@@ -46,10 +46,15 @@ function parseListValue(value: unknown): string[] {
 function parseQueryList(searchParams: URLSearchParams, key: 'tag' | 'tags' | 'path' | 'paths'): string[] {
   const values = searchParams.getAll(key)
   if (!values.length) return []
-  return values
-    .flatMap(value => value.split(','))
-    .map(value => value.trim())
-    .filter(Boolean)
+  const output: string[] = []
+  for (const value of values) {
+    const segments = value.split(',')
+    for (const segment of segments) {
+      const trimmed = segment.trim()
+      if (trimmed) output.push(trimmed)
+    }
+  }
+  return output
 }
 
 function unique(values: string[]): string[] {

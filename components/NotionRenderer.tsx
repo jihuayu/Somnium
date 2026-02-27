@@ -5,23 +5,15 @@ import { createHash } from 'node:crypto'
 import { FONTS_MISANS } from '@/consts'
 import { resolveEmbedIframeUrl } from '@/lib/notion/embed'
 import { buildNotionPublicUrl, resolvePageHref } from '@/lib/notion/pageLinkMap'
+import { escapeHtml, getFileBlockUrl, getLinkToPageLabel, getPlainTextFromRichText } from '@/lib/notion/render-utils'
 import LinkPreviewCard, { LinkPreviewCardFallback } from '@/components/LinkPreviewCard'
 import MermaidBlock from '@/components/MermaidBlock'
-import { RichText, getPlainTextFromRichText, normalizeRichTextUrl } from '@/components/notion/RichText'
+import { RichText, normalizeRichTextUrl } from '@/components/notion/RichText'
 import type { LinkPreviewMap } from '@/lib/link-preview/types'
 import type { NotionDocument } from '@/lib/notion/getPostBlocks'
 import type { PageLinkMap } from '@/lib/notion/pageLinkMap'
 import { highlightCodeToHtml, normalizeCodeLanguage, type HighlightedCode } from '@/lib/server/shiki'
 import { mapWithConcurrency } from '@/lib/utils/promisePool'
-
-function escapeHtml(input: string): string {
-  return `${input || ''}`
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;')
-}
 
 function getBlockClassName(blockId: string): string {
   return `notion-block-${blockId.replaceAll('-', '')}`
@@ -39,13 +31,6 @@ function parseUrl(url: string | null): URL | null {
 function decodePathSegment(segment: string): string {
   if (!segment) return ''
   try { return decodeURIComponent(segment) } catch { return segment }
-}
-
-function getFileBlockUrl(filePayload: any): string {
-  if (!filePayload || typeof filePayload !== 'object') return ''
-  if (filePayload.type === 'external') return filePayload?.external?.url || ''
-  if (filePayload.type === 'file') return filePayload?.file?.url || ''
-  return filePayload?.external?.url || filePayload?.file?.url || ''
 }
 
 function getFileBlockName(filePayload: any, fileUrl: string): string {
@@ -81,21 +66,11 @@ function getCalloutIconUrl(icon: any): string {
   return ''
 }
 
-function getLinkToPageLabel(linkToPage: any): string {
-  if (!linkToPage || typeof linkToPage !== 'object') return 'Linked page'
-  const linkType = `${linkToPage.type || ''}`
-  switch (linkType) {
-    case 'page_id':
-      return 'Linked page'
-    case 'database_id':
-      return 'Linked database'
-    case 'block_id':
-      return 'Linked block'
-    case 'comment_id':
-      return 'Linked comment'
-    default:
-      return 'Linked page'
-  }
+interface CodeBlockPayload {
+  blockId: string
+  source: string
+  language: string
+  normalizedLanguage: string
 }
 
 type HighlightedCodeByBlockId = Record<string, HighlightedCode>
@@ -103,15 +78,29 @@ const HIGHLIGHT_CODE_CONCURRENCY = 4
 const HIGHLIGHTED_PAGE_CACHE_MAX_ENTRIES = 96
 const highlightedCodePageCache = new Map<string, HighlightedCodeByBlockId>()
 
-function buildHighlightedPageCacheKey(pageId: string, blocksById: Record<string, any>): string {
+function collectCodeBlockPayloads(blocksById: Record<string, any>): CodeBlockPayload[] {
+  const payloads: CodeBlockPayload[] = []
+  for (const block of Object.values(blocksById || {})) {
+    if (!block || block.type !== 'code') continue
+    const language = `${block?.code?.language || ''}`
+    const normalizedLanguage = normalizeCodeLanguage(language)
+    const source = getPlainTextFromRichText(block?.code?.rich_text || [])
+    payloads.push({
+      blockId: block.id,
+      source,
+      language,
+      normalizedLanguage
+    })
+  }
+  return payloads
+}
+
+function buildHighlightedPageCacheKey(pageId: string, codeBlocks: CodeBlockPayload[]): string {
   const hash = createHash('sha1')
   hash.update(pageId || '')
 
-  for (const block of Object.values(blocksById || {})) {
-    if (!block || block.type !== 'code') continue
-    const source = getPlainTextFromRichText(block?.code?.rich_text || [])
-    const rawLanguage = `${block?.code?.language || ''}`.trim().toLowerCase()
-    hash.update(`${block.id || ''}\u0000${rawLanguage}\u0000${source}\u0000`)
+  for (const block of codeBlocks) {
+    hash.update(`${block.blockId || ''}\u0000${block.normalizedLanguage}\u0000${block.source}\u0000`)
   }
 
   return hash.digest('hex')
@@ -136,26 +125,20 @@ function writeHighlightedPageCache(cacheKey: string, value: HighlightedCodeByBlo
   highlightedCodePageCache.set(cacheKey, value)
 }
 
-async function buildHighlightedCodeMap(pageId: string, blocksById: Record<string, any>): Promise<HighlightedCodeByBlockId> {
-  const codeBlocks = Object.values(blocksById || {}).filter((block: any) => {
-    if (!block || block.type !== 'code') return false
-    const rawLanguage = `${block?.code?.language || ''}`
-    return normalizeCodeLanguage(rawLanguage) !== 'mermaid'
-  })
+async function buildHighlightedCodeMap(pageId: string, codeBlocks: CodeBlockPayload[]): Promise<HighlightedCodeByBlockId> {
+  const highlightTargets = codeBlocks.filter((block) => block.normalizedLanguage !== 'mermaid')
 
-  if (!codeBlocks.length) return {}
+  if (!highlightTargets.length) return {}
 
-  const cacheKey = buildHighlightedPageCacheKey(pageId, blocksById)
+  const cacheKey = buildHighlightedPageCacheKey(pageId, highlightTargets)
   const cached = readHighlightedPageCache(cacheKey)
   if (cached) return cached
 
   const uniquePairs = new Map<string, { source: string, language: string }>()
-  for (const block of codeBlocks) {
-    const source = getPlainTextFromRichText(block?.code?.rich_text || [])
-    const language = `${block?.code?.language || ''}`
-    const pairKey = `${normalizeCodeLanguage(language)}\u0000${source}`
+  for (const block of highlightTargets) {
+    const pairKey = `${block.normalizedLanguage}\u0000${block.source}`
     if (!uniquePairs.has(pairKey)) {
-      uniquePairs.set(pairKey, { source, language })
+      uniquePairs.set(pairKey, { source: block.source, language: block.language })
     }
   }
 
@@ -169,15 +152,16 @@ async function buildHighlightedCodeMap(pageId: string, blocksById: Record<string
   )
   const highlightedByPair = new Map<string, HighlightedCode>(highlightedPairs)
 
-  const entries = codeBlocks.map((block: any) => {
-    const source = getPlainTextFromRichText(block?.code?.rich_text || [])
-    const language = `${block?.code?.language || ''}`
-    const pairKey = `${normalizeCodeLanguage(language)}\u0000${source}`
+  const entries = highlightTargets.map((block) => {
+    const pairKey = `${block.normalizedLanguage}\u0000${block.source}`
     const highlighted = highlightedByPair.get(pairKey)
-    return [block.id, highlighted!] as const
+    return [block.blockId, highlighted!] as const
   })
 
-  const result = Object.fromEntries(entries)
+  const result: HighlightedCodeByBlockId = {}
+  for (const [blockId, highlighted] of entries) {
+    result[blockId] = highlighted
+  }
   writeHighlightedPageCache(cacheKey, result)
   return result
 }
@@ -197,7 +181,9 @@ export default async function NotionRenderer({ document, linkPreviewMap = {}, pa
   const blocksById = document.blocksById || {}
   const childrenById = document.childrenById || {}
   const rootIds = document.rootIds || []
-  const highlightedCodeByBlockId = await buildHighlightedCodeMap(document.pageId || '', blocksById)
+  const codeBlockPayloads = collectCodeBlockPayloads(blocksById)
+  const codeBlockPayloadById = new Map(codeBlockPayloads.map(payload => [payload.blockId, payload]))
+  const highlightedCodeByBlockId = await buildHighlightedCodeMap(document.pageId || '', codeBlockPayloads)
 
   const renderChildren = (blockId: string) => {
     const childIds = childrenById[blockId] || []
@@ -381,8 +367,9 @@ export default async function NotionRenderer({ document, linkPreviewMap = {}, pa
       }
       case 'code': {
         const code = block?.code || {}
-        const source = getPlainTextFromRichText(code.rich_text || [])
-        const language = normalizeCodeLanguage(code.language || '')
+        const payload = codeBlockPayloadById.get(block.id)
+        const source = payload?.source ?? getPlainTextFromRichText(code.rich_text || [])
+        const language = payload?.normalizedLanguage ?? normalizeCodeLanguage(code.language || '')
 
         if (language === 'mermaid') {
           return (

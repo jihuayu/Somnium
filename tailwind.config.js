@@ -1,9 +1,4 @@
-const fs = require('fs')
-const path = require('path')
-
-// Read blog config directly
-const raw = fs.readFileSync(path.resolve(__dirname, 'config/blog.config.js'), 'utf-8')
-const config = eval(`((module = { exports: {} }) => { ${raw}; return module.exports })()`)
+const config = require('./config/blog.config.js')
 
 const FONTS_SANS = [
   'var(--font-ibm-plex-sans)',

@@ -3,9 +3,12 @@ import { unstable_cache } from 'next/cache'
 import { config } from '@/lib/server/config'
 import { ONE_DAY_SECONDS } from '@/lib/server/cache'
 import { buildNotionDocument, type NotionDocument } from '@/lib/notion/getPostBlocks'
+import { escapeHtml, getFileBlockUrl, getLinkToPageLabel, getPlainTextFromRichText } from '@/lib/notion/render-utils'
+import { mapWithConcurrency } from '@/lib/utils/promisePool'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
 
 const FEED_POST_BLOCKS_CACHE_SECONDS = ONE_DAY_SECONDS
+const FEED_RENDER_CONCURRENCY = 4
 
 function trimSlashes(value: string): string {
   return value.replace(/^\/+|\/+$/g, '')
@@ -42,27 +45,6 @@ interface FeedContentPayload {
   html: string
 }
 
-function escapeHtml(input: string): string {
-  return input
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;')
-}
-
-function getPlainTextFromRichText(richText: any[] = [], trim = true): string {
-  const text = richText.map(item => item?.plain_text || '').join('')
-  return trim ? text.trim() : text
-}
-
-function getFileBlockUrl(filePayload: any): string {
-  if (!filePayload || typeof filePayload !== 'object') return ''
-  if (filePayload.type === 'external') return filePayload?.external?.url || ''
-  if (filePayload.type === 'file') return filePayload?.file?.url || ''
-  return filePayload?.external?.url || filePayload?.file?.url || ''
-}
-
 function getFileNameFromUrl(fileUrl: string): string {
   if (!fileUrl) return 'File'
   try {
@@ -71,23 +53,6 @@ function getFileNameFromUrl(fileUrl: string): string {
     return filename || parsed.hostname || 'File'
   } catch {
     return 'File'
-  }
-}
-
-function getLinkToPageLabel(linkToPage: any): string {
-  if (!linkToPage || typeof linkToPage !== 'object') return 'Linked page'
-  const linkType = `${linkToPage.type || ''}`
-  switch (linkType) {
-    case 'page_id':
-      return 'Linked page'
-    case 'database_id':
-      return 'Linked database'
-    case 'block_id':
-      return 'Linked block'
-    case 'comment_id':
-      return 'Linked comment'
-    default:
-      return 'Linked page'
   }
 }
 
@@ -218,7 +183,7 @@ function renderBlockHtml(
         : image?.file?.url
       const caption = getHtmlFromRichText(image.caption || [])
       const imageHtml = source
-        ? `<figure><img src="${escapeHtml(source)}" alt="${escapeHtml(getPlainTextFromRichText(image.caption || []))}" />${caption ? `<figcaption>${caption}</figcaption>` : ''}</figure>`
+        ? `<figure><img src="${escapeHtml(source)}" alt="${escapeHtml(getPlainTextFromRichText(image.caption || [], true))}" />${caption ? `<figcaption>${caption}</figcaption>` : ''}</figure>`
         : ''
       return `${imageHtml}${renderedChildren}`
     }
@@ -381,7 +346,7 @@ export async function generateRss(posts: PostData[], siteOrigin?: string): Promi
     }
   })
 
-  for (const post of posts) {
+  const items = await mapWithConcurrency(posts, FEED_RENDER_CONCURRENCY, async (post) => {
     const postUrl = buildUrl(siteUrl, post.slug)
     let content = fallbackFeedContent(post)
 
@@ -391,14 +356,18 @@ export async function generateRss(posts: PostData[], siteOrigin?: string): Promi
       console.error(`[feed] Failed to render post content for ${post.slug}:`, error)
     }
 
-    feed.addItem({
+    return {
       title: post.title,
       id: postUrl,
       link: postUrl,
       description: (post.summary || '').trim(),
       content: content.html,
       date: new Date(post.date)
-    })
+    }
+  })
+
+  for (const item of items) {
+    feed.addItem(item)
   }
 
   return feed.rss2()

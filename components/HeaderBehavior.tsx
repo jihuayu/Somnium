@@ -26,7 +26,7 @@ export default function HeaderBehavior({ useSticky }: HeaderBehaviorProps) {
       }
 
       collapseRaf = window.requestAnimationFrame(() => {
-        const sentinelBottom = sentinelEl.getBoundingClientRect().bottom
+        const sentinelBottom = entry?.boundingClientRect?.bottom ?? 0
         const shouldCollapse = sentinelBottom <= 0 && window.scrollY > 0 && !entry.isIntersecting
         navEl.classList.toggle('sticky-nav-full', shouldCollapse)
         collapseRaf = null

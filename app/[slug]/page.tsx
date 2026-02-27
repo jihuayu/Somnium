@@ -6,8 +6,6 @@ import { getAllPosts, getPostBlocks } from '@/lib/notion'
 import loadLocale from '@/assets/i18n'
 import ContainerServer from '@/components/ContainerServer'
 import { buildPageMetadata } from '@/lib/server/metadata'
-import { getLinkPreviewMap } from '@/lib/server/linkPreview'
-import { getLinkPreviewTargets } from '@/lib/notion/linkPreviewTargets'
 import { buildPageLinkMap } from '@/lib/notion/pageLinkMap'
 import { config } from '@/lib/server/config'
 import { ONE_DAY_SECONDS } from '@/lib/server/cache'
@@ -15,6 +13,10 @@ import SlugPostClient from './slug-client'
 
 export const revalidate = 86400
 const getPosts = cache(async () => getAllPosts({ includePages: true }))
+const getPostsBySlug = cache(async () => {
+  const posts = await getPosts()
+  return new Map(posts.map(post => [post.slug, post] as const))
+})
 const PAGE_LINK_MAP_CACHE_REVALIDATE_SECONDS = ONE_DAY_SECONDS
 const getPageLinkMap = unstable_cache(
   async () => {
@@ -38,8 +40,8 @@ interface SlugPageProps {
 
 export async function generateMetadata({ params }: SlugPageProps): Promise<Metadata> {
   const { slug } = await params
-  const posts = await getPosts()
-  const post = posts.find(t => t.slug === slug)
+  const postsBySlug = await getPostsBySlug()
+  const post = postsBySlug.get(slug)
 
   if (!post) return buildPageMetadata()
 
@@ -54,16 +56,14 @@ export async function generateMetadata({ params }: SlugPageProps): Promise<Metad
 
 export default async function SlugPage({ params }: SlugPageProps) {
   const { slug } = await params
-  const posts = await getPosts()
-  const post = posts.find(t => t.slug === slug)
+  const postsBySlug = await getPostsBySlug()
+  const post = postsBySlug.get(slug)
 
   if (!post) notFound()
 
   const document = await getPostBlocks(post.id)
   if (!document) notFound()
-  const linkPreviewTargets = getLinkPreviewTargets(document)
-  const [linkPreviewMap, pageLinkMap, locale] = await Promise.all([
-    getLinkPreviewMap(linkPreviewTargets),
+  const [pageLinkMap, locale] = await Promise.all([
     getPageLinkMap(),
     loadLocale('basic', config.lang)
   ])
@@ -83,7 +83,6 @@ export default async function SlugPage({ params }: SlugPageProps) {
         homePath={config.path || '/'}
         backLabel={locale.POST.BACK}
         topLabel={locale.POST.TOP}
-        linkPreviewMap={linkPreviewMap}
         pageLinkMap={pageLinkMap}
       />
     </ContainerServer>
