@@ -1,4 +1,5 @@
 import { ONE_DAY_SECONDS, SEVEN_DAYS_SECONDS } from '@/lib/server/cache'
+import { isLinkPreviewImageWhitelisted } from '@/lib/server/linkPreviewImageProxy'
 
 export const runtime = 'edge'
 const OG_IMAGE_BROWSER_CACHE_SECONDS = SEVEN_DAYS_SECONDS
@@ -14,6 +15,8 @@ function toAbsoluteImageUrl(rawUrl: string, requestUrl: string): string {
     const parsed = new URL(rawUrl, requestBase)
     if (parsed.origin !== requestBase.origin) return ''
     if (parsed.pathname !== '/api/link-preview/image') return ''
+    const sourceImageUrl = parsed.searchParams.get('url')?.trim() || ''
+    if (!isLinkPreviewImageWhitelisted(sourceImageUrl)) return ''
     return parsed.toString()
   } catch {
     return ''
@@ -25,7 +28,7 @@ export async function GET(req: Request) {
   const rawImageUrl = searchParams.get('image')?.trim() || ''
   const proxyTargetUrl = toAbsoluteImageUrl(rawImageUrl, req.url)
   if (!proxyTargetUrl) {
-    return new Response('Missing image', { status: 400 })
+    return new Response('Missing image or blocked by whitelist', { status: 400 })
   }
 
   try {

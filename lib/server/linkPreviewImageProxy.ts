@@ -70,6 +70,12 @@ export function resolveLinkPreviewImageProxy(rawUrl: string): {
   }
 }
 
+export function isLinkPreviewImageWhitelisted(rawUrl: string): boolean {
+  const parsed = normalizeHttpUrl(rawUrl)
+  if (!parsed) return false
+  return IMAGE_PROXY_RULES.some(rule => rule.match(parsed))
+}
+
 export function toLinkPreviewImageProxyUrl(rawImageUrl: string): string {
   const resolved = resolveLinkPreviewImageProxy(rawImageUrl)
   if (!resolved) return rawImageUrl
