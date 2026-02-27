@@ -66,7 +66,7 @@ function isUrlMention(item: any): boolean {
   return isLinkPreviewMention(item) || isLinkMention(item)
 }
 
-const ANNOTATION_COLOR_CLASS_MAP: Record<string, string> = {
+const ANNOTATION_TEXT_COLOR_CLASS_MAP: Record<string, string> = {
   gray: 'notion-color-gray',
   brown: 'notion-color-brown',
   orange: 'notion-color-orange',
@@ -76,7 +76,10 @@ const ANNOTATION_COLOR_CLASS_MAP: Record<string, string> = {
   blue: 'notion-color-blue',
   purple: 'notion-color-purple',
   pink: 'notion-color-pink',
-  red: 'notion-color-red',
+  red: 'notion-color-red'
+}
+
+const ANNOTATION_BACKGROUND_COLOR_CLASS_MAP: Record<string, string> = {
   gray_background: 'notion-color-gray-bg',
   brown_background: 'notion-color-brown-bg',
   orange_background: 'notion-color-orange-bg',
@@ -89,11 +92,51 @@ const ANNOTATION_COLOR_CLASS_MAP: Record<string, string> = {
   red_background: 'notion-color-red-bg'
 }
 
-function getAnnotationColorClass(color: unknown): string {
-  if (typeof color !== 'string') return ''
-  const normalized = color.trim().toLowerCase()
+function normalizeAnnotationColorToken(value: unknown): string {
+  if (typeof value !== 'string') return ''
+  const normalized = value.trim().toLowerCase()
   if (!normalized || normalized === 'default') return ''
-  return ANNOTATION_COLOR_CLASS_MAP[normalized] || ''
+  return normalized
+}
+
+function getTextColorClass(token: string): string {
+  if (!token || token.endsWith('_background')) return ''
+  return ANNOTATION_TEXT_COLOR_CLASS_MAP[token] || ''
+}
+
+function getBackgroundColorClass(token: string): string {
+  if (!token) return ''
+  const normalized = token.endsWith('_background') ? token : `${token}_background`
+  return ANNOTATION_BACKGROUND_COLOR_CLASS_MAP[normalized] || ''
+}
+
+function firstColorClass(candidates: unknown[], resolver: (token: string) => string): string {
+  for (const candidate of candidates) {
+    const token = normalizeAnnotationColorToken(candidate)
+    if (!token) continue
+    const className = resolver(token)
+    if (className) return className
+  }
+  return ''
+}
+
+function getAnnotationColorClasses(annotations: any): { textColorClassName: string, backgroundColorClassName: string } {
+  const legacyColor = normalizeAnnotationColorToken(annotations?.color)
+  const textColorClassName = firstColorClass([
+    annotations?.text_color,
+    annotations?.foreground_color,
+    annotations?.font_color,
+    legacyColor && !legacyColor.endsWith('_background') ? legacyColor : ''
+  ], getTextColorClass)
+  const backgroundColorClassName = firstColorClass([
+    annotations?.background_color,
+    annotations?.bg_color,
+    annotations?.highlight_color,
+    annotations?.background,
+    legacyColor && legacyColor.endsWith('_background') ? legacyColor : ''
+  ], getBackgroundColorClass)
+
+  return { textColorClassName, backgroundColorClassName }
 }
 
 const DATE_MENTION_DEFAULTS = {
@@ -240,7 +283,7 @@ export function RichText({ richText = [], linkPreviewMap = {} }: RichTextProps) 
           : item?.plain_text || ''
         const href = getRichTextLink(item)
         const annotations = item?.annotations || {}
-        const colorClassName = getAnnotationColorClass(annotations.color)
+        const { textColorClassName, backgroundColorClassName } = getAnnotationColorClasses(annotations)
 
         const content = (
           <span
@@ -249,7 +292,8 @@ export function RichText({ richText = [], linkPreviewMap = {} }: RichTextProps) 
               annotations.italic && 'italic',
               annotations.strikethrough && 'line-through',
               annotations.underline && 'underline',
-              colorClassName,
+              textColorClassName,
+              backgroundColorClassName,
               annotations.code &&
                 'font-mono text-[0.9em] px-1 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800'
             )}
