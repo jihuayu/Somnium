@@ -1,8 +1,7 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useMemo } from 'react'
 import { createPortal } from 'react-dom'
-import { normalizePreviewUrl } from '@/lib/link-preview/normalize'
 import { useFloatingHoverCard } from '@/components/hooks/useFloatingHoverCard'
 
 export interface UrlMentionPreviewData {
@@ -33,8 +32,6 @@ const URL_MENTION_FLOATING_CONFIG = {
   fallbackHeight: 220,
   initialOffset: 12
 } as const
-
-const previewCache = new Map<string, UrlMentionPreviewData>()
 
 function renderUrlMentionIcon(href: string, iconUrl: string, isGithub: boolean) {
   if (iconUrl) {
@@ -95,12 +92,6 @@ function mergePreviewData(
   }
 }
 
-function shouldFetchRemotePreview(preview: UrlMentionPreviewData, label: string): boolean {
-  const hasRichMedia = !!(preview.image || preview.description || preview.icon)
-  const hasCustomTitle = !!preview.title && preview.title !== label
-  return !(hasRichMedia && hasCustomTitle)
-}
-
 export default function UrlMention({
   href,
   label,
@@ -108,16 +99,10 @@ export default function UrlMention({
   preview,
   isGithub
 }: UrlMentionProps) {
-  const fallbackPreview = buildFallbackPreview(href, label, iconUrl)
-  const [remotePreviewState, setRemotePreviewState] = useState<{ href: string, data: UrlMentionPreviewData | null }>({
-    href: '',
-    data: null
-  })
-  const fetchedKeyRef = useRef('')
-  const normalizedHref = normalizePreviewUrl(href)
-  const cachedPreview = normalizedHref ? previewCache.get(normalizedHref) || null : null
-  const remotePreview = remotePreviewState.href === href ? remotePreviewState.data : null
-  const resolvedPreview = mergePreviewData(fallbackPreview, remotePreview || cachedPreview || preview || null)
+  const resolvedPreview = useMemo(() => {
+    const fallbackPreview = buildFallbackPreview(href, label, iconUrl)
+    return mergePreviewData(fallbackPreview, preview || null)
+  }, [href, iconUrl, label, preview])
   const {
     triggerRef,
     cardRef,
@@ -138,32 +123,8 @@ export default function UrlMention({
     minWidth: URL_MENTION_FLOATING_CONFIG.minWidth
   })
 
-  const fetchPreview = async () => {
-    if (!normalizedHref) return
-    if (fetchedKeyRef.current === normalizedHref) return
-    if (!shouldFetchRemotePreview(resolvedPreview, label)) return
-    fetchedKeyRef.current = normalizedHref
-
-    const cached = previewCache.get(normalizedHref)
-    if (cached) return
-
-    try {
-      const response = await fetch(`/api/link-preview?url=${encodeURIComponent(normalizedHref)}`, { method: 'GET' })
-      if (!response.ok) return
-      const payload = await response.json().catch(() => null)
-      if (!payload || typeof payload !== 'object') return
-
-      const next = mergePreviewData(fallbackPreview, payload as Partial<UrlMentionPreviewData>)
-      previewCache.set(normalizedHref, next)
-      setRemotePreviewState({ href, data: next })
-    } catch {
-      // Ignore network errors and keep fallback preview.
-    }
-  }
-
   const handleOpen = () => {
     openCard()
-    void fetchPreview()
   }
 
   const floatingCard = open && resolvedPreview

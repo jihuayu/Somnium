@@ -25,13 +25,54 @@ function isDarkMode(): boolean {
 }
 
 export default function MermaidBlock({ code, className }: MermaidBlockProps) {
+  const hostRef = useRef<HTMLDivElement | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const renderTokenRef = useRef(0)
   const [renderError, setRenderError] = useState('')
   const [themeVersion, setThemeVersion] = useState(0)
+  const [shouldRender, setShouldRender] = useState(false)
   const localId = useId().replaceAll(':', '_')
 
   useEffect(() => {
+    if (shouldRender) return
+    if (!hostRef.current) return
+
+    let idleTimer: ReturnType<typeof setTimeout> | null = null
+    let idleId: number | null = null
+    const activate = () => setShouldRender(true)
+
+    const scheduleActivate = () => {
+      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+        idleId = (window as any).requestIdleCallback(activate, { timeout: 1200 })
+      } else {
+        idleTimer = globalThis.setTimeout(activate, 160)
+      }
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      if (!entries.some(entry => entry.isIntersecting)) return
+      observer.disconnect()
+      scheduleActivate()
+    }, {
+      root: null,
+      rootMargin: '240px 0px',
+      threshold: 0.01
+    })
+    observer.observe(hostRef.current)
+
+    return () => {
+      observer.disconnect()
+      if (idleId !== null && typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
+        (window as any).cancelIdleCallback(idleId)
+      }
+      if (idleTimer !== null) {
+        globalThis.clearTimeout(idleTimer)
+      }
+    }
+  }, [shouldRender])
+
+  useEffect(() => {
+    if (!shouldRender) return
     if (typeof document === 'undefined') return
 
     const observer = new MutationObserver((records) => {
@@ -49,9 +90,10 @@ export default function MermaidBlock({ code, className }: MermaidBlockProps) {
     })
 
     return () => observer.disconnect()
-  }, [])
+  }, [shouldRender])
 
   useEffect(() => {
+    if (!shouldRender) return
     let cancelled = false
     const renderToken = renderTokenRef.current + 1
     renderTokenRef.current = renderToken
@@ -77,7 +119,6 @@ export default function MermaidBlock({ code, className }: MermaidBlockProps) {
           theme: isDarkMode() ? 'dark' : 'default'
         })
 
-        // 将当前容器传给 Mermaid，避免内部在脱离父节点的元素上做 DOM 插入。
         const { svg, bindFunctions } = await mermaid.render(
           `mermaid-${localId}-${themeVersion}-${renderToken}`,
           source,
@@ -97,11 +138,7 @@ export default function MermaidBlock({ code, className }: MermaidBlockProps) {
         setRenderError('')
       } catch (error) {
         if (cancelled || renderTokenRef.current !== renderToken) return
-
-        // 组件卸载/切页时，Mermaid 内部可能在已脱离 DOM 的节点上操作，忽略这类竞态错误。
-        if (error instanceof DOMException && error.name === 'NoModificationAllowedError') {
-          return
-        }
+        if (error instanceof DOMException && error.name === 'NoModificationAllowedError') return
 
         if (containerRef.current && containerRef.current.isConnected) {
           containerRef.current.innerHTML = ''
@@ -119,11 +156,11 @@ export default function MermaidBlock({ code, className }: MermaidBlockProps) {
     return () => {
       cancelled = true
     }
-  }, [code, localId, themeVersion])
+  }, [code, localId, shouldRender, themeVersion])
 
   if (renderError) {
     return (
-      <div className={cn('notion-mermaid-block', className)}>
+      <div ref={hostRef} className={cn('notion-mermaid-block', className)}>
         <pre className="overflow-x-auto p-3 text-sm text-zinc-900 dark:text-zinc-100">
           <code>{code}</code>
         </pre>
@@ -135,8 +172,14 @@ export default function MermaidBlock({ code, className }: MermaidBlockProps) {
   }
 
   return (
-    <div className={cn('notion-mermaid-block', className)}>
-      <div ref={containerRef} className="notion-mermaid-svg" />
+    <div ref={hostRef} className={cn('notion-mermaid-block', className)}>
+      {shouldRender ? (
+        <div ref={containerRef} className="notion-mermaid-svg" />
+      ) : (
+        <pre className="overflow-x-auto p-3 text-sm text-zinc-500 dark:text-zinc-400">
+          <code>Mermaid diagram deferred</code>
+        </pre>
+      )}
     </div>
   )
 }

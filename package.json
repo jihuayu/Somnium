@@ -8,8 +8,8 @@
     "url": "https://github.com/jihuayu/somnium.git"
   },
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
+    "dev": "next dev --webpack",
+    "build": "next build --webpack",
     "start": "next start",
     "test": "node --import tsx --test tests/**/*.test.ts",
     "lint": "eslint .",

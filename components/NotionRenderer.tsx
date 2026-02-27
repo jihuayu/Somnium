@@ -13,6 +13,7 @@ import type { LinkPreviewMap } from '@/lib/link-preview/types'
 import type { NotionDocument } from '@/lib/notion/getPostBlocks'
 import type { PageLinkMap } from '@/lib/notion/pageLinkMap'
 import { highlightCodeToHtml, normalizeCodeLanguage, type HighlightedCode } from '@/lib/server/shiki'
+import { getLinkPreviewByNormalizedUrl } from '@/lib/server/linkPreview'
 import { mapWithConcurrency } from '@/lib/utils/promisePool'
 
 function getBlockClassName(blockId: string): string {
@@ -77,6 +78,8 @@ type HighlightedCodeByBlockId = Record<string, HighlightedCode>
 const HIGHLIGHT_CODE_CONCURRENCY = 4
 const HIGHLIGHTED_PAGE_CACHE_MAX_ENTRIES = 96
 const highlightedCodePageCache = new Map<string, HighlightedCodeByBlockId>()
+const LINK_PREVIEW_FETCH_CONCURRENCY = 4
+const LINK_PREVIEW_FETCH_LIMIT = 48
 
 function collectCodeBlockPayloads(blocksById: Record<string, any>): CodeBlockPayload[] {
   const payloads: CodeBlockPayload[] = []
@@ -166,6 +169,114 @@ async function buildHighlightedCodeMap(pageId: string, codeBlocks: CodeBlockPayl
   return result
 }
 
+function addPreviewCandidateUrl(candidateUrls: Set<string>, rawUrl: string | null | undefined) {
+  const normalized = normalizeRichTextUrl(`${rawUrl || ''}`.trim())
+  if (!normalized) return
+  candidateUrls.add(normalized)
+}
+
+function collectPreviewUrlsFromRichText(richText: any, candidateUrls: Set<string>) {
+  if (!Array.isArray(richText)) return
+
+  for (const item of richText) {
+    if (item?.type !== 'mention') continue
+
+    if (item?.mention?.type === 'link_preview') {
+      addPreviewCandidateUrl(candidateUrls, item?.mention?.link_preview?.url || item?.href)
+      continue
+    }
+
+    if (item?.mention?.type === 'link_mention') {
+      addPreviewCandidateUrl(candidateUrls, item?.mention?.link_mention?.href || item?.href)
+    }
+  }
+}
+
+function collectPreviewCandidateUrls(blocksById: Record<string, any>): string[] {
+  const candidateUrls = new Set<string>()
+
+  for (const block of Object.values(blocksById || {})) {
+    if (!block || typeof block !== 'object') continue
+
+    switch (block.type) {
+      case 'embed':
+        addPreviewCandidateUrl(candidateUrls, block?.embed?.url)
+        break
+      case 'bookmark':
+        addPreviewCandidateUrl(candidateUrls, block?.bookmark?.url)
+        break
+      case 'link_preview':
+        addPreviewCandidateUrl(candidateUrls, block?.link_preview?.url)
+        break
+      case 'table_row': {
+        const cells = block?.table_row?.cells
+        if (Array.isArray(cells)) {
+          for (const cell of cells) {
+            collectPreviewUrlsFromRichText(cell, candidateUrls)
+          }
+        }
+        break
+      }
+      default:
+        break
+    }
+
+    collectPreviewUrlsFromRichText(block?.paragraph?.rich_text, candidateUrls)
+    collectPreviewUrlsFromRichText(block?.heading_1?.rich_text, candidateUrls)
+    collectPreviewUrlsFromRichText(block?.heading_2?.rich_text, candidateUrls)
+    collectPreviewUrlsFromRichText(block?.heading_3?.rich_text, candidateUrls)
+    collectPreviewUrlsFromRichText(block?.quote?.rich_text, candidateUrls)
+    collectPreviewUrlsFromRichText(block?.callout?.rich_text, candidateUrls)
+    collectPreviewUrlsFromRichText(block?.bulleted_list_item?.rich_text, candidateUrls)
+    collectPreviewUrlsFromRichText(block?.numbered_list_item?.rich_text, candidateUrls)
+    collectPreviewUrlsFromRichText(block?.to_do?.rich_text, candidateUrls)
+    collectPreviewUrlsFromRichText(block?.toggle?.rich_text, candidateUrls)
+    collectPreviewUrlsFromRichText(block?.template?.rich_text, candidateUrls)
+    collectPreviewUrlsFromRichText(block?.embed?.caption, candidateUrls)
+    collectPreviewUrlsFromRichText(block?.bookmark?.caption, candidateUrls)
+    collectPreviewUrlsFromRichText(block?.image?.caption, candidateUrls)
+    collectPreviewUrlsFromRichText(block?.video?.caption, candidateUrls)
+    collectPreviewUrlsFromRichText(block?.audio?.caption, candidateUrls)
+    collectPreviewUrlsFromRichText(block?.pdf?.caption, candidateUrls)
+    collectPreviewUrlsFromRichText(block?.file?.caption, candidateUrls)
+    collectPreviewUrlsFromRichText(block?.code?.caption, candidateUrls)
+  }
+
+  return Array.from(candidateUrls)
+}
+
+async function buildResolvedLinkPreviewMap(
+  blocksById: Record<string, any>,
+  initialLinkPreviewMap: LinkPreviewMap
+): Promise<LinkPreviewMap> {
+  const resolvedLinkPreviewMap: LinkPreviewMap = { ...initialLinkPreviewMap }
+  const fetchTargets = collectPreviewCandidateUrls(blocksById)
+    .filter(url => !resolvedLinkPreviewMap[url])
+    .slice(0, LINK_PREVIEW_FETCH_LIMIT)
+
+  if (!fetchTargets.length) return resolvedLinkPreviewMap
+
+  const previewEntries = await mapWithConcurrency(
+    fetchTargets,
+    LINK_PREVIEW_FETCH_CONCURRENCY,
+    async (url) => {
+      try {
+        const preview = await getLinkPreviewByNormalizedUrl(url)
+        return [url, preview] as const
+      } catch {
+        return [url, null] as const
+      }
+    }
+  )
+
+  for (const [url, preview] of previewEntries) {
+    if (!preview) continue
+    resolvedLinkPreviewMap[url] = preview
+  }
+
+  return resolvedLinkPreviewMap
+}
+
 interface NotionRendererProps {
   document: NotionDocument | null
   linkPreviewMap?: LinkPreviewMap
@@ -183,7 +294,10 @@ export default async function NotionRenderer({ document, linkPreviewMap = {}, pa
   const rootIds = document.rootIds || []
   const codeBlockPayloads = collectCodeBlockPayloads(blocksById)
   const codeBlockPayloadById = new Map(codeBlockPayloads.map(payload => [payload.blockId, payload]))
-  const highlightedCodeByBlockId = await buildHighlightedCodeMap(document.pageId || '', codeBlockPayloads)
+  const [highlightedCodeByBlockId, resolvedLinkPreviewMap] = await Promise.all([
+    buildHighlightedCodeMap(document.pageId || '', codeBlockPayloads),
+    buildResolvedLinkPreviewMap(blocksById, linkPreviewMap)
+  ])
 
   const renderChildren = (blockId: string) => {
     const childIds = childrenById[blockId] || []
@@ -197,7 +311,7 @@ export default async function NotionRenderer({ document, linkPreviewMap = {}, pa
     return (
       <li key={block.id} className={className}>
         <div className="notion-text whitespace-pre-wrap">
-          <RichText richText={richText} linkPreviewMap={linkPreviewMap} />
+          <RichText richText={richText} linkPreviewMap={resolvedLinkPreviewMap} />
         </div>
         {renderChildren(block.id)}
       </li>
@@ -210,7 +324,7 @@ export default async function NotionRenderer({ document, linkPreviewMap = {}, pa
     return (
       <li key={block.id} className={className}>
         <div className="notion-text whitespace-pre-wrap">
-          <RichText richText={richText} linkPreviewMap={linkPreviewMap} />
+          <RichText richText={richText} linkPreviewMap={resolvedLinkPreviewMap} />
         </div>
         {renderChildren(block.id)}
       </li>
@@ -240,7 +354,7 @@ export default async function NotionRenderer({ document, linkPreviewMap = {}, pa
             </span>
           </span>
           <div className="notion-to-do-body flex-1 min-w-0 whitespace-pre-wrap">
-            <RichText richText={richText} linkPreviewMap={linkPreviewMap} />
+            <RichText richText={richText} linkPreviewMap={resolvedLinkPreviewMap} />
           </div>
         </div>
         <div className="pl-7">
@@ -282,7 +396,7 @@ export default async function NotionRenderer({ document, linkPreviewMap = {}, pa
           <div key={block.id} className={className}>
             {richText.length > 0 && (
               <p className="notion-text whitespace-pre-wrap">
-                <RichText richText={richText} linkPreviewMap={linkPreviewMap} />
+                <RichText richText={richText} linkPreviewMap={resolvedLinkPreviewMap} />
               </p>
             )}
             {renderChildren(block.id)}
@@ -300,10 +414,10 @@ export default async function NotionRenderer({ document, linkPreviewMap = {}, pa
           block.type === 'heading_3' && 'text-[1.34rem] leading-[1.34] mt-8 mb-1.5'
         )
         const headingNode = block.type === 'heading_1'
-          ? <h1 className={headingClass}><RichText richText={richText} linkPreviewMap={linkPreviewMap} /></h1>
+          ? <h1 className={headingClass}><RichText richText={richText} linkPreviewMap={resolvedLinkPreviewMap} /></h1>
           : block.type === 'heading_2'
-            ? <h2 className={headingClass}><RichText richText={richText} linkPreviewMap={linkPreviewMap} /></h2>
-            : <h3 className={headingClass}><RichText richText={richText} linkPreviewMap={linkPreviewMap} /></h3>
+            ? <h2 className={headingClass}><RichText richText={richText} linkPreviewMap={resolvedLinkPreviewMap} /></h2>
+            : <h3 className={headingClass}><RichText richText={richText} linkPreviewMap={resolvedLinkPreviewMap} /></h3>
         return (
           <div key={block.id} id={getHeadingAnchorId(block.id)} className={className}>
             {headingNode}
@@ -316,7 +430,7 @@ export default async function NotionRenderer({ document, linkPreviewMap = {}, pa
         return (
           <div key={block.id} className={className}>
             <blockquote className="notion-quote border-l-4 border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 rounded-r-md whitespace-pre-wrap">
-              <RichText richText={richText} linkPreviewMap={linkPreviewMap} />
+              <RichText richText={richText} linkPreviewMap={resolvedLinkPreviewMap} />
             </blockquote>
             {renderChildren(block.id)}
           </div>
@@ -343,7 +457,7 @@ export default async function NotionRenderer({ document, linkPreviewMap = {}, pa
                 )}
               </span>
               <div className="notion-callout-text whitespace-pre-wrap">
-                <RichText richText={richText} linkPreviewMap={linkPreviewMap} />
+                <RichText richText={richText} linkPreviewMap={resolvedLinkPreviewMap} />
               </div>
             </div>
             {renderChildren(block.id)}
@@ -429,7 +543,7 @@ export default async function NotionRenderer({ document, linkPreviewMap = {}, pa
             />
             {caption.length > 0 && (
               <figcaption className="mt-2 notion-asset-caption whitespace-pre-wrap">
-                <RichText richText={caption} linkPreviewMap={linkPreviewMap} />
+                <RichText richText={caption} linkPreviewMap={resolvedLinkPreviewMap} />
               </figcaption>
             )}
             {renderChildren(block.id)}
@@ -469,7 +583,7 @@ export default async function NotionRenderer({ document, linkPreviewMap = {}, pa
                 </svg>
               </span>
               <span className="nobelium-toggle-title whitespace-pre-wrap">
-                <RichText richText={richText} linkPreviewMap={linkPreviewMap} />
+                <RichText richText={richText} linkPreviewMap={resolvedLinkPreviewMap} />
               </span>
             </summary>
             {hasChildren && (
@@ -487,7 +601,7 @@ export default async function NotionRenderer({ document, linkPreviewMap = {}, pa
           <div key={block.id} className={className}>
             {richText.length > 0 && (
               <p className="notion-text whitespace-pre-wrap">
-                <RichText richText={richText} linkPreviewMap={linkPreviewMap} />
+                <RichText richText={richText} linkPreviewMap={resolvedLinkPreviewMap} />
               </p>
             )}
             {renderChildren(block.id)}
@@ -638,12 +752,12 @@ export default async function NotionRenderer({ document, linkPreviewMap = {}, pa
                 </div>
               ) : (
                 <Suspense fallback={<LinkPreviewCardFallback />}>
-                  <LinkPreviewCard url={embedUrl} initialData={linkPreviewMap[previewKey]} />
+                  <LinkPreviewCard url={embedUrl} initialData={resolvedLinkPreviewMap[previewKey]} />
                 </Suspense>
               )}
               {caption.length > 0 && (
                 <div className="notion-asset-caption mt-2 whitespace-pre-wrap">
-                  <RichText richText={caption} linkPreviewMap={linkPreviewMap} />
+                  <RichText richText={caption} linkPreviewMap={resolvedLinkPreviewMap} />
                 </div>
               )}
             </div>
@@ -664,12 +778,12 @@ export default async function NotionRenderer({ document, linkPreviewMap = {}, pa
               </div>
             ) : (
               <Suspense fallback={<LinkPreviewCardFallback />}>
-                <LinkPreviewCard url={bookmarkUrl} initialData={linkPreviewMap[previewKey]} />
+                <LinkPreviewCard url={bookmarkUrl} initialData={resolvedLinkPreviewMap[previewKey]} />
               </Suspense>
             )}
             {caption.length > 0 && (
               <div className="notion-asset-caption mt-2 whitespace-pre-wrap">
-                <RichText richText={caption} linkPreviewMap={linkPreviewMap} />
+                <RichText richText={caption} linkPreviewMap={resolvedLinkPreviewMap} />
               </div>
             )}
             {renderChildren(block.id)}
@@ -708,7 +822,7 @@ export default async function NotionRenderer({ document, linkPreviewMap = {}, pa
               )}
               {caption.length > 0 && (
                 <div className="notion-asset-caption mt-2 whitespace-pre-wrap">
-                  <RichText richText={caption} linkPreviewMap={linkPreviewMap} />
+                  <RichText richText={caption} linkPreviewMap={resolvedLinkPreviewMap} />
                 </div>
               )}
             </div>
@@ -737,7 +851,7 @@ export default async function NotionRenderer({ document, linkPreviewMap = {}, pa
               )}
               {caption.length > 0 && (
                 <div className="notion-asset-caption mt-2 whitespace-pre-wrap">
-                  <RichText richText={caption} linkPreviewMap={linkPreviewMap} />
+                  <RichText richText={caption} linkPreviewMap={resolvedLinkPreviewMap} />
                 </div>
               )}
             </div>
@@ -778,7 +892,7 @@ export default async function NotionRenderer({ document, linkPreviewMap = {}, pa
             </div>
             {caption.length > 0 && (
               <div className="notion-asset-caption mt-2 whitespace-pre-wrap">
-                <RichText richText={caption} linkPreviewMap={linkPreviewMap} />
+                <RichText richText={caption} linkPreviewMap={resolvedLinkPreviewMap} />
               </div>
             )}
             {renderChildren(block.id)}
@@ -816,7 +930,7 @@ export default async function NotionRenderer({ document, linkPreviewMap = {}, pa
             )}
             {caption.length > 0 && (
               <div className="notion-asset-caption mt-2 whitespace-pre-wrap">
-                <RichText richText={caption} linkPreviewMap={linkPreviewMap} />
+                <RichText richText={caption} linkPreviewMap={resolvedLinkPreviewMap} />
               </div>
             )}
             {renderChildren(block.id)}
@@ -871,7 +985,7 @@ export default async function NotionRenderer({ document, linkPreviewMap = {}, pa
                                 scope={isColumnHeader ? 'col' : 'row'}
                               >
                                 <div className="whitespace-pre-wrap">
-                                  <RichText richText={cellRichText} linkPreviewMap={linkPreviewMap} />
+                                  <RichText richText={cellRichText} linkPreviewMap={resolvedLinkPreviewMap} />
                                 </div>
                               </th>
                             )
@@ -880,7 +994,7 @@ export default async function NotionRenderer({ document, linkPreviewMap = {}, pa
                           return (
                             <td key={`${row.id || rowIndex}-${colIndex}`} className="notion-table-cell">
                               <div className="whitespace-pre-wrap">
-                                <RichText richText={cellRichText} linkPreviewMap={linkPreviewMap} />
+                                <RichText richText={cellRichText} linkPreviewMap={resolvedLinkPreviewMap} />
                               </div>
                             </td>
                           )
@@ -908,7 +1022,7 @@ export default async function NotionRenderer({ document, linkPreviewMap = {}, pa
               </div>
             ) : (
               <Suspense fallback={<LinkPreviewCardFallback />}>
-                <LinkPreviewCard url={url} initialData={linkPreviewMap[previewKey]} />
+                <LinkPreviewCard url={url} initialData={resolvedLinkPreviewMap[previewKey]} />
               </Suspense>
             )}
             {renderChildren(block.id)}
@@ -983,6 +1097,3 @@ export default async function NotionRenderer({ document, linkPreviewMap = {}, pa
     </div>
   )
 }
-
-
-

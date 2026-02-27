@@ -1,6 +1,6 @@
 import cn from 'classnames'
 import { ARTICLE_CONTENT_MAX_WIDTH_CLASS } from '@/consts'
-import Utterances from '@/components/Utterances'
+import DeferredComments from '@/components/DeferredComments'
 import type { BlogConfig } from '@/lib/config'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
 
@@ -23,7 +23,7 @@ const Comments = ({ frontMatter, comment, appearance }: CommentsProps) => {
         fullWidth ? 'md:px-24' : `mx-auto ${ARTICLE_CONTENT_MAX_WIDTH_CLASS}`
       )}
     >
-      <Utterances issueTerm={frontMatter.id} repo={utterancesRepo} appearance={appearance} />
+      <DeferredComments issueTerm={frontMatter.id} repo={utterancesRepo} appearance={appearance} />
     </section>
   )
 }
