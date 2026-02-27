@@ -19,6 +19,13 @@ export interface BlogConfig {
   autoCollapsedNavBar: boolean
   ogImageGenerateURL: string
   socialLink: string
+  notionDateMention?: {
+    display: 'notion' | 'relative' | 'absolute'
+    includeTime: 'auto' | 'always' | 'never'
+    absoluteDateFormat: string
+    absoluteDateTimeFormat: string
+    relativeStyle: 'long' | 'short' | 'narrow'
+  }
   seo: {
     keywords: string[]
     googleSiteVerification: string

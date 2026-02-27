@@ -18,6 +18,13 @@ const BLOG = {
   autoCollapsedNavBar: false, // 是否关闭吸顶折叠导航（true 为不吸顶）
   ogImageGenerateURL: 'https://og-image-craigary.vercel.app', // OG 图片生成服务地址（末尾不要加 /）
   socialLink: 'https://twitter.com/jihuayu123',
+  notionDateMention: {
+    display: 'relative', // 'notion' | 'relative' | 'absolute'
+    includeTime: 'always', // 'auto' | 'always' | 'never'
+    absoluteDateFormat: 'YYYY年M月D日',
+    absoluteDateTimeFormat: 'YYYY年M月D日 HH:mm:ss',
+    relativeStyle: 'short' // 'long' | 'short' | 'narrow'
+  },
   seo: {
     keywords: ['Blog', 'Website', 'Notion'],
     googleSiteVerification: '' // Google Search Console 验证码（不用可留空）

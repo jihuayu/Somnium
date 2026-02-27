@@ -65,15 +65,19 @@ async function resolvePreviewData(
 
 export function LinkPreviewCardFallback({ className }: { className?: string }) {
   return (
-    <div className={cn('block my-4 h-[110px] rounded-md border border-zinc-200 dark:border-zinc-700 overflow-hidden bg-transparent', className)}>
-      <div className="flex h-full items-stretch">
-        <div className="min-w-0 basis-[65%] shrink-0 flex flex-col px-3 py-2">
+    <div
+      data-link-preview-card="true"
+      data-has-image="true"
+      className={cn('link-preview-card block my-4 h-[110px] rounded-md border border-zinc-200 dark:border-zinc-700 overflow-hidden bg-transparent', className)}
+    >
+      <div className="link-preview-card-inner flex h-full items-stretch">
+        <div className="link-preview-card-main min-w-0 basis-[65%] shrink-0 flex flex-col px-3 py-2">
           <div className="h-5 w-2/3 rounded bg-zinc-200 dark:bg-zinc-700 animate-pulse" />
           <div className="mt-2 h-4 w-full rounded bg-zinc-200 dark:bg-zinc-700 animate-pulse" />
           <div className="mt-1.5 h-4 w-5/6 rounded bg-zinc-200 dark:bg-zinc-700 animate-pulse" />
           <div className="mt-auto pt-1.5 h-4 w-2/5 rounded bg-zinc-200 dark:bg-zinc-700 animate-pulse" />
         </div>
-        <div className="basis-[35%] shrink-0 h-full">
+        <div className="link-preview-card-media basis-[35%] shrink-0 h-full">
           <div className="h-full w-full bg-zinc-200/80 dark:bg-zinc-700/70 animate-pulse" />
         </div>
       </div>
@@ -96,15 +100,16 @@ export default async function LinkPreviewCard({ url, className, initialData }: L
       target="_blank"
       rel="noopener noreferrer"
       data-link-preview-card="true"
+      data-has-image={generatedImageUrl ? 'true' : 'false'}
       className={cn(
-        'block my-4 h-[110px] rounded-md border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors overflow-hidden bg-transparent opacity-100 hover:opacity-100',
+        'link-preview-card block my-4 h-[110px] rounded-md border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors overflow-hidden bg-transparent opacity-100 hover:opacity-100',
         className
       )}
       style={{ opacity: 1 }}
     >
-      <div className="flex h-full items-stretch">
+      <div className="link-preview-card-inner flex h-full items-stretch">
         <div className={cn(
-          'min-w-0 flex flex-col px-3 py-2',
+          'link-preview-card-main min-w-0 flex flex-col px-3 py-2',
           generatedImageUrl ? 'basis-[65%] shrink-0' : 'flex-1'
         )}>
           <p className="text-base text-zinc-900 dark:text-zinc-100 font-medium truncate">
@@ -140,7 +145,7 @@ export default async function LinkPreviewCard({ url, className, initialData }: L
           </div>
         </div>
         {generatedImageUrl && (
-          <div className="basis-[35%] shrink-0 h-full">
+          <div className="link-preview-card-media basis-[35%] shrink-0 h-full">
             <div className="relative h-full w-full overflow-hidden bg-zinc-200/80 dark:bg-zinc-700/70">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img

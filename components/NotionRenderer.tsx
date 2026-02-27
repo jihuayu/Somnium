@@ -1,13 +1,18 @@
 ﻿import { Fragment, Suspense } from 'react'
 import cn from 'classnames'
 import katex from 'katex'
-import { FONTS_SANS, FONTS_SERIF } from '@/consts'
+import { FONTS_MISANS } from '@/consts'
 import { config } from '@/lib/server/config'
 import { resolveEmbedIframeUrl } from '@/lib/notion/embed'
 import { buildNotionPublicUrl, resolvePageHref } from '@/lib/notion/pageLinkMap'
 import LinkPreviewCard, { LinkPreviewCardFallback } from '@/components/LinkPreviewCard'
 import MermaidBlock from '@/components/MermaidBlock'
 import UrlMention, { type UrlMentionPreviewData } from '@/components/UrlMention'
+import DateMention, {
+  type DateMentionDisplayMode,
+  type DateMentionIncludeTimeMode,
+  type DateMentionRelativeStyle
+} from '@/components/DateMention'
 import type { LinkPreviewMap } from '@/lib/link-preview/types'
 import type { NotionDocument } from '@/lib/notion/getPostBlocks'
 import type { PageLinkMap } from '@/lib/notion/pageLinkMap'
@@ -138,8 +143,56 @@ function isLinkMention(item: any): boolean {
   return item?.type === 'mention' && item?.mention?.type === 'link_mention'
 }
 
+function isDateMention(item: any): boolean {
+  return item?.type === 'mention' && item?.mention?.type === 'date'
+}
+
 function isUrlMention(item: any): boolean {
   return isLinkPreviewMention(item) || isLinkMention(item)
+}
+
+const DATE_MENTION_DEFAULTS = {
+  display: 'relative' as DateMentionDisplayMode,
+  includeTime: 'always' as DateMentionIncludeTimeMode,
+  absoluteDateFormat: 'YYYY年M月D日',
+  absoluteDateTimeFormat: 'YYYY年M月D日 HH:mm:ss',
+  relativeStyle: 'short' as DateMentionRelativeStyle
+}
+
+function toDateMentionDisplayMode(value: unknown): DateMentionDisplayMode {
+  return value === 'relative' || value === 'absolute' || value === 'notion'
+    ? value
+    : DATE_MENTION_DEFAULTS.display
+}
+
+function toDateMentionIncludeTimeMode(value: unknown): DateMentionIncludeTimeMode {
+  return value === 'always' || value === 'never' || value === 'auto'
+    ? value
+    : DATE_MENTION_DEFAULTS.includeTime
+}
+
+function toDateMentionRelativeStyle(value: unknown): DateMentionRelativeStyle {
+  return value === 'long' || value === 'short' || value === 'narrow'
+    ? value
+    : DATE_MENTION_DEFAULTS.relativeStyle
+}
+
+const DATE_MENTION_OPTIONS = (() => {
+  const raw: Partial<NonNullable<typeof config.notionDateMention>> = config.notionDateMention || {}
+
+  return {
+    display: toDateMentionDisplayMode(raw.display),
+    includeTime: toDateMentionIncludeTimeMode(raw.includeTime),
+    absoluteDateFormat: `${raw.absoluteDateFormat || DATE_MENTION_DEFAULTS.absoluteDateFormat}`.trim() || DATE_MENTION_DEFAULTS.absoluteDateFormat,
+    absoluteDateTimeFormat:
+      `${raw.absoluteDateTimeFormat || DATE_MENTION_DEFAULTS.absoluteDateTimeFormat}`.trim() ||
+      DATE_MENTION_DEFAULTS.absoluteDateTimeFormat,
+    relativeStyle: toDateMentionRelativeStyle(raw.relativeStyle)
+  }
+})()
+
+function getDateMentionFallbackText(item: any): string {
+  return `${item?.plain_text || ''}`.trim()
 }
 
 function getRichTextLink(item: any): string | null {
@@ -274,6 +327,28 @@ function RichText({ richText = [], linkPreviewMap = {} }: { richText: any[]; lin
           </span>
         )
 
+        if (isDateMention(item)) {
+          const date = item?.mention?.date || {}
+          const start = `${date?.start || ''}`.trim()
+          const end = `${date?.end || ''}`.trim()
+          const timeZone = `${date?.time_zone || config.timezone || ''}`.trim()
+          return (
+            <DateMention
+              key={`${index}-${start}-${end}`}
+              start={start}
+              end={end}
+              timeZone={timeZone}
+              locale={config.lang}
+              displayMode={DATE_MENTION_OPTIONS.display}
+              includeTime={DATE_MENTION_OPTIONS.includeTime}
+              absoluteDateFormat={DATE_MENTION_OPTIONS.absoluteDateFormat}
+              absoluteDateTimeFormat={DATE_MENTION_OPTIONS.absoluteDateTimeFormat}
+              relativeStyle={DATE_MENTION_OPTIONS.relativeStyle}
+              fallbackText={getDateMentionFallbackText(item)}
+            />
+          )
+        }
+
         if (!href) {
           return <Fragment key={`${index}-${textContent}`}>{content}</Fragment>
         }
@@ -319,11 +394,8 @@ interface NotionRendererProps {
 }
 
 export default async function NotionRenderer({ document, linkPreviewMap = {}, pageLinkMap = {} }: NotionRendererProps) {
-  const font = {
-    'sans-serif': FONTS_SANS,
-    serif: FONTS_SERIF
-  }[config.font] || FONTS_SANS
-  const fontFamily = font.join(', ')
+  // 正文使用独立字体栈，避免受站点头部/导航的全局字体切换影响。
+  const fontFamily = FONTS_MISANS.join(', ')
 
   if (!document) return null
 
@@ -371,23 +443,22 @@ export default async function NotionRenderer({ document, linkPreviewMap = {}, pa
     const className = getBlockClassName(block.id)
 
     return (
-      <div key={block.id} className={cn(className, 'my-3')}>
-        <div className="notion-to-do-item flex items-start gap-2">
-          <span className="notion-property-checkbox mt-0.5">
-            <input
-              type="checkbox"
-              checked={checked}
-              readOnly
+      <div key={block.id} className={cn(className, 'notion-to-do-block')}>
+        <div className="notion-to-do-item flex items-baseline gap-1">
+          <span className="notion-property-checkbox">
+            <span
+              className={cn('notion-to-do-checkbox', checked && 'is-checked')}
+              role="img"
               aria-label={checked ? 'Checked' : 'Unchecked'}
-              className="h-[18px] w-[18px] accent-zinc-700 dark:accent-zinc-300"
-            />
+            >
+              {checked && (
+                <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <path d="M4.5 10.5 8.3 14.3 15.5 6.8" />
+                </svg>
+              )}
+            </span>
           </span>
-          <div
-            className={cn(
-              'notion-to-do-body flex-1 min-w-0 whitespace-pre-wrap',
-              checked && 'line-through text-zinc-500 dark:text-zinc-400'
-            )}
-          >
+          <div className="notion-to-do-body flex-1 min-w-0 whitespace-pre-wrap">
             <RichText richText={richText} linkPreviewMap={linkPreviewMap} />
           </div>
         </div>
@@ -431,10 +502,10 @@ export default async function NotionRenderer({ document, linkPreviewMap = {}, pa
       case 'heading_3': {
         const richText = block?.[block.type]?.rich_text || []
         const headingClass = cn(
-          'font-semibold text-black dark:text-white scroll-mt-20',
-          block.type === 'heading_1' && 'text-3xl mt-10 mb-4',
-          block.type === 'heading_2' && 'text-2xl mt-8 mb-3',
-          block.type === 'heading_3' && 'text-xl mt-7 mb-3'
+          'font-semibold text-inherit scroll-mt-20',
+          block.type === 'heading_1' && 'text-[2rem] leading-[1.24] mt-12 mb-3',
+          block.type === 'heading_2' && 'text-[1.62rem] leading-[1.28] mt-10 mb-2',
+          block.type === 'heading_3' && 'text-[1.34rem] leading-[1.34] mt-8 mb-1.5'
         )
         const headingNode = block.type === 'heading_1'
           ? <h1 className={headingClass}><RichText richText={richText} linkPreviewMap={linkPreviewMap} /></h1>
@@ -1098,7 +1169,7 @@ export default async function NotionRenderer({ document, linkPreviewMap = {}, pa
           i += 1
         }
         nodes.push(
-          <ul key={`bulleted-${block.id}`} className="notion-list list-disc my-3 space-y-1">
+          <ul key={`bulleted-${block.id}`} className="notion-list list-disc my-3">
             {listItems}
           </ul>
         )
@@ -1114,7 +1185,7 @@ export default async function NotionRenderer({ document, linkPreviewMap = {}, pa
           i += 1
         }
         nodes.push(
-          <ol key={`numbered-${block.id}`} className="notion-list list-decimal my-3 space-y-1">
+          <ol key={`numbered-${block.id}`} className="notion-list list-decimal my-3">
             {listItems}
           </ol>
         )

@@ -7,8 +7,6 @@ import { config } from '@/lib/server/config'
 import { buildPageMetadata } from '@/lib/server/metadata'
 import { prepareDayjs } from '@/lib/dayjs'
 import cn from 'classnames'
-import cjk from '@/lib/cjk'
-import { FONTS_SANS, FONTS_SERIF } from '@/consts'
 import ClientProviders from './providers'
 
 const defaultMetadata = buildPageMetadata()
@@ -39,11 +37,6 @@ export default async function RootLayout({
   }
   const colorSchemeClass = initialColorScheme[config.appearance] || ''
 
-  const CJK = cjk(config)
-  const isSerif = config.font === 'serif'
-  const fontType = isSerif ? 'Serif' : 'Sans'
-  const isCJK = ['zh', 'ja', 'ko'].includes(config.lang.slice(0, 2).toLocaleLowerCase())
-
   const dayBg = config.lightBackground || '#ffffff'
   const nightBg = config.darkBackground || '#111827'
   const themeBootstrapScript = `(() => {
@@ -68,31 +61,6 @@ export default async function RootLayout({
   return (
     <html lang={config.lang} className={cn(colorSchemeClass)} suppressHydrationWarning>
       <head>
-        {isSerif ? (
-          <>
-            <link rel="preload" href="/fonts/SourceSerif.var.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
-            <link rel="preload" href="/fonts/SourceSerif-Italic.var.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
-          </>
-        ) : (
-          <>
-            <link rel="preload" href="/fonts/IBMPlexSansVar-Roman.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
-            <link rel="preload" href="/fonts/IBMPlexSansVar-Italic.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
-          </>
-        )}
-        {isCJK && CJK && (
-          <>
-            <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-            <link
-              rel="preload"
-              as="style"
-              href={`https://fonts.googleapis.com/css2?family=Noto+${fontType}+${CJK}:wght@400;500;700&display=swap`}
-            />
-            <link
-              rel="stylesheet"
-              href={`https://fonts.googleapis.com/css2?family=Noto+${fontType}+${CJK}:wght@400;500;700&display=swap`}
-            />
-          </>
-        )}
         {config.appearance === 'auto' ? (
           <>
             <meta name="theme-color" content={config.lightBackground} media="(prefers-color-scheme: light)" />

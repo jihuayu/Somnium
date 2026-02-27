@@ -16,6 +16,7 @@ function isDarkMode(): boolean {
 
 export default function MermaidBlock({ code, className }: MermaidBlockProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
+  const renderTokenRef = useRef(0)
   const [renderError, setRenderError] = useState('')
   const [themeVersion, setThemeVersion] = useState(0)
   const localId = useId().replaceAll(':', '_')
@@ -42,33 +43,56 @@ export default function MermaidBlock({ code, className }: MermaidBlockProps) {
 
   useEffect(() => {
     let cancelled = false
+    const renderToken = renderTokenRef.current + 1
+    renderTokenRef.current = renderToken
 
     async function renderDiagram() {
-      if (!containerRef.current) return
+      const container = containerRef.current
+      if (!container || !container.isConnected) return
 
       const source = `${code || ''}`.trim()
       if (!source) {
-        containerRef.current.innerHTML = ''
+        container.innerHTML = ''
         setRenderError('')
         return
       }
 
       try {
+        container.innerHTML = ''
+
         mermaid.initialize({
           startOnLoad: false,
           securityLevel: 'strict',
           theme: isDarkMode() ? 'dark' : 'default'
         })
 
-        const { svg } = await mermaid.render(`mermaid-${localId}-${themeVersion}`, source)
-        if (cancelled || !containerRef.current) return
+        // 将当前容器传给 Mermaid，避免内部在脱离父节点的元素上做 DOM 插入。
+        const { svg, bindFunctions } = await mermaid.render(
+          `mermaid-${localId}-${themeVersion}-${renderToken}`,
+          source,
+          container
+        )
+        if (
+          cancelled ||
+          renderTokenRef.current !== renderToken ||
+          !container.isConnected ||
+          containerRef.current !== container
+        ) {
+          return
+        }
 
-        containerRef.current.innerHTML = svg
+        container.innerHTML = svg
+        bindFunctions?.(container)
         setRenderError('')
       } catch (error) {
-        if (cancelled) return
+        if (cancelled || renderTokenRef.current !== renderToken) return
 
-        if (containerRef.current) {
+        // 组件卸载/切页时，Mermaid 内部可能在已脱离 DOM 的节点上操作，忽略这类竞态错误。
+        if (error instanceof DOMException && error.name === 'NoModificationAllowedError') {
+          return
+        }
+
+        if (containerRef.current && containerRef.current.isConnected) {
           containerRef.current.innerHTML = ''
         }
 

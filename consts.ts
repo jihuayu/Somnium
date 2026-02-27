@@ -1,62 +1,56 @@
-// Preferred sans-serif font stack used across the site (first available font wins).
+// Notion-like sans-serif stack (system first, no heavy custom webfont bias).
 export const FONTS_SANS = [
-  '"IBM Plex Sans"',
   'ui-sans-serif',
   'system-ui',
   '-apple-system',
   'BlinkMacSystemFont',
-  'Segoe UI',
-  'Roboto',
-  '"Noto Sans"',
-  '"Helvetica Neue"',
+  '"Segoe UI Variable Display"',
+  '"Segoe UI"',
   'Helvetica',
-  '"Nimbus Sans L"',
-  'Arial',
-  '"Liberation Sans"',
   '"PingFang SC"',
   '"Hiragino Sans GB"',
   '"Noto Sans CJK SC"',
   '"Source Han Sans SC"',
-  '"Source Han Sans CN"',
   '"Microsoft YaHei"',
-  '"Wenquanyi Micro Hei"',
-  '"WenQuanYi Zen Hei"',
-  '"ST Heiti"',
-  'SimHei',
-  '"WenQuanYi Zen Hei Sharp"',
+  'Arial',
+  '"Apple Color Emoji"',
+  '"Segoe UI Emoji"',
+  '"Segoe UI Symbol"',
   'sans-serif'
 ]
 
-// Preferred serif font stack used when BLOG.font is set to 'serif'.
+// Notion-like serif stack.
 export const FONTS_SERIF = [
   '"Source Serif"',
+  '"Lyon-Text"',
   'ui-serif',
   'Georgia',
-  '"Nimbus Roman No9 L"',
+  '"Times New Roman"',
   '"Songti SC"',
   '"Noto Serif CJK SC"',
   '"Source Han Serif SC"',
-  '"Source Han Serif CN"',
-  'STSong',
-  '"AR PL New Sung"',
-  '"AR PL SungtiL GB"',
-  'NSimSun',
-  'SimSun',
-  '"TW-Sung"',
-  '"WenQuanYi Bitmap Song"',
-  '"AR PL UMing CN"',
-  '"AR PL UMing HK"',
-  '"AR PL UMing TW"',
-  '"AR PL UMing TW MBE"',
-  'PMingLiU',
-  'MingLiU',
   'serif'
 ]
 
+// Chinese reading stack.
+export const FONTS_MISANS = [
+  '"PingFang SC"',
+  '"Microsoft YaHei"',
+  '"Hiragino Sans GB"',
+  '"Noto Sans CJK SC"',
+  '"Source Han Sans SC"',
+  'ui-sans-serif',
+  'system-ui',
+  '-apple-system',
+  '"Segoe UI"',
+  'Arial',
+  'sans-serif'
+]
+
 // Tailwind max-width class used by article content containers.
-export const ARTICLE_CONTENT_MAX_WIDTH_CLASS = 'max-w-3xl'
+export const ARTICLE_CONTENT_MAX_WIDTH_CLASS = 'max-w-[50.6rem]'
 // Half of the article content width, in rem, used to compute TOC horizontal anchor.
-export const ARTICLE_CONTENT_HALF_WIDTH_REM = 24
+export const ARTICLE_CONTENT_HALF_WIDTH_REM = 25.3
 // Horizontal gap between article content and TOC, in rem.
 export const ARTICLE_TOC_GAP_REM = -1
 // TOC panel width in pixels.
