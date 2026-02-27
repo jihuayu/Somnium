@@ -1,10 +1,13 @@
-import net from 'node:net'
 import { unstable_cache } from 'next/cache'
 import { toLinkPreviewImageProxyUrl } from '@/lib/server/linkPreviewImageProxy'
 import type { LinkPreviewData, LinkPreviewMap } from '@/lib/link-preview/types'
 import { resolveLinkPreviewByAdapter, type ParsedLinkPreviewMetadata } from '@/lib/server/linkPreviewAdapters'
+import { getHostnameFromUrl, isPrivateHostname } from '@/lib/server/networkSafety'
+import { ONE_DAY_SECONDS } from '@/lib/server/cache'
+import { mapWithConcurrency } from '@/lib/utils/promisePool'
 
-const LINK_PREVIEW_CACHE_REVALIDATE_SECONDS = 60 * 60 * 6
+const LINK_PREVIEW_CACHE_REVALIDATE_SECONDS = ONE_DAY_SECONDS
+const LINK_PREVIEW_FETCH_CONCURRENCY = 6
 
 function decodeEntities(input = ''): string {
   return input
@@ -13,33 +16,6 @@ function decodeEntities(input = ''): string {
     .replaceAll('&gt;', '>')
     .replaceAll('&quot;', '"')
     .replaceAll('&#39;', "'")
-}
-
-function getHostname(url: string): string {
-  try { return new URL(url).hostname.toLowerCase() } catch { return '' }
-}
-
-function isPrivateHostname(hostname: string): boolean {
-  if (!hostname) return true
-  if (hostname === 'localhost') return true
-  if (hostname.endsWith('.local')) return true
-
-  const ipVersion = net.isIP(hostname)
-  if (ipVersion === 4) {
-    if (hostname.startsWith('10.')) return true
-    if (hostname.startsWith('127.')) return true
-    if (hostname.startsWith('192.168.')) return true
-    if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname)) return true
-    if (hostname.startsWith('169.254.')) return true
-  }
-  if (ipVersion === 6) {
-    const lower = hostname.toLowerCase()
-    if (lower === '::1') return true
-    if (lower.startsWith('fe8') || lower.startsWith('fe9') || lower.startsWith('fea') || lower.startsWith('feb')) return true
-    if (lower.startsWith('fc') || lower.startsWith('fd')) return true
-  }
-
-  return false
 }
 
 function pickMetaValue(entries: Map<string, string>, keys: string[]): string {
@@ -101,7 +77,7 @@ function parseMetadata(html: string, sourceUrl: string): ParsedLinkPreviewMetada
 }
 
 function createFallback(url: string): LinkPreviewData {
-  const hostname = getHostname(url)
+  const hostname = getHostnameFromUrl(url)
   const defaultIcon = hostname
     ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(hostname)}&sz=32`
     : ''
@@ -167,7 +143,7 @@ async function fetchLinkPreview(normalizedUrl: string): Promise<LinkPreviewData>
     const html = await response.text()
     const resolvedUrl = response.url || normalizedUrl
     const metadata = parseMetadata(html, resolvedUrl)
-    const hostname = getHostname(resolvedUrl)
+    const hostname = getHostnameFromUrl(resolvedUrl)
     const parsedUrl = new URL(resolvedUrl)
 
     const adapted = resolveLinkPreviewByAdapter({
@@ -180,7 +156,7 @@ async function fetchLinkPreview(normalizedUrl: string): Promise<LinkPreviewData>
     })
 
     const finalUrl = `${adapted.url || resolvedUrl}`.trim() || resolvedUrl
-    const finalHostname = `${adapted.hostname || hostname || getHostname(finalUrl)}`.trim() || hostname
+    const finalHostname = `${adapted.hostname || hostname || getHostnameFromUrl(finalUrl)}`.trim() || hostname
     const finalTitle = `${adapted.title || ''}`.trim() || fallback.title
     const finalDescription = `${adapted.description || ''}`.trim()
     const finalImage = `${adapted.image || ''}`.trim()
@@ -226,11 +202,13 @@ export async function getLinkPreviewMap(urls: string[]): Promise<LinkPreviewMap>
   ))
   if (!uniqueUrls.length) return {}
 
-  const records = await Promise.all(
-    uniqueUrls.map(async (url) => {
+  const records = await mapWithConcurrency(
+    uniqueUrls,
+    LINK_PREVIEW_FETCH_CONCURRENCY,
+    async (url) => {
       const data = await getLinkPreview(url)
       return data ? [url, data] as const : null
-    })
+    }
   )
 
   const map: LinkPreviewMap = {}

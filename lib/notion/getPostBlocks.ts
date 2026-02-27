@@ -1,8 +1,9 @@
 import api from '@/lib/server/notion-api'
+import { ONE_DAY_SECONDS } from '@/lib/server/cache'
 import { unstable_cache } from 'next/cache'
 
 const NOTION_BLOCK_FETCH_CONCURRENCY = 6
-const POST_BLOCKS_CACHE_REVALIDATE_SECONDS = 30
+const POST_BLOCKS_CACHE_REVALIDATE_SECONDS = ONE_DAY_SECONDS
 
 export interface TocItem {
   id: string

@@ -1,10 +1,11 @@
 import { Feed } from 'feed'
 import { unstable_cache } from 'next/cache'
 import { config } from '@/lib/server/config'
+import { ONE_DAY_SECONDS } from '@/lib/server/cache'
 import { buildNotionDocument, type NotionDocument } from '@/lib/notion/getPostBlocks'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
 
-const FEED_POST_BLOCKS_CACHE_SECONDS = 60 * 60 * 24
+const FEED_POST_BLOCKS_CACHE_SECONDS = ONE_DAY_SECONDS
 
 function trimSlashes(value: string): string {
   return value.replace(/^\/+|\/+$/g, '')

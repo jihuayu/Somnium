@@ -1,3 +1,5 @@
+import { ONE_DAY_SECONDS } from '@/lib/server/cache'
+
 interface LinkPreviewImageProxyRule {
   id: string
   match: (url: URL) => boolean
@@ -14,17 +16,17 @@ const IMAGE_PROXY_RULES: LinkPreviewImageProxyRule[] = [
         url.hostname.toLowerCase() === 'img1.doubanio.com' || 
         url.hostname.toLowerCase() === 'img2.doubanio.com' || 
         url.hostname.toLowerCase() === 'img3.doubanio.com'
-      ) &&
+    ) &&
       url.pathname.startsWith('/'),
     referer: 'https://book.douban.com/',
-    cacheTtlSeconds: 60 * 60 * 24
+    cacheTtlSeconds: ONE_DAY_SECONDS
   }
 ]
 
 const DEFAULT_PROXY_RULE = {
   id: 'default',
   referer: '',
-  cacheTtlSeconds: 60 * 60 * 24
+  cacheTtlSeconds: ONE_DAY_SECONDS
 }
 
 export function normalizeHttpUrl(rawUrl: string): URL | null {

@@ -2,13 +2,14 @@ import { NextResponse } from 'next/server'
 import { getFeedPosts } from '@/lib/notion/getFeedPosts'
 import { generateRss } from '@/lib/rss'
 import { config } from '@/lib/server/config'
+import { ONE_HOUR_SECONDS } from '@/lib/server/cache'
 
 const FEED_ITEM_LIMIT = 20
-const FEED_BROWSER_CACHE_SECONDS = 60 * 60 * 12
+const FEED_BROWSER_CACHE_SECONDS = ONE_HOUR_SECONDS * 12
 const FEED_EDGE_CACHE_SECONDS = 60 * 60 * 24 * 7
 const FEED_STALE_SECONDS = 60 * 60 * 24 * 30
 
-export const revalidate = 86400
+export const revalidate = ONE_HOUR_SECONDS * 12
 export const dynamic = 'force-static'
 
 function buildFeedHeaders(): HeadersInit {

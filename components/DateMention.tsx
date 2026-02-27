@@ -6,6 +6,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type CSSProperties,
   type FocusEvent
 } from 'react'
@@ -42,6 +43,52 @@ const DATE_MENTION_FLOATING_CONFIG = {
   fallbackHeight: 46,
   initialOffset: 12
 } as const
+
+let relativeNowTs = Date.now()
+let relativeNowTimer: number | null = null
+const relativeNowSubscribers = new Set<() => void>()
+
+function notifyRelativeNowSubscribers() {
+  relativeNowTs = Date.now()
+  for (const subscriber of relativeNowSubscribers) {
+    subscriber()
+  }
+}
+
+function ensureRelativeNowTimer() {
+  if (typeof window === 'undefined') return
+  if (relativeNowTimer !== null) return
+
+  relativeNowTimer = window.setInterval(() => {
+    notifyRelativeNowSubscribers()
+  }, RELATIVE_TICK_MS)
+}
+
+function clearRelativeNowTimer() {
+  if (relativeNowTimer === null) return
+  window.clearInterval(relativeNowTimer)
+  relativeNowTimer = null
+}
+
+function subscribeRelativeNow(onStoreChange: () => void) {
+  relativeNowSubscribers.add(onStoreChange)
+  ensureRelativeNowTimer()
+
+  return () => {
+    relativeNowSubscribers.delete(onStoreChange)
+    if (!relativeNowSubscribers.size) {
+      clearRelativeNowTimer()
+    }
+  }
+}
+
+function getRelativeNowSnapshot() {
+  return relativeNowTs
+}
+
+function getRelativeNowServerSnapshot() {
+  return 0
+}
 
 function toDayjsLocale(locale: string): string {
   const normalized = `${locale || ''}`.trim().toLowerCase()
@@ -142,7 +189,11 @@ export default function DateMention({
   const triggerRef = useRef<HTMLSpanElement | null>(null)
   const cardRef = useRef<HTMLDivElement | null>(null)
   const closeTimerRef = useRef<number | null>(null)
-  const [nowTs, setNowTs] = useState(() => Date.now())
+  const nowTs = useSyncExternalStore(
+    subscribeRelativeNow,
+    getRelativeNowSnapshot,
+    getRelativeNowServerSnapshot
+  )
   const [open, setOpen] = useState(false)
   const [floatingStyle, setFloatingStyle] = useState<CSSProperties>({
     position: 'fixed',
@@ -153,11 +204,6 @@ export default function DateMention({
 
   // Keep dependency in API surface for compatibility; dayjs relativeTime does not use style variants.
   void relativeStyle
-
-  useEffect(() => {
-    const timer = window.setInterval(() => setNowTs(Date.now()), RELATIVE_TICK_MS)
-    return () => window.clearInterval(timer)
-  }, [])
 
   const parsedStart = useMemo(() => parseMentionDate(start, timeZone), [start, timeZone])
   const parsedEnd = useMemo(() => parseMentionDate(end, timeZone), [end, timeZone])

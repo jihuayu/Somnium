@@ -1,10 +1,11 @@
 import { config as BLOG } from '@/lib/server/config'
 import api from '@/lib/server/notion-api'
+import { ONE_DAY_SECONDS } from '@/lib/server/cache'
 import { unstable_cache } from 'next/cache'
 import filterPublishedPosts, { PostData } from './filterPublishedPosts'
 import { mapPageToPost, normalizeNotionUuid } from './postMapper'
 
-const FEED_POSTS_CACHE_REVALIDATE_SECONDS = 60 * 60 * 24
+const FEED_POSTS_CACHE_REVALIDATE_SECONDS = ONE_DAY_SECONDS
 
 async function fetchFeedPosts(): Promise<PostData[]> {
   const dataSourceId = normalizeNotionUuid(process.env.NOTION_DATA_SOURCE_ID)

@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { searchPosts } from '@/lib/notion/searchPosts'
 import { MIN_SEARCH_QUERY_LENGTH } from '@/lib/search/constants'
 import { decodePossiblyEncoded } from '@/lib/url/decodePossiblyEncoded'
+import { ONE_HOUR_SECONDS } from '@/lib/server/cache'
 
 const DEFAULT_LIMIT = 20
 const MAX_LIMIT = 50
-const SEARCH_BROWSER_CACHE_SECONDS = 30
+const SEARCH_BROWSER_CACHE_SECONDS = ONE_HOUR_SECONDS
 const SEARCH_EDGE_CACHE_SECONDS = 120
 
 export const dynamic = 'force-dynamic'

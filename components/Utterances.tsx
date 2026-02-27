@@ -47,11 +47,7 @@ function buildEmbedSrc(repo: string, issueTerm: string, theme: string): string {
 
   const currentUrl = new URL(window.location.href)
   const sessionFromQuery = currentUrl.searchParams.get('utterances')
-  if (sessionFromQuery) {
-    localStorage.setItem('utterances-session', sessionFromQuery)
-    currentUrl.searchParams.delete('utterances')
-    history.replaceState(undefined, document.title, currentUrl.href)
-  }
+  currentUrl.searchParams.delete('utterances')
 
   const canonical = document.querySelector<HTMLLinkElement>("link[rel='canonical']")
   const descriptionMeta = document.querySelector<HTMLMetaElement>("meta[name='description']")
@@ -91,6 +87,18 @@ const Utterances = ({ issueTerm, repo, appearance, layout }: UtterancesProps) =>
     if (!isHydrated || !repo) return ''
     return buildEmbedSrc(repo, issueTerm, theme)
   }, [isHydrated, repo, issueTerm, theme])
+
+  useEffect(() => {
+    if (!isHydrated) return
+
+    const currentUrl = new URL(window.location.href)
+    const sessionFromQuery = currentUrl.searchParams.get('utterances')
+    if (!sessionFromQuery) return
+
+    localStorage.setItem('utterances-session', sessionFromQuery)
+    currentUrl.searchParams.delete('utterances')
+    history.replaceState(undefined, document.title, currentUrl.href)
+  }, [isHydrated])
 
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {

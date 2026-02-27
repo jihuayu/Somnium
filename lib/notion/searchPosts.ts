@@ -1,5 +1,6 @@
 import { config as BLOG } from '@/lib/server/config'
 import api from '@/lib/server/notion-api'
+import { ONE_DAY_SECONDS } from '@/lib/server/cache'
 import { unstable_cache } from 'next/cache'
 import {
   MAX_SEARCH_KEYWORD_TOKENS,
@@ -11,7 +12,7 @@ import { mapPageToPost, normalizeNotionUuid } from './postMapper'
 
 const MAX_PAGE_FETCHES = 10
 const MAX_LIMIT = 50
-const DATA_SOURCE_SCHEMA_CACHE_TTL_MS = 5 * 60 * 1000
+const DATA_SOURCE_SCHEMA_CACHE_SECONDS = ONE_DAY_SECONDS
 
 interface SearchPostsOptions {
   query: string
@@ -92,7 +93,7 @@ const getSearchPropertyRefsCached = unstable_cache(
     }
   },
   ['notion-search-property-refs'],
-  { revalidate: DATA_SOURCE_SCHEMA_CACHE_TTL_MS / 1000, tags: ['notion-search-schema'] }
+  { revalidate: DATA_SOURCE_SCHEMA_CACHE_SECONDS, tags: ['notion-search-schema'] }
 )
 
 async function getSearchPropertyRefs(dataSourceId: string, signal?: AbortSignal): Promise<SearchPropertyRefs> {

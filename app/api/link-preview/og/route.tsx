@@ -1,8 +1,12 @@
 import { ImageResponse } from '@vercel/og'
+import { ONE_DAY_SECONDS, SEVEN_DAYS_SECONDS } from '@/lib/server/cache'
 
 export const runtime = 'nodejs'
 const TARGET_HEIGHT = 440
 const FALLBACK_WIDTH = 520
+const OG_IMAGE_BROWSER_CACHE_SECONDS = SEVEN_DAYS_SECONDS
+const OG_IMAGE_EDGE_CACHE_SECONDS = ONE_DAY_SECONDS
+const OG_IMAGE_STALE_SECONDS = ONE_DAY_SECONDS
 
 function toAbsoluteImageUrl(rawUrl: string, requestUrl: string): string {
   if (!rawUrl) return ''
@@ -56,7 +60,7 @@ export async function GET(req: Request) {
 
   result.headers.set(
     'Cache-Control',
-    'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400'
+    `public, max-age=${OG_IMAGE_BROWSER_CACHE_SECONDS}, s-maxage=${OG_IMAGE_EDGE_CACHE_SECONDS}, stale-while-revalidate=${OG_IMAGE_STALE_SECONDS}`
   )
 
   return result

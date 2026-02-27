@@ -17,6 +17,7 @@ import type { LinkPreviewMap } from '@/lib/link-preview/types'
 import type { NotionDocument } from '@/lib/notion/getPostBlocks'
 import type { PageLinkMap } from '@/lib/notion/pageLinkMap'
 import { highlightCodeToHtml, normalizeCodeLanguage, type HighlightedCode } from '@/lib/server/shiki'
+import { mapWithConcurrency } from '@/lib/utils/promisePool'
 
 function getPlainTextFromRichText(richText: any[] = []): string {
   return richText.map(item => item?.plain_text || '').join('')
@@ -280,6 +281,7 @@ function getUrlMentionPreviewData(
 }
 
 type HighlightedCodeByBlockId = Record<string, HighlightedCode>
+const HIGHLIGHT_CODE_CONCURRENCY = 4
 
 async function buildHighlightedCodeMap(blocksById: Record<string, any>): Promise<HighlightedCodeByBlockId> {
   const codeBlocks = Object.values(blocksById || {}).filter((block: any) => {
@@ -290,12 +292,14 @@ async function buildHighlightedCodeMap(blocksById: Record<string, any>): Promise
 
   if (!codeBlocks.length) return {}
 
-  const entries = await Promise.all(
-    codeBlocks.map(async (block: any) => {
+  const entries = await mapWithConcurrency(
+    codeBlocks,
+    HIGHLIGHT_CODE_CONCURRENCY,
+    async (block: any) => {
       const source = getPlainTextFromRichText(block?.code?.rich_text || [])
       const highlighted = await highlightCodeToHtml(source, block?.code?.language || '')
       return [block.id, highlighted] as const
-    })
+    }
   )
 
   return Object.fromEntries(entries)

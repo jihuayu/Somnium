@@ -3,8 +3,9 @@ import ContainerServer from '@/components/ContainerServer'
 import BlogPostServer from '@/components/BlogPostServer'
 import Pagination from '@/components/Pagination'
 import { getAllPosts } from '@/lib/notion'
+import { ONE_DAY_SECONDS } from '@/lib/server/cache'
 
-export const revalidate = 60
+export const revalidate = ONE_DAY_SECONDS
 
 export async function generateStaticParams() {
   const posts = await getAllPosts({ includePages: false })

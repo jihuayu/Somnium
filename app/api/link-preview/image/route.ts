@@ -1,36 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import net from 'node:net'
+import { ONE_DAY_SECONDS, SEVEN_DAYS_SECONDS } from '@/lib/server/cache'
 import { resolveLinkPreviewImageProxy } from '@/lib/server/linkPreviewImageProxy'
+import { getHostnameFromUrl, isPrivateHostname } from '@/lib/server/networkSafety'
 
 const FETCH_TIMEOUT_MS = 10_000
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024
-
-function getHostname(url: string): string {
-  try { return new URL(url).hostname.toLowerCase() } catch { return '' }
-}
-
-function isPrivateHostname(hostname: string): boolean {
-  if (!hostname) return true
-  if (hostname === 'localhost') return true
-  if (hostname.endsWith('.local')) return true
-
-  const ipVersion = net.isIP(hostname)
-  if (ipVersion === 4) {
-    if (hostname.startsWith('10.')) return true
-    if (hostname.startsWith('127.')) return true
-    if (hostname.startsWith('192.168.')) return true
-    if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname)) return true
-    if (hostname.startsWith('169.254.')) return true
-  }
-  if (ipVersion === 6) {
-    const lower = hostname.toLowerCase()
-    if (lower === '::1') return true
-    if (lower.startsWith('fe8') || lower.startsWith('fe9') || lower.startsWith('fea') || lower.startsWith('feb')) return true
-    if (lower.startsWith('fc') || lower.startsWith('fd')) return true
-  }
-
-  return false
-}
+const IMAGE_BROWSER_CACHE_SECONDS = SEVEN_DAYS_SECONDS
+const IMAGE_STALE_SECONDS = ONE_DAY_SECONDS
 
 function buildResponse({
   contentType,
@@ -39,14 +15,13 @@ function buildResponse({
   contentLength
 }: {
   contentType: string
-  body: ReadableStream<Uint8Array>
+  body: BodyInit
   cacheTtlSeconds: number
   contentLength?: number
 }) {
-  const browserMaxAge = Math.min(60 * 60, cacheTtlSeconds)
   const headers: Record<string, string> = {
     'Content-Type': contentType,
-    'Cache-Control': `public, max-age=${browserMaxAge}, s-maxage=${cacheTtlSeconds}, stale-while-revalidate=86400`
+    'Cache-Control': `public, max-age=${IMAGE_BROWSER_CACHE_SECONDS}, s-maxage=${cacheTtlSeconds}, stale-while-revalidate=${IMAGE_STALE_SECONDS}`
   }
 
   if (typeof contentLength === 'number' && Number.isFinite(contentLength) && contentLength >= 0) {
@@ -66,6 +41,37 @@ function parseContentLength(rawValue: string | null): number | undefined {
   return Math.floor(value)
 }
 
+async function readImageBodyWithLimit(
+  body: ReadableStream<Uint8Array>,
+  maxBytes: number
+): Promise<Uint8Array | null> {
+  const reader = body.getReader()
+  const chunks: Uint8Array[] = []
+  let total = 0
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      if (!value || value.byteLength === 0) continue
+
+      total += value.byteLength
+      if (total > maxBytes) return null
+      chunks.push(value)
+    }
+  } finally {
+    try { await reader.cancel() } catch {}
+  }
+
+  const merged = new Uint8Array(total)
+  let offset = 0
+  for (const chunk of chunks) {
+    merged.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+  return merged
+}
+
 export async function GET(req: NextRequest) {
   const rawUrl = req.nextUrl.searchParams.get('url')?.trim() || ''
   const resolved = resolveLinkPreviewImageProxy(rawUrl)
@@ -75,7 +81,7 @@ export async function GET(req: NextRequest) {
 
   const { normalizedUrl, rule } = resolved
 
-  const targetHostname = getHostname(normalizedUrl)
+  const targetHostname = getHostnameFromUrl(normalizedUrl)
   if (isPrivateHostname(targetHostname)) {
     return NextResponse.json({ error: 'Blocked hostname' }, { status: 400 })
   }
@@ -103,7 +109,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch image' }, { status: 502 })
     }
 
-    const finalHostname = getHostname(response.url || normalizedUrl)
+    const finalHostname = getHostnameFromUrl(response.url || normalizedUrl)
     if (isPrivateHostname(finalHostname)) {
       return NextResponse.json({ error: 'Blocked redirected hostname' }, { status: 400 })
     }
@@ -122,10 +128,17 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to read image response' }, { status: 502 })
     }
 
+    const imageBytes = await readImageBodyWithLimit(response.body, MAX_IMAGE_BYTES)
+    if (!imageBytes) {
+      return NextResponse.json({ error: 'Upstream image is too large' }, { status: 413 })
+    }
+    const normalizedBytes = new Uint8Array(imageBytes.byteLength)
+    normalizedBytes.set(imageBytes)
+
     return buildResponse({
       contentType,
-      body: response.body,
-      contentLength,
+      body: new Blob([normalizedBytes]),
+      contentLength: imageBytes.byteLength,
       cacheTtlSeconds: rule.cacheTtlSeconds
     })
   } catch {

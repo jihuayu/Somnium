@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { cache } from 'react'
+import { unstable_cache } from 'next/cache'
 import { getAllPosts, getPostBlocks } from '@/lib/notion'
 import loadLocale from '@/assets/i18n'
 import ContainerServer from '@/components/ContainerServer'
@@ -9,10 +10,20 @@ import { getLinkPreviewMap } from '@/lib/server/linkPreview'
 import { getLinkPreviewTargets } from '@/lib/notion/linkPreviewTargets'
 import { buildPageLinkMap } from '@/lib/notion/pageLinkMap'
 import { config } from '@/lib/server/config'
+import { ONE_DAY_SECONDS } from '@/lib/server/cache'
 import SlugPostClient from './slug-client'
 
-export const revalidate = 60
+export const revalidate = ONE_DAY_SECONDS
 const getPosts = cache(async () => getAllPosts({ includePages: true }))
+const PAGE_LINK_MAP_CACHE_REVALIDATE_SECONDS = ONE_DAY_SECONDS
+const getPageLinkMap = unstable_cache(
+  async () => {
+    const allPosts = await getAllPosts({ includePages: true })
+    return buildPageLinkMap(allPosts, config.path || '')
+  },
+  ['page-link-map-v1'],
+  { revalidate: PAGE_LINK_MAP_CACHE_REVALIDATE_SECONDS, tags: ['page-link-map'] }
+)
 
 export async function generateStaticParams() {
   const posts = await getPosts()
@@ -50,9 +61,12 @@ export default async function SlugPage({ params }: SlugPageProps) {
 
   const document = await getPostBlocks(post.id)
   if (!document) notFound()
-  const linkPreviewMap = await getLinkPreviewMap(getLinkPreviewTargets(document))
-  const pageLinkMap = buildPageLinkMap(posts, config.path || '')
-  const locale = await loadLocale('basic', config.lang)
+  const linkPreviewTargets = getLinkPreviewTargets(document)
+  const [linkPreviewMap, pageLinkMap, locale] = await Promise.all([
+    getLinkPreviewMap(linkPreviewTargets),
+    getPageLinkMap(),
+    loadLocale('basic', config.lang)
+  ])
 
   const fullWidth = post.fullWidth ?? false
 
