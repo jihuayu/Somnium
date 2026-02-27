@@ -20,7 +20,7 @@ interface UrlMentionProps {
   isGithub: boolean
 }
 
-// 悬浮卡片的交互与定位参数，统一集中在这里便于后续微调。
+// Hover card behavior and layout constants.
 const URL_MENTION_FLOATING_CONFIG = {
   closeDelayMs: 90,
   viewportPadding: 12,
@@ -70,6 +70,7 @@ export default function UrlMention({
   const triggerRef = useRef<HTMLAnchorElement | null>(null)
   const cardRef = useRef<HTMLAnchorElement | null>(null)
   const closeTimerRef = useRef<number | null>(null)
+  const updateRafRef = useRef<number | null>(null)
   const [open, setOpen] = useState(false)
   const [floatingStyle, setFloatingStyle] = useState<CSSProperties>({
     position: 'fixed',
@@ -83,6 +84,12 @@ export default function UrlMention({
     if (closeTimerRef.current === null) return
     window.clearTimeout(closeTimerRef.current)
     closeTimerRef.current = null
+  }
+
+  const clearUpdateRaf = () => {
+    if (updateRafRef.current === null) return
+    window.cancelAnimationFrame(updateRafRef.current)
+    updateRafRef.current = null
   }
 
   const openCard = () => {
@@ -113,12 +120,9 @@ export default function UrlMention({
       URL_MENTION_FLOATING_CONFIG.targetWidth,
       Math.max(URL_MENTION_FLOATING_CONFIG.minWidth, viewportWidth - viewportPadding * 2)
     )
-    cardElement.style.width = `${width}px`
-
     const height = cardElement.offsetHeight || URL_MENTION_FLOATING_CONFIG.fallbackHeight
     const canPlaceBottom = triggerRect.bottom + gap + height + viewportPadding <= viewportHeight
     const canPlaceTop = triggerRect.top - gap - height >= viewportPadding
-    // 优先显示在下方；下方空间不足且上方够用时切到上方。
     const placeTop = !canPlaceBottom && canPlaceTop
 
     let left = clamp(triggerRect.left, viewportPadding, viewportWidth - width - viewportPadding)
@@ -137,14 +141,21 @@ export default function UrlMention({
     })
   }, [open, preview])
 
+  const scheduleUpdatePosition = useCallback(() => {
+    clearUpdateRaf()
+    updateRafRef.current = window.requestAnimationFrame(() => {
+      updateRafRef.current = null
+      updatePosition()
+    })
+  }, [updatePosition])
+
   useEffect(() => {
     if (!open || !preview) return
 
-    const rafId = window.requestAnimationFrame(() => updatePosition())
-    const handleViewportChange = () => updatePosition()
-    // 文本换行、图片加载等会改变卡片尺寸，监听尺寸变化保持定位准确。
+    scheduleUpdatePosition()
+    const handleViewportChange = () => scheduleUpdatePosition()
     const observer = cardRef.current
-      ? new ResizeObserver(() => updatePosition())
+      ? new ResizeObserver(() => scheduleUpdatePosition())
       : null
 
     if (cardRef.current && observer) observer.observe(cardRef.current)
@@ -153,16 +164,17 @@ export default function UrlMention({
     window.addEventListener('scroll', handleViewportChange, true)
 
     return () => {
-      window.cancelAnimationFrame(rafId)
+      clearUpdateRaf()
       observer?.disconnect()
       window.removeEventListener('resize', handleViewportChange)
       window.removeEventListener('scroll', handleViewportChange, true)
     }
-  }, [open, preview, updatePosition])
+  }, [open, preview, scheduleUpdatePosition])
 
   useEffect(() => {
     return () => {
       clearCloseTimer()
+      clearUpdateRaf()
     }
   }, [])
 
@@ -174,7 +186,6 @@ export default function UrlMention({
 
   const floatingCard = open && preview
     ? createPortal(
-      // 使用 Portal 挂到 body，避免父容器的 overflow/stacking context 造成裁剪。
       <a
         ref={cardRef}
         href={preview.href}
@@ -189,9 +200,8 @@ export default function UrlMention({
       >
         {preview.image && (
           <span className="notion-url-mention-hover-cover">
-            {/* 图片加载后高度可能变化，需要重新计算卡片位置。 */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={preview.image} alt={preview.title} loading="lazy" onLoad={updatePosition} />
+            <img src={preview.image} alt={preview.title} loading="lazy" onLoad={scheduleUpdatePosition} />
           </span>
         )}
 

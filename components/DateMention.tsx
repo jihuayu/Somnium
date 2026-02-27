@@ -44,6 +44,8 @@ const DATE_MENTION_FLOATING_CONFIG = {
   initialOffset: 12
 } as const
 
+const subscribeNoop = () => () => {}
+
 let relativeNowTs = Date.now()
 let relativeNowTimer: number | null = null
 const relativeNowSubscribers = new Set<() => void>()
@@ -86,8 +88,20 @@ function getRelativeNowSnapshot() {
   return relativeNowTs
 }
 
+function getRelativeNowDisabledSnapshot() {
+  return Date.now()
+}
+
 function getRelativeNowServerSnapshot() {
   return 0
+}
+
+function useRelativeNow(enabled: boolean): number {
+  return useSyncExternalStore(
+    enabled ? subscribeRelativeNow : subscribeNoop,
+    enabled ? getRelativeNowSnapshot : getRelativeNowDisabledSnapshot,
+    getRelativeNowServerSnapshot
+  )
 }
 
 function toDayjsLocale(locale: string): string {
@@ -189,12 +203,11 @@ export default function DateMention({
   const triggerRef = useRef<HTMLSpanElement | null>(null)
   const cardRef = useRef<HTMLDivElement | null>(null)
   const closeTimerRef = useRef<number | null>(null)
-  const nowTs = useSyncExternalStore(
-    subscribeRelativeNow,
-    getRelativeNowSnapshot,
-    getRelativeNowServerSnapshot
-  )
+  const updateRafRef = useRef<number | null>(null)
   const [open, setOpen] = useState(false)
+  const primaryMode = displayMode === 'notion' ? 'relative' : displayMode
+  const secondaryMode = primaryMode === 'relative' ? 'absolute' : 'relative'
+  const nowTs = useRelativeNow(primaryMode === 'relative' || open)
   const [floatingStyle, setFloatingStyle] = useState<CSSProperties>({
     position: 'fixed',
     left: DATE_MENTION_FLOATING_CONFIG.initialOffset,
@@ -227,9 +240,6 @@ export default function DateMention({
 
   const notionText = stripLeadingAt(fallbackText)
 
-  const primaryMode = displayMode === 'notion' ? 'relative' : displayMode
-  const secondaryMode = primaryMode === 'relative' ? 'absolute' : 'relative'
-
   const primaryRaw = primaryMode === 'relative' ? relativeText : absoluteText
   const secondaryRaw = secondaryMode === 'relative' ? relativeText : absoluteText
 
@@ -242,6 +252,12 @@ export default function DateMention({
     if (closeTimerRef.current === null) return
     window.clearTimeout(closeTimerRef.current)
     closeTimerRef.current = null
+  }
+
+  const clearUpdateRaf = () => {
+    if (updateRafRef.current === null) return
+    window.cancelAnimationFrame(updateRafRef.current)
+    updateRafRef.current = null
   }
 
   const openCard = () => {
@@ -289,13 +305,21 @@ export default function DateMention({
     })
   }, [open, hasHoverCard])
 
+  const scheduleUpdatePosition = useCallback(() => {
+    clearUpdateRaf()
+    updateRafRef.current = window.requestAnimationFrame(() => {
+      updateRafRef.current = null
+      updatePosition()
+    })
+  }, [updatePosition])
+
   useEffect(() => {
     if (!open || !hasHoverCard) return
 
-    const rafId = window.requestAnimationFrame(() => updatePosition())
-    const handleViewportChange = () => updatePosition()
+    scheduleUpdatePosition()
+    const handleViewportChange = () => scheduleUpdatePosition()
     const observer = cardRef.current
-      ? new ResizeObserver(() => updatePosition())
+      ? new ResizeObserver(() => scheduleUpdatePosition())
       : null
 
     if (cardRef.current && observer) observer.observe(cardRef.current)
@@ -304,16 +328,17 @@ export default function DateMention({
     window.addEventListener('scroll', handleViewportChange, true)
 
     return () => {
-      window.cancelAnimationFrame(rafId)
+      clearUpdateRaf()
       observer?.disconnect()
       window.removeEventListener('resize', handleViewportChange)
       window.removeEventListener('scroll', handleViewportChange, true)
     }
-  }, [open, hasHoverCard, updatePosition])
+  }, [open, hasHoverCard, scheduleUpdatePosition])
 
   useEffect(() => {
     return () => {
       clearCloseTimer()
+      clearUpdateRaf()
     }
   }, [])
 

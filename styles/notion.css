@@ -615,6 +615,7 @@ div[data-link-preview-card='true'].link-preview-card {
 }
 .notion-list {
   width: 100%;
+  padding-inline-start: 28px;
 }
 .notion-collection {
   @apply max-w-full;
@@ -655,7 +656,6 @@ div[data-link-preview-card='true'].link-preview-card {
   align-items: center;
   justify-content: center;
   line-height: 1;
-  transform: translateY(0.8px);
 }
 
 .notion-to-do-checkbox svg {
@@ -671,7 +671,6 @@ div[data-link-preview-card='true'].link-preview-card {
   border-color: rgb(22 163 74);
   color: rgb(22 163 74);
   background-color: rgb(22 163 74 / 0.08);
-  transform: translateY(-0.8px);
 }
 
 .dark .notion-to-do-checkbox {
@@ -698,10 +697,6 @@ div[data-link-preview-card='true'].link-preview-card {
 .notion-to-do-item {
   align-items: baseline;
   line-height: var(--no-leading);
-}
-
-.notion-list {
-  padding-inline-start: 28px;
 }
 
 .notion-list > li {

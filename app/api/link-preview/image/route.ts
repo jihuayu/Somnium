@@ -76,7 +76,7 @@ export async function GET(req: NextRequest) {
   const rawUrl = req.nextUrl.searchParams.get('url')?.trim() || ''
   const resolved = resolveLinkPreviewImageProxy(rawUrl)
   if (!resolved) {
-    return NextResponse.json({ error: 'Invalid image URL' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid image URL or blocked by whitelist' }, { status: 400 })
   }
 
   const { normalizedUrl, rule } = resolved
@@ -128,16 +128,27 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to read image response' }, { status: 502 })
     }
 
+    if (typeof contentLength === 'number') {
+      return buildResponse({
+        contentType,
+        body: response.body,
+        contentLength,
+        cacheTtlSeconds: rule.cacheTtlSeconds
+      })
+    }
+
     const imageBytes = await readImageBodyWithLimit(response.body, MAX_IMAGE_BYTES)
     if (!imageBytes) {
       return NextResponse.json({ error: 'Upstream image is too large' }, { status: 413 })
     }
-    const normalizedBytes = new Uint8Array(imageBytes.byteLength)
-    normalizedBytes.set(imageBytes)
+    const imageBuffer = imageBytes.buffer.slice(
+      imageBytes.byteOffset,
+      imageBytes.byteOffset + imageBytes.byteLength
+    ) as ArrayBuffer
 
     return buildResponse({
       contentType,
-      body: new Blob([normalizedBytes]),
+      body: new Blob([imageBuffer]),
       contentLength: imageBytes.byteLength,
       cacheTtlSeconds: rule.cacheTtlSeconds
     })

@@ -1,35 +1,12 @@
 import cn from 'classnames'
 import type { LinkPreviewData } from '@/lib/link-preview/types'
 import { getLinkPreview, normalizePreviewUrl } from '@/lib/server/linkPreview'
-import { toLinkPreviewImageProxyUrl } from '@/lib/server/linkPreviewImageProxy'
+import { canUseLinkPreviewOgProxy, toLinkPreviewImageProxyUrl } from '@/lib/server/linkPreviewImageProxy'
 
 interface LinkPreviewCardProps {
   url: string
   className?: string
   initialData?: LinkPreviewData
-}
-
-const LINK_PREVIEW_OG_PROXY_WHITELIST = [
-  'douban.com',
-  'doubanio.com'
-] as const
-
-function isHostInOgProxyWhitelist(hostname: string): boolean {
-  const host = `${hostname || ''}`.trim().toLowerCase()
-  if (!host) return false
-  return LINK_PREVIEW_OG_PROXY_WHITELIST.some(
-    allowed => host === allowed || host.endsWith(`.${allowed}`)
-  )
-}
-
-function shouldUseLinkPreviewOgProxy(targetUrl: string): boolean {
-  if (!targetUrl) return false
-  try {
-    const parsed = new URL(targetUrl)
-    return isHostInOgProxyWhitelist(parsed.hostname)
-  } catch {
-    return false
-  }
 }
 
 function buildFallback(url: string): LinkPreviewData {
@@ -66,14 +43,12 @@ function mergePreview(
   }
 }
 
-function buildLinkPreviewOgImageUrl(preview: LinkPreviewData, fallbackUrl: string): string {
+function buildLinkPreviewOgImageUrl(preview: LinkPreviewData): string {
   if (!preview.image) return ''
-  const targetUrl = preview.url || fallbackUrl
-  if (!shouldUseLinkPreviewOgProxy(targetUrl)) return preview.image
+  if (!canUseLinkPreviewOgProxy(preview.image)) return preview.image
 
   const params = new URLSearchParams()
   params.set('image', preview.image)
-  params.set('url', preview.url || fallbackUrl)
   return `/api/link-preview/og?${params.toString()}`
 }
 
@@ -116,7 +91,7 @@ export default async function LinkPreviewCard({ url, className, initialData }: L
   const fallback = buildFallback(normalizedUrl || url)
   const preview = await resolvePreviewData(normalizedUrl, fallback, initialData)
   const displayUrl = preview.url || normalizedUrl
-  const generatedImageUrl = displayUrl ? buildLinkPreviewOgImageUrl(preview, displayUrl) : ''
+  const generatedImageUrl = displayUrl ? buildLinkPreviewOgImageUrl(preview) : ''
 
   if (!displayUrl) return null
 

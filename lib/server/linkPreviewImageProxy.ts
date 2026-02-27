@@ -23,12 +23,6 @@ const IMAGE_PROXY_RULES: LinkPreviewImageProxyRule[] = [
   }
 ]
 
-const DEFAULT_PROXY_RULE = {
-  id: 'default',
-  referer: '',
-  cacheTtlSeconds: ONE_DAY_SECONDS
-}
-
 export function normalizeHttpUrl(rawUrl: string): URL | null {
   if (!rawUrl) return null
   try {
@@ -58,22 +52,30 @@ export function resolveLinkPreviewImageProxy(rawUrl: string): {
         rule: {
           id: rule.id,
           referer: rule.referer || '',
-          cacheTtlSeconds: rule.cacheTtlSeconds || DEFAULT_PROXY_RULE.cacheTtlSeconds
+          cacheTtlSeconds: rule.cacheTtlSeconds || ONE_DAY_SECONDS
         }
       }
     }
   }
-
-  return {
-    normalizedUrl: parsed.toString(),
-    rule: DEFAULT_PROXY_RULE
-  }
+  return null
 }
 
 export function isLinkPreviewImageWhitelisted(rawUrl: string): boolean {
   const parsed = normalizeHttpUrl(rawUrl)
   if (!parsed) return false
   return IMAGE_PROXY_RULES.some(rule => rule.match(parsed))
+}
+
+export function canUseLinkPreviewOgProxy(rawUrl: string): boolean {
+  if (!rawUrl) return false
+  try {
+    const parsed = new URL(rawUrl, 'https://proxy.local')
+    if (parsed.pathname !== '/api/link-preview/image') return false
+    const sourceImageUrl = parsed.searchParams.get('url')?.trim() || ''
+    return isLinkPreviewImageWhitelisted(sourceImageUrl)
+  } catch {
+    return false
+  }
 }
 
 export function toLinkPreviewImageProxyUrl(rawImageUrl: string): string {

@@ -8,6 +8,7 @@ import { mapWithConcurrency } from '@/lib/utils/promisePool'
 
 const LINK_PREVIEW_CACHE_REVALIDATE_SECONDS = ONE_DAY_SECONDS
 const LINK_PREVIEW_FETCH_CONCURRENCY = 6
+const LINK_PREVIEW_MAX_HTML_BYTES = 256 * 1024
 
 function decodeEntities(input = ''): string {
   return input
@@ -76,6 +77,41 @@ function parseMetadata(html: string, sourceUrl: string): ParsedLinkPreviewMetada
   return { ogTitle, titleTag, description, image, icon }
 }
 
+async function readTextHeadWithLimit(response: Response, maxBytes: number): Promise<string> {
+  if (!response.body) return ''
+
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  const chunks: string[] = []
+  let total = 0
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      if (!value || value.byteLength === 0) continue
+
+      const remaining = maxBytes - total
+      if (remaining <= 0) break
+
+      if (value.byteLength > remaining) {
+        const slice = value.subarray(0, remaining)
+        chunks.push(decoder.decode(slice, { stream: true }))
+        total += slice.byteLength
+        break
+      }
+
+      chunks.push(decoder.decode(value, { stream: true }))
+      total += value.byteLength
+    }
+  } finally {
+    try { await reader.cancel() } catch {}
+  }
+
+  chunks.push(decoder.decode())
+  return chunks.join('')
+}
+
 function createFallback(url: string): LinkPreviewData {
   const hostname = getHostnameFromUrl(url)
   const defaultIcon = hostname
@@ -140,7 +176,10 @@ async function fetchLinkPreview(normalizedUrl: string): Promise<LinkPreviewData>
       return fallback
     }
 
-    const html = await response.text()
+    const html = await readTextHeadWithLimit(response, LINK_PREVIEW_MAX_HTML_BYTES)
+    if (!html) {
+      return fallback
+    }
     const resolvedUrl = response.url || normalizedUrl
     const metadata = parseMetadata(html, resolvedUrl)
     const hostname = getHostnameFromUrl(resolvedUrl)
