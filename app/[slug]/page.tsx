@@ -7,6 +7,7 @@ import ContainerServer from '@/components/ContainerServer'
 import { buildPageMetadata } from '@/lib/server/metadata'
 import { getLinkPreviewMap } from '@/lib/server/linkPreview'
 import { getLinkPreviewTargets } from '@/lib/notion/linkPreviewTargets'
+import { buildPageLinkMap } from '@/lib/notion/pageLinkMap'
 import { config } from '@/lib/server/config'
 import SlugPostClient from './slug-client'
 
@@ -50,6 +51,7 @@ export default async function SlugPage({ params }: SlugPageProps) {
   const document = await getPostBlocks(post.id)
   if (!document) notFound()
   const linkPreviewMap = await getLinkPreviewMap(getLinkPreviewTargets(document))
+  const pageLinkMap = buildPageLinkMap(posts, config.path || '')
   const locale = await loadLocale('basic', config.lang)
 
   const fullWidth = post.fullWidth ?? false
@@ -68,6 +70,7 @@ export default async function SlugPage({ params }: SlugPageProps) {
         backLabel={locale.POST.BACK}
         topLabel={locale.POST.TOP}
         linkPreviewMap={linkPreviewMap}
+        pageLinkMap={pageLinkMap}
       />
     </ContainerServer>
   )

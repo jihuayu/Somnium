@@ -2,6 +2,7 @@ import net from 'node:net'
 import { unstable_cache } from 'next/cache'
 import { toLinkPreviewImageProxyUrl } from '@/lib/server/linkPreviewImageProxy'
 import type { LinkPreviewData, LinkPreviewMap } from '@/lib/link-preview/types'
+import { resolveLinkPreviewByAdapter, type ParsedLinkPreviewMetadata } from '@/lib/server/linkPreviewAdapters'
 
 const LINK_PREVIEW_CACHE_REVALIDATE_SECONDS = 60 * 60 * 6
 
@@ -65,7 +66,7 @@ function toAbsoluteUrl(baseUrl: string, maybeRelativeUrl: string): string {
   try { return new URL(maybeRelativeUrl, baseUrl).toString() } catch { return '' }
 }
 
-function parseMetadata(html: string, sourceUrl: string) {
+function parseMetadata(html: string, sourceUrl: string): ParsedLinkPreviewMetadata {
   const head = html.slice(0, 200_000)
   const metaValues = new Map<string, string>()
   let icon = ''
@@ -90,13 +91,13 @@ function parseMetadata(html: string, sourceUrl: string) {
   }
 
   const titleMatch = head.match(/<title[^>]*>([\s\S]*?)<\/title>/i)
-  const titleFromTag = decodeEntities((titleMatch?.[1] || '').trim())
-  const title = pickMetaValue(metaValues, ['og:title']) || titleFromTag
+  const titleTag = decodeEntities((titleMatch?.[1] || '').trim())
+  const ogTitle = pickMetaValue(metaValues, ['og:title'])
   const description = pickMetaValue(metaValues, ['og:description', 'twitter:description', 'description'])
   const imageRaw = pickMetaValue(metaValues, ['og:image'])
   const image = toAbsoluteUrl(sourceUrl, imageRaw)
 
-  return { title, description, image, icon }
+  return { ogTitle, titleTag, description, image, icon }
 }
 
 function createFallback(url: string): LinkPreviewData {
@@ -114,8 +115,19 @@ function createFallback(url: string): LinkPreviewData {
   }
 }
 
+function normalizeRawPreviewUrl(rawUrl: string): string {
+  const trimmed = `${rawUrl || ''}`.trim()
+  if (!trimmed) return ''
+  if (/^https?:\/\//i.test(trimmed)) return trimmed
+  if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) return trimmed
+  if (/^(?:www\.)?[a-z0-9][a-z0-9.-]*\.[a-z]{2,}(?::\d+)?(?:[/?#].*)?$/i.test(trimmed)) {
+    return `https://${trimmed}`
+  }
+  return trimmed
+}
+
 export function normalizePreviewUrl(rawUrl: string): string | null {
-  const trimmed = rawUrl?.trim()
+  const trimmed = normalizeRawPreviewUrl(rawUrl)
   if (!trimmed) return null
 
   try {
@@ -156,14 +168,31 @@ async function fetchLinkPreview(normalizedUrl: string): Promise<LinkPreviewData>
     const resolvedUrl = response.url || normalizedUrl
     const metadata = parseMetadata(html, resolvedUrl)
     const hostname = getHostname(resolvedUrl)
+    const parsedUrl = new URL(resolvedUrl)
+
+    const adapted = resolveLinkPreviewByAdapter({
+      normalizedUrl,
+      resolvedUrl,
+      hostname,
+      parsedUrl,
+      metadata,
+      fallback
+    })
+
+    const finalUrl = `${adapted.url || resolvedUrl}`.trim() || resolvedUrl
+    const finalHostname = `${adapted.hostname || hostname || getHostname(finalUrl)}`.trim() || hostname
+    const finalTitle = `${adapted.title || ''}`.trim() || fallback.title
+    const finalDescription = `${adapted.description || ''}`.trim()
+    const finalImage = `${adapted.image || ''}`.trim()
+    const finalIcon = `${adapted.icon || fallback.icon}`.trim()
 
     const data: LinkPreviewData = {
-      url: resolvedUrl,
-      hostname,
-      title: metadata.title || fallback.title,
-      description: metadata.description || '',
-      image: toLinkPreviewImageProxyUrl(metadata.image || ''),
-      icon: toLinkPreviewImageProxyUrl(metadata.icon || fallback.icon)
+      url: finalUrl,
+      hostname: finalHostname,
+      title: finalTitle,
+      description: finalDescription,
+      image: toLinkPreviewImageProxyUrl(finalImage),
+      icon: toLinkPreviewImageProxyUrl(finalIcon)
     }
 
     return data
@@ -176,7 +205,7 @@ async function fetchLinkPreview(normalizedUrl: string): Promise<LinkPreviewData>
 
 const getCachedLinkPreview = unstable_cache(
   async (normalizedUrl: string): Promise<LinkPreviewData> => fetchLinkPreview(normalizedUrl),
-  ['link-preview-metadata-v4'],
+  ['link-preview-metadata-v5'],
   {
     revalidate: LINK_PREVIEW_CACHE_REVALIDATE_SECONDS,
     tags: ['link-preview-metadata']

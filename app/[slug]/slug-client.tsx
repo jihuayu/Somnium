@@ -1,4 +1,4 @@
-import cn from 'classnames'
+﻿import cn from 'classnames'
 import Link from 'next/link'
 import { ARTICLE_CONTENT_MAX_WIDTH_CLASS } from '@/consts'
 import Post from '@/components/Post'
@@ -7,6 +7,7 @@ import { config } from '@/lib/server/config'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
 import type { NotionDocument } from '@/lib/notion/getPostBlocks'
 import type { LinkPreviewMap } from '@/lib/link-preview/types'
+import type { PageLinkMap } from '@/lib/notion/pageLinkMap'
 
 interface SlugPostClientProps {
   post: PostData
@@ -16,6 +17,7 @@ interface SlugPostClientProps {
   backLabel: string
   topLabel: string
   linkPreviewMap?: LinkPreviewMap
+  pageLinkMap?: PageLinkMap
 }
 
 export default function SlugPostClient({
@@ -25,7 +27,8 @@ export default function SlugPostClient({
   homePath,
   backLabel,
   topLabel,
-  linkPreviewMap = {}
+  linkPreviewMap = {},
+  pageLinkMap = {}
 }: SlugPostClientProps) {
   return (
     <>
@@ -34,6 +37,7 @@ export default function SlugPostClient({
         document={document}
         fullWidth={fullWidth}
         linkPreviewMap={linkPreviewMap}
+        pageLinkMap={pageLinkMap}
       />
 
       <div
@@ -58,3 +62,4 @@ export default function SlugPostClient({
     </>
   )
 }
+

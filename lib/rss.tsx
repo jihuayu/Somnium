@@ -85,6 +85,67 @@ function getPlainTextFromRichText(richText: any[] = [], trim = true): string {
   return trim ? text.trim() : text
 }
 
+function getFileBlockUrl(filePayload: any): string {
+  if (!filePayload || typeof filePayload !== 'object') return ''
+  if (filePayload.type === 'external') return filePayload?.external?.url || ''
+  if (filePayload.type === 'file') return filePayload?.file?.url || ''
+  return filePayload?.external?.url || filePayload?.file?.url || ''
+}
+
+function getFileNameFromUrl(fileUrl: string): string {
+  if (!fileUrl) return 'File'
+  try {
+    const parsed = new URL(fileUrl)
+    const filename = decodeURIComponent(parsed.pathname.split('/').filter(Boolean).pop() || '')
+    return filename || parsed.hostname || 'File'
+  } catch {
+    return 'File'
+  }
+}
+
+function getLinkToPageLabel(linkToPage: any): string {
+  if (!linkToPage || typeof linkToPage !== 'object') return 'Linked page'
+  const linkType = `${linkToPage.type || ''}`
+  switch (linkType) {
+    case 'page_id':
+      return 'Linked page'
+    case 'database_id':
+      return 'Linked database'
+    case 'block_id':
+      return 'Linked block'
+    case 'comment_id':
+      return 'Linked comment'
+    default:
+      return 'Linked page'
+  }
+}
+
+function isLinkPreviewMention(item: any): boolean {
+  return item?.type === 'mention' && item?.mention?.type === 'link_preview'
+}
+
+function isLinkMention(item: any): boolean {
+  return item?.type === 'mention' && item?.mention?.type === 'link_mention'
+}
+
+function getRichTextHrefByType(item: any): string | null {
+  if (!item || typeof item !== 'object') return null
+
+  if (item.type === 'text') {
+    return item?.text?.link?.url || null
+  }
+
+  if (isLinkPreviewMention(item)) {
+    return item?.mention?.link_preview?.url || item?.href || null
+  }
+
+  if (isLinkMention(item)) {
+    return item?.mention?.link_mention?.href || item?.href || null
+  }
+
+  return item?.href || null
+}
+
 function getHtmlFromRichText(richText: any[] = []): string {
   return richText
     .map(item => {
@@ -102,7 +163,7 @@ function getHtmlFromRichText(richText: any[] = []): string {
       if (annotations.strikethrough) output = `<s>${output}</s>`
       if (annotations.underline) output = `<u>${output}</u>`
 
-      const href = item?.href || item?.text?.link?.url || null
+      const href = getRichTextHrefByType(item)
       if (href) output = `<a href="${escapeHtml(href)}">${output}</a>`
 
       return output
@@ -149,11 +210,35 @@ function renderBlockHtml(
       const text = getHtmlFromRichText(block?.bulleted_list_item?.rich_text || [])
       return `<ul><li>${text}${renderedChildren}</li></ul>`
     }
+    case 'numbered_list_item': {
+      const text = getHtmlFromRichText(block?.numbered_list_item?.rich_text || [])
+      return `<ol><li>${text}${renderedChildren}</li></ol>`
+    }
+    case 'to_do': {
+      const text = getHtmlFromRichText(block?.to_do?.rich_text || [])
+      const checked = !!block?.to_do?.checked
+      const marker = checked ? '&#x2611;' : '&#x2610;'
+      return `<p>${marker} ${text}</p>${renderedChildren}`
+    }
+    case 'callout': {
+      const text = getHtmlFromRichText(block?.callout?.rich_text || [])
+      const emoji = block?.callout?.icon?.type === 'emoji' ? block?.callout?.icon?.emoji || '' : ''
+      const prefix = emoji ? `${escapeHtml(emoji)} ` : ''
+      return `${text ? `<blockquote>${prefix}${text}</blockquote>` : ''}${renderedChildren}`
+    }
+    case 'equation': {
+      const expression = `${block?.equation?.expression || ''}`.trim()
+      return `${expression ? `<p><code>${escapeHtml(expression)}</code></p>` : ''}${renderedChildren}`
+    }
     case 'code': {
       const code = block?.code || {}
       const source = escapeHtml(getPlainTextFromRichText(code.rich_text || [], false))
       const language = code.language ? ` class="language-${escapeHtml(code.language)}"` : ''
       return `<pre><code${language}>${source}</code></pre>${renderedChildren}`
+    }
+    case 'toggle': {
+      const text = getHtmlFromRichText(block?.toggle?.rich_text || [])
+      return `<details><summary>${text || 'Toggle'}</summary>${renderedChildren}</details>`
     }
     case 'image': {
       const image = block?.image || {}
@@ -166,6 +251,27 @@ function renderBlockHtml(
         : ''
       return `${imageHtml}${renderedChildren}`
     }
+    case 'video': {
+      const video = block?.video || {}
+      const source = getFileBlockUrl(video)
+      const caption = getHtmlFromRichText(video.caption || [])
+      const media = source ? `<p><a href="${escapeHtml(source)}">${escapeHtml(getFileNameFromUrl(source))}</a></p>` : ''
+      return `${media}${caption ? `<p>${caption}</p>` : ''}${renderedChildren}`
+    }
+    case 'audio': {
+      const audio = block?.audio || {}
+      const source = getFileBlockUrl(audio)
+      const caption = getHtmlFromRichText(audio.caption || [])
+      const media = source ? `<p><a href="${escapeHtml(source)}">${escapeHtml(getFileNameFromUrl(source))}</a></p>` : ''
+      return `${media}${caption ? `<p>${caption}</p>` : ''}${renderedChildren}`
+    }
+    case 'pdf': {
+      const pdf = block?.pdf || {}
+      const source = getFileBlockUrl(pdf)
+      const caption = getHtmlFromRichText(pdf.caption || [])
+      const media = source ? `<p><a href="${escapeHtml(source)}">Open PDF</a></p>` : ''
+      return `${media}${caption ? `<p>${caption}</p>` : ''}${renderedChildren}`
+    }
     case 'embed': {
       const url = block?.embed?.url || ''
       const caption = getHtmlFromRichText(block?.embed?.caption || [])
@@ -177,6 +283,72 @@ function renderBlockHtml(
       const caption = getHtmlFromRichText(block?.bookmark?.caption || [])
       const link = url ? `<p><a href="${escapeHtml(url)}">${escapeHtml(url)}</a></p>` : ''
       return `${link}${caption ? `<p>${caption}</p>` : ''}${renderedChildren}`
+    }
+    case 'file': {
+      const file = block?.file || {}
+      const url = getFileBlockUrl(file)
+      const caption = getHtmlFromRichText(file.caption || [])
+      const fileName = escapeHtml(getFileNameFromUrl(url))
+      const link = url ? `<p><a href="${escapeHtml(url)}">${fileName}</a></p>` : ''
+      return `${link}${caption ? `<p>${caption}</p>` : ''}${renderedChildren}`
+    }
+    case 'template': {
+      const text = getHtmlFromRichText(block?.template?.rich_text || [])
+      return `${text ? `<p>${text}</p>` : ''}${renderedChildren}`
+    }
+    case 'synced_block':
+      return renderedChildren
+    case 'child_page': {
+      const title = `${block?.child_page?.title || ''}`.trim()
+      return `${title ? `<p>${escapeHtml(title)}</p>` : ''}${renderedChildren}`
+    }
+    case 'child_database': {
+      const title = `${block?.child_database?.title || ''}`.trim()
+      return `${title ? `<p>${escapeHtml(title)}</p>` : ''}${renderedChildren}`
+    }
+    case 'link_to_page': {
+      const label = getLinkToPageLabel(block?.link_to_page || {})
+      return `<p>${escapeHtml(label)}</p>${renderedChildren}`
+    }
+    case 'table_of_contents':
+    case 'breadcrumb':
+      return renderedChildren
+    case 'table': {
+      const table = block?.table || {}
+      const rowIds = childrenById[blockId] || []
+      const rows = rowIds
+        .map(id => blocksById[id])
+        .filter((row: any) => row?.type === 'table_row')
+
+      const widthFromSchema = Number(table.table_width) || 0
+      const widthFromRows = rows.reduce((max: number, row: any) => {
+        const cells = row?.table_row?.cells
+        return Math.max(max, Array.isArray(cells) ? cells.length : 0)
+      }, 0)
+      const columnCount = Math.max(widthFromSchema, widthFromRows)
+
+      if (!rows.length || !columnCount) return renderedChildren
+
+      const body = rows.map((row: any, rowIndex: number) => {
+        const cells = Array.isArray(row?.table_row?.cells) ? row.table_row.cells : []
+        const rowHtml = Array.from({ length: columnCount }).map((_, colIndex: number) => {
+          const cellRichText = cells[colIndex] || []
+          const content = getHtmlFromRichText(cellRichText) || '&nbsp;'
+          const isHeader = (!!table.has_column_header && rowIndex === 0) || (!!table.has_row_header && colIndex === 0)
+          const tag = isHeader ? 'th' : 'td'
+          return `<${tag}>${content}</${tag}>`
+        }).join('')
+        return `<tr>${rowHtml}</tr>`
+      }).join('')
+
+      return `<table><tbody>${body}</tbody></table>${renderedChildren}`
+    }
+    case 'table_row':
+      return ''
+    case 'link_preview': {
+      const url = block?.link_preview?.url || ''
+      const link = url ? `<p><a href="${escapeHtml(url)}">${escapeHtml(url)}</a></p>` : ''
+      return `${link}${renderedChildren}`
     }
     case 'divider':
       return `<hr/>${renderedChildren}`

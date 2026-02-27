@@ -14,16 +14,18 @@ import TableOfContents from '@/components/TableOfContents'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
 import type { NotionDocument } from '@/lib/notion/getPostBlocks'
 import type { LinkPreviewMap } from '@/lib/link-preview/types'
+import type { PageLinkMap } from '@/lib/notion/pageLinkMap'
 
 interface PostProps {
   post: PostData
   document: NotionDocument
   fullWidth?: boolean
   linkPreviewMap?: LinkPreviewMap
+  pageLinkMap?: PageLinkMap
 }
 
 export default function Post(props: PostProps) {
-  const { post, document, fullWidth = false, linkPreviewMap = {} } = props
+  const { post, document, fullWidth = false, linkPreviewMap = {}, pageLinkMap = {} } = props
 
   return (
     <article className={cn('flex flex-col', fullWidth ? 'md:px-24' : 'items-center')}>
@@ -58,7 +60,7 @@ export default function Post(props: PostProps) {
       )}
       <div className="self-stretch -mt-4 relative">
         <div className={fullWidth ? 'w-full px-4 md:px-24' : `mx-auto w-full ${ARTICLE_CONTENT_MAX_WIDTH_CLASS} px-4`}>
-          <NotionRenderer document={document} linkPreviewMap={linkPreviewMap} />
+          <NotionRenderer document={document} linkPreviewMap={linkPreviewMap} pageLinkMap={pageLinkMap} />
         </div>
         {!fullWidth && (
           <div
