@@ -5,7 +5,7 @@ import { ONE_DAY_SECONDS, ONE_HOUR_SECONDS } from '@/lib/server/cache'
 const TAGS_BROWSER_CACHE_SECONDS = ONE_HOUR_SECONDS
 const TAGS_EDGE_CACHE_SECONDS = ONE_DAY_SECONDS
 const TAGS_STALE_SECONDS = ONE_DAY_SECONDS
-export const revalidate = ONE_DAY_SECONDS
+export const revalidate = 86400
 
 export async function GET() {
   try {

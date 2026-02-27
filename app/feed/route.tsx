@@ -9,7 +9,7 @@ const FEED_BROWSER_CACHE_SECONDS = ONE_HOUR_SECONDS * 12
 const FEED_EDGE_CACHE_SECONDS = 60 * 60 * 24 * 7
 const FEED_STALE_SECONDS = 60 * 60 * 24 * 30
 
-export const revalidate = ONE_HOUR_SECONDS * 12
+export const revalidate = 43200
 export const dynamic = 'force-static'
 
 function buildFeedHeaders(): HeadersInit {

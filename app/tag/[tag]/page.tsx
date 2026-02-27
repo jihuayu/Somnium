@@ -1,9 +1,8 @@
 import { getAllPosts, getAllTagsFromPosts } from '@/lib/notion'
 import SearchLayout from '@/layouts/search'
 import { decodePossiblyEncoded } from '@/lib/url/decodePossiblyEncoded'
-import { ONE_DAY_SECONDS } from '@/lib/server/cache'
 
-export const revalidate = ONE_DAY_SECONDS
+export const revalidate = 86400
 
 export async function generateStaticParams() {
   const posts = await getAllPosts({ includePages: false })

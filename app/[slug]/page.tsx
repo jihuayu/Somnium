@@ -13,7 +13,7 @@ import { config } from '@/lib/server/config'
 import { ONE_DAY_SECONDS } from '@/lib/server/cache'
 import SlugPostClient from './slug-client'
 
-export const revalidate = ONE_DAY_SECONDS
+export const revalidate = 86400
 const getPosts = cache(async () => getAllPosts({ includePages: true }))
 const PAGE_LINK_MAP_CACHE_REVALIDATE_SECONDS = ONE_DAY_SECONDS
 const getPageLinkMap = unstable_cache(

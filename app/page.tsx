@@ -3,9 +3,8 @@ import ContainerServer from '@/components/ContainerServer'
 import BlogPostServer from '@/components/BlogPostServer'
 import Pagination from '@/components/Pagination'
 import { getAllPosts } from '@/lib/notion'
-import { FIVE_MINUTES_SECONDS } from '@/lib/server/cache'
 
-export const revalidate = FIVE_MINUTES_SECONDS
+export const revalidate = 300
 
 export default async function HomePage() {
   const posts = await getAllPosts({ includePages: false })
