@@ -16,7 +16,6 @@
 - 归档、标签、搜索、RSS、Sitemap
 - SEO 配置与 Open Graph 支持
 - 响应式布局，支持亮色/暗色/跟随系统
-- 支持 Google Analytics
 
 ## 本地开发
 
@@ -46,7 +45,6 @@ NOTION_API_VERSION=2025-09-03
 - `title` / `author` / `link`
 - `description`
 - `seo.keywords`
-- `analytics`（如 GA）
 - `comment`（如 Utterances）
 
 ### 4. 启动开发服务器

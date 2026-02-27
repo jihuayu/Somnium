@@ -2,11 +2,21 @@
 
 import { useEffect, useId, useRef, useState } from 'react'
 import cn from 'classnames'
-import mermaid from 'mermaid'
 
 interface MermaidBlockProps {
   code: string
   className?: string
+}
+
+type MermaidModule = typeof import('mermaid')
+let mermaidModulePromise: Promise<MermaidModule> | null = null
+
+async function getMermaid() {
+  if (!mermaidModulePromise) {
+    mermaidModulePromise = import('mermaid')
+  }
+  const loadedModule = await mermaidModulePromise
+  return loadedModule.default
 }
 
 function isDarkMode(): boolean {
@@ -59,6 +69,7 @@ export default function MermaidBlock({ code, className }: MermaidBlockProps) {
 
       try {
         container.innerHTML = ''
+        const mermaid = await getMermaid()
 
         mermaid.initialize({
           startOnLoad: false,

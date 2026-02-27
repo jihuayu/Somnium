@@ -16,7 +16,6 @@
     "postbuild": "next-sitemap --config config/next-sitemap.config.js"
   },
   "dependencies": {
-    "@vercel/analytics": "^1.6.1",
     "@vercel/og": "^0.9.0",
     "classnames": "^2.5.1",
     "dayjs": "^1.11.19",

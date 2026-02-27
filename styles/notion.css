@@ -518,14 +518,6 @@
   background-color: rgb(39 39 42 / 0.85);
 }
 
-svg.notion-page-icon {
-  @apply hidden;
-}
-
-svg + .notion-page-title-text {
-  @apply border-b-0;
-}
-
 .notion-callout > .notion-page-icon-inline {
   max-width: unset;
   max-height: unset;
@@ -541,25 +533,6 @@ svg + .notion-page-title-text {
   @apply min-w-0;
   padding-left: 2px;
   padding-right: 2px;
-}
-
-.notion-bookmark {
-  @apply border;
-  @apply border-gray-100;
-  color: inherit;
-}
-
-.notion-bookmark .notion-bookmark-title,
-.notion-bookmark .notion-bookmark-link div {
-  @apply text-gray-900 dark:text-gray-200;
-}
-
-.notion-bookmark .notion-bookmark-description {
-  @apply text-gray-600 dark:text-gray-300;
-}
-
-.notion-bookmark:hover {
-  @apply border-blue-400;
 }
 
 a[data-link-preview-card='true'] .link-preview-cover,
@@ -586,22 +559,9 @@ div[data-link-preview-card='true'].link-preview-card {
   }
 }
 
-.notion-viewport {
-  z-index: -10;
-}
 .notion-asset-caption {
   @apply text-center;
   @apply text-gray-500 dark:text-gray-400;
-}
-.notion-asset-wrapper-tweet iframe {
-  @apply bg-day dark:bg-night;
-}
-.notion-full-width {
-  @apply px-0;
-}
-.notion-page {
-  @apply w-auto;
-  @apply px-0;
 }
 .notion-quote {
   padding: 0.2em 0.9em;
@@ -617,25 +577,6 @@ div[data-link-preview-card='true'].link-preview-card {
   width: 100%;
   padding-inline-start: 28px;
 }
-.notion-collection {
-  @apply max-w-full;
-}
-.notion-collection > .notion-collection-header {
-  @apply px-0 !important;
-}
-.notion-collection > .notion-table {
-  @apply max-w-full !important;
-}
-.notion-collection > .notion-table > .notion-table-view {
-  @apply px-0 !important;
-}
-.notion-collection-view-type {
-  @apply hidden;
-}
-.notion-collection-row {
-  @apply hidden;
-}
-
 .notion-property-checkbox {
   width: 18px;
   margin-right: 0 !important;
@@ -709,16 +650,6 @@ div[data-link-preview-card='true'].link-preview-card {
   margin-top: 0;
   margin-bottom: 0;
   line-height: var(--no-leading);
-}
-
-/* Every block */
-
-.nobelium-block {
-  @apply my-0.5; /* OVERRIDES */
-}
-
-.nobelium-block .nobelium-block {
-  @apply mt-1 mb-0;
 }
 
 /* Toggle block */

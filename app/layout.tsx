@@ -3,11 +3,19 @@ import '@/styles/globals.css'
 import '@/styles/notion.css'
 import { Metadata } from 'next'
 import Script from 'next/script'
+import { IBM_Plex_Sans } from 'next/font/google'
 import { config } from '@/lib/server/config'
 import { buildPageMetadata } from '@/lib/server/metadata'
 import { prepareDayjs } from '@/lib/dayjs'
 import cn from 'classnames'
-import ClientProviders from './providers'
+
+const ibmPlexSans = IBM_Plex_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  style: ['normal', 'italic'],
+  display: 'swap',
+  variable: '--font-ibm-plex-sans'
+})
 
 const defaultMetadata = buildPageMetadata()
 
@@ -59,7 +67,7 @@ export default async function RootLayout({
   })();`
 
   return (
-    <html lang={config.lang} className={cn(colorSchemeClass)} suppressHydrationWarning>
+    <html lang={config.lang} className={cn(colorSchemeClass, ibmPlexSans.variable)} suppressHydrationWarning>
       <head>
         {config.appearance === 'auto' ? (
           <>
@@ -86,9 +94,7 @@ export default async function RootLayout({
         </Script>
       </head>
       <body className="bg-day dark:bg-night">
-        <ClientProviders>
-          {children}
-        </ClientProviders>
+        {children}
       </body>
     </html>
   )

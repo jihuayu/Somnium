@@ -1,5 +1,6 @@
 // Notion-like sans-serif stack (system first, no heavy custom webfont bias).
 export const FONTS_SANS = [
+  'var(--font-ibm-plex-sans)',
   'ui-sans-serif',
   'system-ui',
   '-apple-system',
@@ -34,6 +35,7 @@ export const FONTS_SERIF = [
 
 // Chinese reading stack.
 export const FONTS_MISANS = [
+  'var(--font-ibm-plex-sans)',
   '"PingFang SC"',
   '"Microsoft YaHei"',
   '"Hiragino Sans GB"',

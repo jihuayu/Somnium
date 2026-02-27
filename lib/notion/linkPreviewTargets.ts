@@ -14,11 +14,6 @@ function collectRichTextMentionUrls(urls: Set<string>, richText: any[] = []) {
 
     if (item?.mention?.type === 'link_preview') {
       addUrl(urls, item?.mention?.link_preview?.url)
-      continue
-    }
-
-    if (item?.mention?.type === 'link_mention') {
-      addUrl(urls, item?.mention?.link_mention?.href)
     }
   }
 }

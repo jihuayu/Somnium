@@ -32,17 +32,6 @@ export interface BlogConfig {
   }
   notionDataSourceId?: string
   notionApiVersion?: string
-  analytics: {
-    provider: string
-    ackeeConfig: {
-      tracker: string
-      dataAckeeServer: string
-      domainId: string
-    }
-    gaConfig: {
-      measurementId: string
-    }
-  }
   comment: {
     provider: '' | 'utterances'
     utterancesConfig: {

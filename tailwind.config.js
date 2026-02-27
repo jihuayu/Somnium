@@ -6,6 +6,7 @@ const raw = fs.readFileSync(path.resolve(__dirname, 'config/blog.config.js'), 'u
 const config = eval(`((module = { exports: {} }) => { ${raw}; return module.exports })()`)
 
 const FONTS_SANS = [
+  'var(--font-ibm-plex-sans)',
   '"PingFang SC"', '"Microsoft YaHei"', '"Hiragino Sans GB"', '"Noto Sans CJK SC"',
   '"Source Han Sans SC"', '"Source Han Sans CN"', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont',
   'Segoe UI', 'Roboto', '"Noto Sans"', '"Helvetica Neue"', 'Helvetica', '"Nimbus Sans L"',

@@ -276,16 +276,14 @@ export async function getLinkPreviewMap(urls: string[]): Promise<LinkPreviewMap>
   const records = await mapWithConcurrency(
     uniqueUrls,
     LINK_PREVIEW_FETCH_CONCURRENCY,
-    async (url) => {
-      const data = await getLinkPreview(url)
-      return data ? [url, data] as const : null
+    async (normalizedUrl) => {
+      const data = await getLinkPreviewByNormalizedUrl(normalizedUrl)
+      return [normalizedUrl, data] as const
     }
   )
 
   const map: LinkPreviewMap = {}
-  for (const item of records) {
-    if (!item) continue
-    const [key, data] = item
+  for (const [key, data] of records) {
     map[key] = data
   }
   return map

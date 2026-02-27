@@ -1,6 +1,6 @@
 import cn from 'classnames'
 import type { LinkPreviewData } from '@/lib/link-preview/types'
-import { getLinkPreview, normalizePreviewUrl } from '@/lib/server/linkPreview'
+import { normalizePreviewUrl } from '@/lib/server/linkPreview'
 import { toLinkPreviewImageProxyUrl } from '@/lib/server/linkPreviewImageProxy'
 
 interface LinkPreviewCardProps {
@@ -43,16 +43,13 @@ function mergePreview(
   }
 }
 
-async function resolvePreviewData(
+function resolvePreviewData(
   normalizedUrl: string,
   fallback: LinkPreviewData,
   initialData?: LinkPreviewData
-): Promise<LinkPreviewData> {
+): LinkPreviewData {
   if (!normalizedUrl) return fallback
-  if (initialData) return mergePreview(normalizedUrl, fallback, initialData)
-
-  const fetched = await getLinkPreview(normalizedUrl)
-  return mergePreview(normalizedUrl, fallback, fetched || null)
+  return mergePreview(normalizedUrl, fallback, initialData || null)
 }
 
 export function LinkPreviewCardFallback({ className }: { className?: string }) {
@@ -77,10 +74,10 @@ export function LinkPreviewCardFallback({ className }: { className?: string }) {
   )
 }
 
-export default async function LinkPreviewCard({ url, className, initialData }: LinkPreviewCardProps) {
+export default function LinkPreviewCard({ url, className, initialData }: LinkPreviewCardProps) {
   const normalizedUrl = normalizePreviewUrl(url) || ''
   const fallback = buildFallback(normalizedUrl || url)
-  const preview = await resolvePreviewData(normalizedUrl, fallback, initialData)
+  const preview = resolvePreviewData(normalizedUrl, fallback, initialData)
   const displayUrl = preview.url || normalizedUrl
   const generatedImageUrl = displayUrl ? `${preview.image || ''}`.trim() : ''
 

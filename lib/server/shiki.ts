@@ -42,30 +42,35 @@ const SHIKI_LANGUAGE_ALIASES: Record<string, BundledLanguage | 'plaintext'> = {
 
 const SHIKI_LANGUAGES: Array<BundledLanguage | SpecialLanguage> = [
   'plaintext',
-  'html',
-  'xml',
-  'css',
-  'javascript',
-  'typescript',
-  'jsx',
-  'tsx',
-  'json',
   'bash',
-  'yaml',
+  'css',
+  'diff',
+  'html',
+  'javascript',
+  'json',
+  'jsx',
   'markdown',
   'python',
+  'tsx',
+  'typescript',
+  'yaml',
   'go',
-  'java',
   'rust',
-  'sql',
-  'diff',
+  'sql'
+]
+
+// Optional but commonly-seen extended languages; kept light to reduce cold-start overhead.
+const SHIKI_EXTENDED_LANGUAGES: Array<BundledLanguage | SpecialLanguage> = [
+  'xml',
   'toml',
+  'java',
   'ruby',
   'csharp',
   'kotlin'
 ]
 
 const SHIKI_LANGUAGE_SET = new Set<string>(SHIKI_LANGUAGES as string[])
+const SHIKI_EXTENDED_LANGUAGE_SET = new Set<string>(SHIKI_EXTENDED_LANGUAGES as string[])
 const SHIKI_HIGHLIGHT_CACHE_MAX_ENTRIES = 512
 
 let highlighterPromise: Promise<Highlighter> | null = null
@@ -75,7 +80,7 @@ function getHighlighter(): Promise<Highlighter> {
   if (!highlighterPromise) {
     highlighterPromise = createHighlighter({
       themes: ['github-light', 'github-dark'],
-      langs: SHIKI_LANGUAGES
+      langs: [...SHIKI_LANGUAGES, ...SHIKI_EXTENDED_LANGUAGES]
     })
   }
 
@@ -129,7 +134,9 @@ function writeHighlightCache(key: string, value: { html: string, language: strin
 export async function highlightCodeToHtml(source: string, rawLanguage: string): Promise<HighlightedCode> {
   const displayLanguage = `${rawLanguage || ''}`.trim() || 'plain text'
   const normalized = normalizeCodeLanguage(rawLanguage)
-  const language = SHIKI_LANGUAGE_SET.has(normalized) ? normalized : 'plaintext'
+  const language = SHIKI_LANGUAGE_SET.has(normalized) || SHIKI_EXTENDED_LANGUAGE_SET.has(normalized)
+    ? normalized
+    : 'plaintext'
   const cacheKey = buildHighlightCacheKey(source, language)
   const cached = readHighlightCache(cacheKey)
   if (cached) {
