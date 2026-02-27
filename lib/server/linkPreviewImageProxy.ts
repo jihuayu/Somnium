@@ -7,16 +7,21 @@ interface LinkPreviewImageProxyRule {
   cacheTtlSeconds?: number
 }
 
+const DOUBAN_IMAGE_HOSTS = new Set([
+  'img1.doubanio.com',
+  'img2.doubanio.com',
+  'img3.doubanio.com'
+])
+
+function isHttpsHostAllowed(url: URL, hosts: Set<string>): boolean {
+  return url.protocol === 'https:' && hosts.has(url.hostname.toLowerCase())
+}
+
 const IMAGE_PROXY_RULES: LinkPreviewImageProxyRule[] = [
   {
     id: 'douban',
     match: (url: URL) =>
-      url.protocol === 'https:' &&
-      (
-        url.hostname.toLowerCase() === 'img1.doubanio.com' || 
-        url.hostname.toLowerCase() === 'img2.doubanio.com' || 
-        url.hostname.toLowerCase() === 'img3.doubanio.com'
-    ) &&
+      isHttpsHostAllowed(url, DOUBAN_IMAGE_HOSTS) &&
       url.pathname.startsWith('/'),
     referer: 'https://book.douban.com/',
     cacheTtlSeconds: ONE_DAY_SECONDS

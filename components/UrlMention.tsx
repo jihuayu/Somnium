@@ -132,12 +132,23 @@ export default function UrlMention({
     top = clamp(top, viewportPadding, viewportHeight - height - viewportPadding)
     if (!Number.isFinite(top)) top = viewportPadding
 
-    setFloatingStyle({
-      position: 'fixed',
-      left,
-      top,
-      width,
-      visibility: 'visible'
+    setFloatingStyle(prev => {
+      if (
+        prev.position === 'fixed' &&
+        prev.left === left &&
+        prev.top === top &&
+        prev.width === width &&
+        prev.visibility === 'visible'
+      ) {
+        return prev
+      }
+      return {
+        position: 'fixed',
+        left,
+        top,
+        width,
+        visibility: 'visible'
+      }
     })
   }, [open, preview])
 

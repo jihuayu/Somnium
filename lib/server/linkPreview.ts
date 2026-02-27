@@ -10,6 +10,11 @@ const LINK_PREVIEW_CACHE_REVALIDATE_SECONDS = ONE_DAY_SECONDS
 const LINK_PREVIEW_FETCH_CONCURRENCY = 6
 const LINK_PREVIEW_MAX_HTML_BYTES = 256 * 1024
 
+const CHARSET_ALIASES: Record<string, string> = {
+  utf8: 'utf-8',
+  gb2312: 'gbk'
+}
+
 function decodeEntities(input = ''): string {
   return input
     .replaceAll('&amp;', '&')
@@ -77,11 +82,32 @@ function parseMetadata(html: string, sourceUrl: string): ParsedLinkPreviewMetada
   return { ogTitle, titleTag, description, image, icon }
 }
 
-async function readTextHeadWithLimit(response: Response, maxBytes: number): Promise<string> {
+export function parseCharsetFromContentType(contentType: string): string {
+  const match = contentType.match(/charset\s*=\s*["']?([^;"'\s]+)/i)
+  if (!match?.[1]) return ''
+  const normalized = match[1].trim().toLowerCase()
+  if (!normalized) return ''
+  return CHARSET_ALIASES[normalized] || normalized
+}
+
+function createTextDecoderForContentType(contentType: string): TextDecoder {
+  const charset = parseCharsetFromContentType(contentType)
+  if (!charset) return new TextDecoder()
+  try {
+    return new TextDecoder(charset)
+  } catch {
+    return new TextDecoder()
+  }
+}
+
+async function readTextHeadWithLimit(
+  response: Response,
+  maxBytes: number,
+  decoder: TextDecoder
+): Promise<string> {
   if (!response.body) return ''
 
   const reader = response.body.getReader()
-  const decoder = new TextDecoder()
   const chunks: string[] = []
   let total = 0
 
@@ -176,13 +202,19 @@ async function fetchLinkPreview(normalizedUrl: string): Promise<LinkPreviewData>
       return fallback
     }
 
-    const html = await readTextHeadWithLimit(response, LINK_PREVIEW_MAX_HTML_BYTES)
+    const resolvedUrl = response.url || normalizedUrl
+    const resolvedHostname = getHostnameFromUrl(resolvedUrl)
+    if (isPrivateHostname(resolvedHostname)) {
+      return fallback
+    }
+
+    const decoder = createTextDecoderForContentType(contentType)
+    const html = await readTextHeadWithLimit(response, LINK_PREVIEW_MAX_HTML_BYTES, decoder)
     if (!html) {
       return fallback
     }
-    const resolvedUrl = response.url || normalizedUrl
     const metadata = parseMetadata(html, resolvedUrl)
-    const hostname = getHostnameFromUrl(resolvedUrl)
+    const hostname = resolvedHostname
     const parsedUrl = new URL(resolvedUrl)
 
     const adapted = resolveLinkPreviewByAdapter({

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { ONE_DAY_SECONDS, SEVEN_DAYS_SECONDS } from '@/lib/server/cache'
 import { resolveLinkPreviewImageProxy } from '@/lib/server/linkPreviewImageProxy'
 import { getHostnameFromUrl, isPrivateHostname } from '@/lib/server/networkSafety'
+import { createByteLimitedStream } from '@/lib/server/streamLimit'
 
 const FETCH_TIMEOUT_MS = 10_000
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024
@@ -129,10 +130,14 @@ export async function GET(req: NextRequest) {
     }
 
     if (typeof contentLength === 'number') {
+      const limitedBody = createByteLimitedStream(
+        response.body,
+        MAX_IMAGE_BYTES,
+        () => controller.abort()
+      )
       return buildResponse({
         contentType,
-        body: response.body,
-        contentLength,
+        body: limitedBody,
         cacheTtlSeconds: rule.cacheTtlSeconds
       })
     }
