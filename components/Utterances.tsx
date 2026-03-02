@@ -42,6 +42,20 @@ function trimByEncodedBytes(input: string, maxBytes: number): string {
   return value
 }
 
+function resolveDiscussionUrl(currentUrl: URL, canonicalHref?: string | null): string {
+  const fallback = `${currentUrl.origin}${currentUrl.pathname}${currentUrl.search}`
+  if (!canonicalHref) return fallback
+
+  try {
+    const canonicalUrl = new URL(canonicalHref)
+    // Avoid cross-origin callbacks (for example localhost -> production domain).
+    if (canonicalUrl.origin !== currentUrl.origin) return fallback
+    return canonicalUrl.href
+  } catch {
+    return fallback
+  }
+}
+
 function buildEmbedSrc(repo: string, issueTerm: string, theme: string): string {
   if (typeof window === 'undefined' || typeof document === 'undefined') return ''
 
@@ -53,7 +67,7 @@ function buildEmbedSrc(repo: string, issueTerm: string, theme: string): string {
   const descriptionMeta = document.querySelector<HTMLMetaElement>("meta[name='description']")
   const ogTitleMeta = document.querySelector<HTMLMetaElement>("meta[property='og:title'],meta[name='og:title']")
 
-  const url = canonical?.href || `${currentUrl.origin}${currentUrl.pathname}${currentUrl.search}`
+  const url = resolveDiscussionUrl(currentUrl, canonical?.href)
   const description = trimByEncodedBytes(descriptionMeta?.content || '', UTTERANCES_MAX_DESCRIPTION_BYTES)
   const pathname = currentUrl.pathname.length < 2
     ? 'index'
@@ -63,6 +77,7 @@ function buildEmbedSrc(repo: string, issueTerm: string, theme: string): string {
   const params = new URLSearchParams({
     repo,
     'issue-term': issueTerm,
+    endpoint: `https://atrium-production.up.railway.app/`,
     theme,
     url,
     origin: currentUrl.origin,
