@@ -77,7 +77,7 @@ function buildEmbedSrc(repo: string, issueTerm: string, theme: string): string {
   const params = new URLSearchParams({
     repo,
     'issue-term': issueTerm,
-    // endpoint: `https://atrium-production.up.railway.app/`,
+    endpoint: `https://atrium-production.up.railway.app/`,
     theme,
     url,
     origin: currentUrl.origin,
