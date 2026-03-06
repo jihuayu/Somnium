@@ -1,6 +1,7 @@
 import { Fragment } from 'react'
 import cn from 'classnames'
 import { config } from '@/lib/server/config'
+import { toLinkPreviewImageProxyUrl } from '@/lib/server/linkPreviewImageProxy'
 import UrlMention, { type UrlMentionPreviewData } from '@/components/UrlMention'
 import DateMention, {
   type DateMentionDisplayMode,
@@ -208,7 +209,8 @@ function getUrlMentionTitle(item: any): string {
 
 function getUrlMentionIconUrl(item: any): string {
   if (!isLinkMention(item)) return ''
-  return `${item?.mention?.link_mention?.icon_url || ''}`.trim()
+  const rawIconUrl = `${item?.mention?.link_mention?.icon_url || ''}`.trim()
+  return toLinkPreviewImageProxyUrl(rawIconUrl)
 }
 
 function getUrlMentionProvider(provider: string, href: string): string {
@@ -234,7 +236,7 @@ function getUrlMentionPreviewData(
       href: `${payload?.href || href}`.trim() || href,
       title: `${payload?.title || ''}`.trim() || label,
       description: `${payload?.description || ''}`.trim(),
-      icon: `${payload?.icon_url || ''}`.trim(),
+      icon: toLinkPreviewImageProxyUrl(`${payload?.icon_url || ''}`.trim()),
       image: `${payload?.thumbnail_url || ''}`.trim(),
       provider: getUrlMentionProvider(`${payload?.link_provider || ''}`, href)
     }
@@ -248,7 +250,7 @@ function getUrlMentionPreviewData(
       href: previewHref,
       title: `${preview.title || ''}`.trim() || label,
       description: `${preview.description || ''}`.trim(),
-      icon: `${preview.icon || ''}`.trim(),
+      icon: toLinkPreviewImageProxyUrl(`${preview.icon || ''}`.trim()),
       image: `${preview.image || ''}`.trim(),
       provider: getUrlMentionProvider(`${preview.hostname || ''}`, previewHref)
     }
