@@ -744,15 +744,17 @@ export default async function NotionRenderer({ document, linkPreviewMap = {}, pa
         const embed = block?.embed || {}
         const embedUrl = embed.url
         const iframeUrl = resolveEmbedIframeUrl(embedUrl)
+        const normalizedEmbedUrl = normalizeRichTextUrl(embedUrl)
+        const renderIframeUrl = iframeUrl || normalizedEmbedUrl
         const previewKey = normalizeRichTextUrl(embedUrl)
         const caption = embed.caption || []
         return (
           <div key={block.id} className={className}>
             <div className="my-4">
-              {iframeUrl ? (
+              {renderIframeUrl ? (
                 <div className="relative w-full overflow-hidden rounded-md border border-zinc-200 dark:border-zinc-700" style={{ paddingTop: '56.25%' }}>
                   <iframe
-                    src={iframeUrl}
+                    src={renderIframeUrl}
                     title={embedUrl || block.id}
                     className="absolute top-0 left-0 h-full w-full"
                     allowFullScreen
