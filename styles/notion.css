@@ -383,23 +383,23 @@
   border-radius: 0.5rem;
   color: inherit;
   text-decoration: none;
-  background-color: rgb(250 250 250 / 0.7);
+  background-color: rgb(248 250 252 / 0.55);
   transition: border-color 120ms ease, background-color 120ms ease;
 }
 
 .notion-file-block:hover {
   border-color: rgb(161 161 170 / 0.85);
-  background-color: rgb(244 244 245 / 0.9);
+  background-color: rgb(248 250 252 / 0.55);
 }
 
 .dark .notion-file-block {
   border-color: rgb(63 63 70 / 0.85);
-  background-color: rgb(39 39 42 / 0.55);
+  background-color: rgb(24 24 27 / 0.45);
 }
 
 .dark .notion-file-block:hover {
   border-color: rgb(82 82 91 / 0.95);
-  background-color: rgb(39 39 42 / 0.85);
+  background-color: rgb(24 24 27 / 0.45);
 }
 
 .notion-file-icon {
@@ -432,13 +432,13 @@
 .notion-mermaid-block {
   border: 1px solid rgb(228 228 231 / 0.9);
   border-radius: 0.5rem;
-  background-color: rgb(250 250 250 / 0.7);
+  background-color: rgb(248 250 252 / 0.55);
   overflow: hidden;
 }
 
 .dark .notion-mermaid-block {
   border-color: rgb(63 63 70 / 0.85);
-  background-color: rgb(39 39 42 / 0.55);
+  background-color: rgb(24 24 27 / 0.45);
 }
 
 .notion-mermaid-svg {
@@ -564,6 +564,14 @@
   justify-content: center;
   align-items: center;
   font-size: 1.05em;
+}
+
+.notion-callout {
+  background-color: rgb(248 250 252 / 0.55);
+}
+
+.dark .notion-callout {
+  background-color: rgb(24 24 27 / 0.45);
 }
 
 .notion-callout-text {
@@ -697,14 +705,14 @@ div[data-link-preview-card='true'].link-preview-card {
   padding: 0.55rem 0.7rem;
   border: 1px solid rgb(228 228 231 / 0.9);
   border-radius: 0.5rem;
-  background-color: rgb(250 250 250 / 0.7);
+  background-color: rgb(248 250 252 / 0.55);
   transition: border-color 120ms ease, background-color 120ms ease;
   position: relative;
 }
 
 .dark .nobelium-toggle {
   border-color: rgb(63 63 70 / 0.85);
-  background-color: rgb(39 39 42 / 0.55);
+  background-color: rgb(24 24 27 / 0.45);
 }
 
 .nobelium-toggle ::marker {
@@ -722,6 +730,11 @@ div[data-link-preview-card='true'].link-preview-card {
 
 .nobelium-toggle:not([open]) > .nobelium-toggle-summary {
   align-items: center;
+}
+
+.nobelium-toggle:not([open]) {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
 }
 
 .nobelium-toggle[open] > .nobelium-toggle-summary {
@@ -844,10 +857,10 @@ div[data-link-preview-card='true'].link-preview-card {
 
 .nobelium-toggle:not([open]):hover {
   border-color: rgb(161 161 170 / 0.85);
-  background-color: rgb(244 244 245 / 0.9);
+  background-color: rgb(248 250 252 / 0.55);
 }
 
 .dark .nobelium-toggle:not([open]):hover {
   border-color: rgb(82 82 91 / 0.95);
-  background-color: rgb(39 39 42 / 0.85);
+  background-color: rgb(24 24 27 / 0.45);
 }

@@ -445,7 +445,7 @@ export default async function NotionRenderer({ document, linkPreviewMap = {}, pa
 
         return (
           <div key={block.id} className={className}>
-            <div className="notion-callout my-4 rounded-md border border-zinc-200 dark:border-zinc-700 bg-zinc-50/80 dark:bg-zinc-800/40 px-3 py-2 flex items-start">
+            <div className="notion-callout my-4 rounded-md border border-zinc-200 dark:border-zinc-700 px-3 py-2 flex items-start">
               <span className="notion-page-icon-inline flex-none">
                 {emoji ? (
                   <span aria-hidden="true">{emoji}</span>
