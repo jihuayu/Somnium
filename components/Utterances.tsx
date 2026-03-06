@@ -6,11 +6,9 @@ interface UtterancesProps {
   issueTerm: string
   repo: string
   appearance: 'light' | 'dark' | 'auto'
-  layout?: string
 }
 
 const UTTERANCES_ORIGIN = 'https://utteranc.raw2.cc'
-const UTTERANCES_EMBED_MAX_WIDTH_PX = 760
 const UTTERANCES_DEFAULT_HEIGHT_PX = 320
 const UTTERANCES_MAX_DESCRIPTION_BYTES = 1000
 
@@ -91,7 +89,7 @@ function buildEmbedSrc(repo: string, issueTerm: string, theme: string): string {
   return `${UTTERANCES_ORIGIN}/utterances.html?${params.toString()}`
 }
 
-const Utterances = ({ issueTerm, repo, appearance, layout }: UtterancesProps) => {
+const Utterances = ({ issueTerm, repo, appearance }: UtterancesProps) => {
   const isHydrated = useIsHydrated()
   const [height, setHeight] = useState(UTTERANCES_DEFAULT_HEIGHT_PX)
   const theme = useMemo(() => {
@@ -135,21 +133,16 @@ const Utterances = ({ issueTerm, repo, appearance, layout }: UtterancesProps) =>
   return (
     <div
       id="comments"
-      className={layout && layout === 'fullWidth' ? '' : 'md:-ml-16'}
+      className="w-full"
     >
-      <div
-        className="w-full mx-auto"
-        style={{ maxWidth: `${UTTERANCES_EMBED_MAX_WIDTH_PX}px` }}
-      >
-        <iframe
-          title="Comments"
-          className="w-full border-0"
-          src={src}
-          loading="lazy"
-          scrolling="no"
-          style={{ height: `${height}px` }}
-        />
-      </div>
+      <iframe
+        title="Comments"
+        className="block w-full border-0"
+        src={src}
+        loading="lazy"
+        scrolling="no"
+        style={{ height: `${height}px` }}
+      />
     </div>
   )
 }
