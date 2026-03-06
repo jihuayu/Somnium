@@ -574,21 +574,34 @@ export default async function NotionRenderer({ document, linkPreviewMap = {}, pa
         return (
           <details
             key={block.id}
-            className={cn(className, 'nobelium-toggle my-3', !hasChildren && 'nobelium-toggle-empty')}
+            className={cn(className, 'nobelium-toggle callout-wrap my-3', !hasChildren && 'nobelium-toggle-empty')}
           >
-            <summary>
-              <span className="nobelium-toggle-triangle" aria-hidden="true">
-                <svg viewBox="0 0 16 16" role="presentation">
-                  <path d="M6.5 3.5L11 8l-4.5 4.5z" />
+            <summary className="nobelium-toggle-summary">
+              <span className="collapsed-label nobelium-toggle-title whitespace-pre-wrap">
+                <RichText richText={richText} linkPreviewMap={resolvedLinkPreviewMap} />
+              </span>
+              <span className="button-wrap expand-icon" aria-hidden="true">
+                <svg width="24" height="24" viewBox="0 0 24 24" role="presentation">
+                  <path d="M8.67383 5.36887L12.0427 2L15.4116 5.36887" />
+                  <path d="M15.4116 18.8443L12.0427 22.2132L8.67383 18.8443" />
+                  <path d="M12.0426 2.00003V10.0853" />
+                  <path d="M12.0426 22.2132V14.1279" />
                 </svg>
               </span>
-              <span className="nobelium-toggle-title whitespace-pre-wrap">
-                <RichText richText={richText} linkPreviewMap={resolvedLinkPreviewMap} />
+              <span className="button-wrap collapse-icon" aria-hidden="true">
+                <svg width="24" height="24" viewBox="0 0 24 24" role="presentation">
+                  <path d="M8.67383 17.3689L12.0427 14L15.4116 17.3689" />
+                  <path d="M15.4116 6.7164L12.0427 10.0853L8.67383 6.7164" />
+                  <path d="M12.0426 14V22.0853" />
+                  <path d="M12.0426 10.0853V1.99999" />
+                </svg>
               </span>
             </summary>
             {hasChildren && (
-              <div className="nobelium-toggle-content">
-                {renderChildren(block.id)}
+              <div className="nobelium-toggle-content callout-content">
+                <div className="content">
+                  {renderChildren(block.id)}
+                </div>
               </div>
             )}
           </details>
