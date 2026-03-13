@@ -1,5 +1,4 @@
-import 'katex/dist/katex.min.css'
-import '@/styles/notion.css'
+import '@/packages/notion-react/src/styles.css'
 import '@/styles/globals.css'
 import { Metadata } from 'next'
 import Script from 'next/script'

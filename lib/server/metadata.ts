@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { config } from '@/lib/server/config'
+import { buildOgImageUrl, buildOpenGraphPayload } from '@jihuayu/notion-react/og'
 
 interface PageMetadataOptions {
   title?: string
@@ -34,12 +35,6 @@ function buildSiteUrl(): string {
 function buildPageUrl(siteUrl: string, slug?: string): string {
   const normalizedSlug = trimSlashes(slug || '')
   return normalizedSlug ? `${siteUrl}/${normalizedSlug}` : siteUrl
-}
-
-function buildOgImageUrl(title: string): string {
-  const ogBaseUrl = config.ogImageGenerateURL.replace(/\/+$/g, '')
-  const logoUrl = 'https://nobelium.vercel.app/logo-for-dark-bg.svg'
-  return `${ogBaseUrl}/${encodeURIComponent(title)}.png?theme=dark&md=1&fontSize=125px&images=${encodeURIComponent(logoUrl)}`
 }
 
 export function buildNotionOgImageUrl(pageId: string): string {
@@ -92,25 +87,31 @@ export function buildPageMetadata({
   const pageDescription = description || config.description
   const siteUrl = buildSiteUrl()
   const pageUrl = buildPageUrl(siteUrl, slug)
-  const resolvedOgImageUrl = ogImageUrl || buildOgImageUrl(pageTitle)
+  const resolvedOgImageUrl = ogImageUrl || buildOgImageUrl({
+    baseUrl: config.ogImageGenerateURL,
+    title: pageTitle,
+    query: {
+      theme: 'dark',
+      md: 1,
+      fontSize: '125px',
+      images: 'https://nobelium.vercel.app/logo-for-dark-bg.svg'
+    }
+  })
   const publishedTime = toIsoDate(date)
   const twitterHandle = buildTwitterHandle(config.socialLink || '')
-
-  const openGraph = {
-    locale: config.lang,
+  const ogPayload = buildOpenGraphPayload({
     title: pageTitle,
     description: pageDescription,
-    url: pageUrl,
+    siteUrl,
+    slug,
+    type,
+    locale: config.lang,
     siteName: config.title,
     images: [{ url: resolvedOgImageUrl }],
-    type,
-    ...(type === 'article'
-      ? {
-          authors: [config.author],
-          ...(publishedTime ? { publishedTime } : {})
-        }
-      : {})
-  } as Metadata['openGraph']
+    authors: [config.author],
+    publishedTime,
+    twitterSite: twitterHandle
+  })
 
   return {
     title: pageTitle,
@@ -127,16 +128,12 @@ export function buildPageMetadata({
       ? { google: config.seo.googleSiteVerification }
       : undefined,
     alternates: {
-      canonical: pageUrl
+      canonical: ogPayload.canonicalUrl || pageUrl
     },
-    openGraph,
+    openGraph: ogPayload.openGraph as Metadata['openGraph'],
     twitter: {
-      card: 'summary_large_image',
-      site: twitterHandle,
-      creator: twitterHandle,
-      title: pageTitle,
-      description: pageDescription,
-      images: [resolvedOgImageUrl]
+      ...ogPayload.twitter,
+      creator: twitterHandle
     }
   }
 }

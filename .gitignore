@@ -12,6 +12,9 @@
 /.next/
 /out/
 /.cache/
+/packages/*/node_modules/
+/packages/*/dist/
+/packages/*/storybook-static/
 
 # production
 /build

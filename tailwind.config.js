@@ -17,7 +17,16 @@ const FONTS_SERIF = [
 ]
 
 module.exports = {
-  content: ['./*.{js,ts,jsx,tsx}', './app/**/*.{js,ts,jsx,tsx}', './pages/**/*.{js,ts,jsx,tsx}', './components/**/*.{js,ts,jsx,tsx}', './layouts/**/*.{js,ts,jsx,tsx}'],
+  content: [
+    './*.{js,ts,jsx,tsx}',
+    './app/**/*.{js,ts,jsx,tsx}',
+    './pages/**/*.{js,ts,jsx,tsx}',
+    './components/**/*.{js,ts,jsx,tsx}',
+    './layouts/**/*.{js,ts,jsx,tsx}',
+    './packages/notion-react/.storybook/**/*.{js,ts,jsx,tsx,mdx}',
+    './packages/notion-react/stories/**/*.{js,ts,jsx,tsx,mdx}',
+    './packages/notion-react/src/**/*.{js,ts,jsx,tsx}'
+  ],
   darkMode: 'class',
   theme: {
     extend: {

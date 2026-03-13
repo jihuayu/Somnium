@@ -8,14 +8,18 @@
     "url": "https://github.com/jihuayu/somnium.git"
   },
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "pnpm run notion-react:build && next dev --webpack",
+    "build": "pnpm run notion-react:build && next build --webpack",
     "start": "next start",
-    "test": "node --import tsx --test tests/**/*.test.ts",
+    "test": "node --import tsx --test tests/**/*.test.ts packages/*/tests/**/*.test.ts",
     "lint": "eslint .",
-    "postbuild": "next-sitemap --config config/next-sitemap.config.js"
+    "postbuild": "next-sitemap --config config/next-sitemap.config.js",
+    "notion-react:build": "pnpm --filter @jihuayu/notion-react build",
+    "notion-react:storybook": "storybook dev -p 6006 -c packages/notion-react/.storybook --disable-telemetry",
+    "notion-react:storybook:build": "storybook build -c packages/notion-react/.storybook -o packages/notion-react/storybook-static --disable-telemetry"
   },
   "dependencies": {
+    "@jihuayu/notion-react": "workspace:*",
     "@vercel/og": "^0.11.1",
     "classnames": "^2.5.1",
     "dayjs": "^1.11.20",
@@ -29,6 +33,10 @@
     "shiki": "^4.0.2"
   },
   "devDependencies": {
+    "@storybook/addon-essentials": "^8.6.18",
+    "@storybook/react": "^8.6.18",
+    "@storybook/react-vite": "^8.6.18",
+    "@storybook/test": "^8.6.18",
     "@tailwindcss/postcss": "^4.2.1",
     "@types/node": "^25.5.0",
     "@types/react": "^19.2.14",
@@ -37,9 +45,12 @@
     "eslint-config-next": "^16.1.6",
     "next-sitemap": "^4.2.3",
     "postcss": "^8.5.8",
+    "storybook": "^8.6.18",
     "tailwindcss": "^4.2.1",
+    "tsup": "^8.5.0",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vite": "^6.3.6"
   },
   "browserslist": {
     "production": [

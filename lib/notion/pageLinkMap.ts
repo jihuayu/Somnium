@@ -1,41 +1,34 @@
 import type { PostData } from './filterPublishedPosts'
+import {
+  buildInternalSlugHref as buildInternalSlugHrefBase,
+  buildNotionPublicUrl as buildNotionPublicUrlBase,
+  buildPageHrefMap as buildPageHrefMapBase,
+  normalizeNotionEntityId as normalizeNotionEntityIdBase,
+  resolvePageHref as resolvePageHrefBase,
+  type PageHrefEntry,
+  type PageHrefMap
+} from '@jihuayu/notion-react'
 
-export type PageLinkMap = Record<string, string>
+export type PageLinkMap = PageHrefMap
 
-function trimSlashes(value: string): string {
-  return `${value || ''}`.trim().replace(/^\/+|\/+$/g, '')
-}
-
-export function normalizeNotionEntityId(rawId?: string): string {
-  const compact = `${rawId || ''}`.trim().replaceAll('-', '').toLowerCase()
-  return /^[0-9a-f]{32}$/.test(compact) ? compact : ''
-}
+export const normalizeNotionEntityId = normalizeNotionEntityIdBase
 
 export function buildInternalSlugHref(basePath: string, slug: string): string {
-  const normalizedBase = trimSlashes(basePath)
-  const normalizedSlug = trimSlashes(slug)
-  if (!normalizedSlug) return normalizedBase ? `/${normalizedBase}` : '/'
-  return normalizedBase ? `/${normalizedBase}/${normalizedSlug}` : `/${normalizedSlug}`
+  return buildInternalSlugHrefBase(basePath, slug)
 }
 
 export function buildPageLinkMap(posts: PostData[], basePath = ''): PageLinkMap {
-  const map: PageLinkMap = {}
-  for (const post of posts || []) {
-    const key = normalizeNotionEntityId(post?.id)
-    const slug = `${post?.slug || ''}`.trim()
-    if (!key || !slug) continue
-    map[key] = buildInternalSlugHref(basePath, slug)
-  }
-  return map
+  const entries: PageHrefEntry[] = (posts || []).map(post => ({
+    id: post?.id,
+    slug: post?.slug
+  }))
+  return buildPageHrefMapBase(entries, basePath)
 }
 
 export function buildNotionPublicUrl(rawId: string): string {
-  const normalized = normalizeNotionEntityId(rawId)
-  return normalized ? `https://www.notion.so/${normalized}` : ''
+  return buildNotionPublicUrlBase(rawId)
 }
 
 export function resolvePageHref(rawId: string, pageLinkMap: PageLinkMap): string {
-  const normalized = normalizeNotionEntityId(rawId)
-  if (!normalized) return ''
-  return pageLinkMap[normalized] || buildNotionPublicUrl(normalized)
+  return resolvePageHrefBase(rawId, pageLinkMap)
 }
