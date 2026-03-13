@@ -11,6 +11,8 @@
 # next.js
 /.next/
 /out/
+/.astro/
+/dist/
 /.cache/
 /packages/*/node_modules/
 /packages/*/dist/

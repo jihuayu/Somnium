@@ -1,0 +1,40 @@
+---
+import BaseLayout from '@/src/layouts/BaseLayout.astro'
+import ListPageView from '@/components/views/ListPageView'
+import NotFoundPageView from '@/components/views/NotFoundPageView'
+import loadLocale from '@/assets/i18n'
+import { config } from '@/lib/server/config'
+import { buildPageMetadata } from '@/lib/server/metadata'
+import { getAllPosts } from '@/lib/notion'
+
+const locale = await loadLocale('basic', config.lang)
+const pageNum = Number(Astro.params.page || '0')
+const posts = await getAllPosts({ includePages: false })
+const totalPages = Math.max(1, Math.ceil(posts.length / config.postsPerPage))
+const metadata = buildPageMetadata()
+const isInvalidPage = !Number.isInteger(pageNum) || pageNum < 2 || pageNum > totalPages
+
+if (isInvalidPage) {
+  Astro.response.status = 404
+}
+
+const postsToShow = isInvalidPage
+  ? []
+  : posts.slice(config.postsPerPage * (pageNum - 1), config.postsPerPage * pageNum)
+const showNext = !isInvalidPage && pageNum * config.postsPerPage < posts.length
+---
+
+<BaseLayout metadata={metadata}>
+  {isInvalidPage ? (
+    <NotFoundPageView client:load navLocale={locale.NAV} />
+  ) : (
+    <ListPageView
+      client:load
+      posts={postsToShow}
+      page={pageNum}
+      showNext={showNext}
+      navLocale={locale.NAV}
+      paginationLocale={locale.PAGINATION}
+    />
+  )}
+</BaseLayout>

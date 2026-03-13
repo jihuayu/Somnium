@@ -1,4 +1,4 @@
-import { unstable_cache } from 'next/cache'
+import { unstable_cache } from '@/lib/server/runtimeCache'
 import { config } from '@/lib/server/config'
 import { ONE_DAY_SECONDS } from '@/lib/server/cache'
 import { getAllPosts } from '@/lib/notion/getAllPosts'

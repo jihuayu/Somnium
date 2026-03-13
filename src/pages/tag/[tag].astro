@@ -1,0 +1,20 @@
+---
+import BaseLayout from '@/src/layouts/BaseLayout.astro'
+import SearchPageView from '@/components/views/SearchPageView'
+import loadLocale from '@/assets/i18n'
+import { config } from '@/lib/server/config'
+import { buildPageMetadata } from '@/lib/server/metadata'
+import { getAllPosts, getAllTagsFromPosts } from '@/lib/notion'
+import { decodePossiblyEncoded } from '@/lib/url/decodePossiblyEncoded'
+
+const locale = await loadLocale('basic', config.lang)
+const currentTag = decodePossiblyEncoded(Astro.params.tag || '')
+const posts = await getAllPosts({ includePages: false })
+const tags = getAllTagsFromPosts(posts)
+const filteredPosts = posts.filter(post => post?.tags?.includes(currentTag))
+const metadata = buildPageMetadata()
+---
+
+<BaseLayout metadata={metadata}>
+  <SearchPageView client:load tags={tags} posts={filteredPosts} currentTag={currentTag} useNotionSearch navLocale={locale.NAV} />
+</BaseLayout>

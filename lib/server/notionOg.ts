@@ -1,6 +1,6 @@
 import cjk from '@/lib/cjk'
 import { mapPageToOgData, type PageOgData } from '@/lib/notion/pageOgData'
-import { unstable_cache } from 'next/cache'
+import { unstable_cache } from '@/lib/server/runtimeCache'
 import { config } from './config'
 import api from './notion-api'
 

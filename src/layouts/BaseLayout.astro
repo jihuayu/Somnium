@@ -1,0 +1,103 @@
+---
+import '@fontsource/ibm-plex-sans/400.css'
+import '@fontsource/ibm-plex-sans/500.css'
+import '@fontsource/ibm-plex-sans/700.css'
+import '@/packages/notion-react/src/styles.css'
+import '@/styles/globals.css'
+import cn from 'classnames'
+import { config } from '@/lib/server/config'
+import { prepareDayjs } from '@/lib/dayjs'
+import type { PageMetadata } from '@/lib/server/metadata'
+
+interface Props {
+  metadata?: PageMetadata
+}
+
+const { metadata = {} } = Astro.props
+
+prepareDayjs(config.timezone)
+
+const initialColorScheme: Record<string, string> = {
+  auto: 'color-scheme-unset',
+  dark: 'dark'
+}
+const colorSchemeClass = initialColorScheme[config.appearance] || ''
+const dayBg = config.lightBackground || '#ffffff'
+const nightBg = config.darkBackground || '#111827'
+const pageTitle = metadata.title || config.title
+const pageDescription = metadata.description || config.description
+const canonical = metadata.alternates?.canonical
+const themeBootstrapScript = `(() => {
+  const appearance = ${JSON.stringify(config.appearance)};
+  const root = document.documentElement;
+  const media = window.matchMedia('(prefers-color-scheme: dark)');
+  const apply = () => {
+    const dark = appearance === 'dark' || (appearance === 'auto' && media.matches);
+    root.classList.toggle('dark', dark);
+    root.classList.remove('color-scheme-unset');
+  };
+  apply();
+  if (appearance !== 'auto') return;
+  const onChange = () => apply();
+  if (typeof media.addEventListener === 'function') {
+    media.addEventListener('change', onChange);
+  } else if (typeof media.addListener === 'function') {
+    media.addListener(onChange);
+  }
+})();`
+---
+
+<!doctype html>
+<html lang={config.lang} class={cn(colorSchemeClass, 'font-ibm-plex-sans')}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={pageDescription} />
+    {metadata.applicationName && <meta name="application-name" content={metadata.applicationName} />}
+    {metadata.creator && <meta name="author" content={metadata.creator} />}
+    {metadata.keywords?.length ? <meta name="keywords" content={metadata.keywords.join(', ')} /> : null}
+    {metadata.robots ? <meta name="robots" content={`${metadata.robots.index === false ? 'noindex' : 'index'}, ${metadata.robots.follow === false ? 'nofollow' : 'follow'}`} /> : null}
+    {metadata.verification?.google ? <meta name="google-site-verification" content={metadata.verification.google} /> : null}
+    {canonical && <link rel="canonical" href={canonical} />}
+    <link rel="icon" href="/favicon.png" />
+    <link rel="alternate" type="application/rss+xml" title={`${config.title} RSS`} href="/feed" />
+    {config.appearance === 'auto' ? (
+      <>
+        <meta name="theme-color" content={config.lightBackground} media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content={config.darkBackground} media="(prefers-color-scheme: dark)" />
+      </>
+    ) : (
+      <meta name="theme-color" content={config.appearance === 'dark' ? config.darkBackground : config.lightBackground} />
+    )}
+    {metadata.openGraph?.title && <meta property="og:title" content={metadata.openGraph.title} />}
+    {metadata.openGraph?.description && <meta property="og:description" content={metadata.openGraph.description} />}
+    {metadata.openGraph?.url && <meta property="og:url" content={metadata.openGraph.url} />}
+    {metadata.openGraph?.type && <meta property="og:type" content={metadata.openGraph.type} />}
+    {metadata.openGraph?.siteName && <meta property="og:site_name" content={metadata.openGraph.siteName} />}
+    {metadata.openGraph?.locale && <meta property="og:locale" content={metadata.openGraph.locale} />}
+    {metadata.openGraph?.publishedTime && <meta property="article:published_time" content={metadata.openGraph.publishedTime} />}
+    {(metadata.openGraph?.authors || []).map(author => <meta property="article:author" content={author} />)}
+    {(metadata.openGraph?.images || []).map(image => <meta property="og:image" content={image.url} />)}
+    {metadata.twitter?.card && <meta name="twitter:card" content={metadata.twitter.card} />}
+    {metadata.twitter?.title && <meta name="twitter:title" content={metadata.twitter.title} />}
+    {metadata.twitter?.description && <meta name="twitter:description" content={metadata.twitter.description} />}
+    {metadata.twitter?.site && <meta name="twitter:site" content={metadata.twitter.site} />}
+    {metadata.twitter?.creator && <meta name="twitter:creator" content={metadata.twitter.creator} />}
+    {(metadata.twitter?.images || []).map(image => <meta name="twitter:image" content={image} />)}
+    <style is:inline>{`
+      .color-scheme-unset, .color-scheme-unset body {
+        background-color: ${dayBg} !important;
+      }
+      @media (prefers-color-scheme: dark) {
+        .color-scheme-unset, .color-scheme-unset body {
+          background-color: ${nightBg} !important;
+        }
+      }
+    `}</style>
+    <script is:inline set:html={themeBootstrapScript}></script>
+  </head>
+  <body class="bg-day dark:bg-night">
+    <slot />
+  </body>
+</html>

@@ -1,5 +1,3 @@
-import Link from 'next/link'
-import Image from 'next/image'
 import { ARTICLE_CONTENT_MAX_WIDTH_CLASS } from '@/consts'
 import HeaderBehavior from '@/components/HeaderBehavior'
 
@@ -34,7 +32,7 @@ const NavBar = ({ path, showAbout, locale }: NavBarProps) => {
                 key={link.id}
                 className="block ml-4 text-black dark:text-gray-50 nav"
               >
-                <Link href={link.to} target={link.external ? '_blank' : undefined}>{link.name}</Link>
+                <a href={link.to} target={link.external ? '_blank' : undefined} rel={link.external ? 'noopener noreferrer' : undefined}>{link.name}</a>
               </li>
             )
         )}
@@ -105,15 +103,15 @@ export default function Header({
           />
         </svg>
         <div className="header-main flex items-center md:items-end gap-2">
-          <Link href={path || '/'} aria-label={siteTitle} className="header-icon-link flex items-center md:items-end justify-center shrink-0 leading-none transition-transform duration-500">
-            <Image
+          <a href={path || '/'} aria-label={siteTitle} className="header-icon-link flex items-center md:items-end justify-center shrink-0 leading-none transition-transform duration-500">
+            <img
               src="/favicon.png"
               width={26}
               height={26}
               alt={siteTitle}
               className="block header-icon"
             />
-          </Link>
+          </a>
           <HeaderName
             siteTitle={siteTitle}
             siteDescription={siteDescription}

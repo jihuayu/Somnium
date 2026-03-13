@@ -1,7 +1,7 @@
 import { config as BLOG } from '@/lib/server/config'
 import api from '@/lib/server/notion-api'
 import { ONE_DAY_SECONDS } from '@/lib/server/cache'
-import { unstable_cache } from 'next/cache'
+import { unstable_cache } from '@/lib/server/runtimeCache'
 import filterPublishedPosts, { PostData } from './filterPublishedPosts'
 import { mapPageToPost, normalizeNotionUuid } from './postMapper'
 

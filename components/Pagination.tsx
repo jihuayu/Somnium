@@ -1,14 +1,13 @@
-import Link from 'next/link'
-import loadLocale from '@/assets/i18n'
 import { config } from '@/lib/server/config'
 
 interface PaginationProps {
   page: number
   showNext: boolean
+  prevLabel: string
+  nextLabel: string
 }
 
-export default async function Pagination({ page, showNext }: PaginationProps) {
-  const locale = await loadLocale('basic', config.lang)
+export default function Pagination({ page, showNext, prevLabel, nextLabel }: PaginationProps) {
   const currentPage = +page
   let additionalClassName = 'justify-between'
   if (currentPage === 1 && showNext) additionalClassName = 'justify-end'
@@ -17,23 +16,22 @@ export default async function Pagination({ page, showNext }: PaginationProps) {
   return (
     <div className={`flex font-medium text-black dark:text-gray-100 ${additionalClassName}`}>
       {currentPage !== 1 && (
-        <Link
+        <a
           href={
             currentPage - 1 === 1
               ? `${config.path || '/'}`
               : `/page/${currentPage - 1}`
           }
-          prefetch={false}
           rel="prev"
           className="block cursor-pointer"
         >
-          ← {locale.PAGINATION.PREV}
-        </Link>
+          ← {prevLabel}
+        </a>
       )}
       {showNext && (
-        <Link href={`/page/${currentPage + 1}`} prefetch={false} rel="next" className="block cursor-pointer">
-          {locale.PAGINATION.NEXT} →
-        </Link>
+        <a href={`/page/${currentPage + 1}`} rel="next" className="block cursor-pointer">
+          {nextLabel} →
+        </a>
       )}
     </div>
   )

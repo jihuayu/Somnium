@@ -1,4 +1,4 @@
-import { unstable_cache } from 'next/cache'
+import { unstable_cache } from '@/lib/server/runtimeCache'
 import { toLinkPreviewImageProxyUrl } from '@/lib/server/linkPreviewImageProxy'
 import type { LinkPreviewData } from '@/lib/link-preview/types'
 import { normalizePreviewUrl } from '@/lib/link-preview/normalize'

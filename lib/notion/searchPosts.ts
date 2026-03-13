@@ -1,7 +1,7 @@
 import { config as BLOG } from '@/lib/server/config'
 import api from '@/lib/server/notion-api'
 import { ONE_DAY_SECONDS } from '@/lib/server/cache'
-import { unstable_cache } from 'next/cache'
+import { unstable_cache } from '@/lib/server/runtimeCache'
 import {
   MAX_SEARCH_KEYWORD_TOKENS,
   MAX_SEARCH_TOKEN_LENGTH,

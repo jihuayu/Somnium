@@ -1,0 +1,65 @@
+---
+import BaseLayout from '@/src/layouts/BaseLayout.astro'
+import NotFoundPageView from '@/components/views/NotFoundPageView'
+import SlugPageView from '@/components/views/SlugPageView'
+import loadLocale from '@/assets/i18n'
+import { buildPageLinkMap } from '@/lib/notion/pageLinkMap'
+import { buildPagePreviewMap } from '@/lib/notion/pagePreviewMap'
+import { getAllPosts, getPostBlocks } from '@/lib/notion'
+import { config } from '@/lib/server/config'
+import { buildNotionOgImageUrl, buildPageMetadata } from '@/lib/server/metadata'
+import { prepareSomniumRenderModel } from '@/lib/server/notionRender'
+
+const locale = await loadLocale('basic', config.lang)
+const slug = `${Astro.params.slug || ''}`.trim()
+const posts = await getAllPosts({ includePages: true })
+const post = posts.find(item => item.slug === slug)
+
+let metadata = buildPageMetadata()
+let document = null
+let model = null
+
+if (!post) {
+  Astro.response.status = 404
+} else {
+  metadata = buildPageMetadata({
+    title: post.title,
+    description: post.summary,
+    slug: post.slug,
+    type: 'article',
+    date: post.date,
+    ogImageUrl: buildNotionOgImageUrl(post.id)
+  })
+  document = await getPostBlocks(post.id)
+  if (!document) {
+    Astro.response.status = 404
+  } else {
+    const pageLinkMap = buildPageLinkMap(posts, config.path || '')
+    const pagePreviewMap = buildPagePreviewMap(posts, pageLinkMap)
+    model = await prepareSomniumRenderModel({
+      document,
+      pageLinkMap,
+      pagePreviewMap
+    })
+  }
+}
+
+const notFound = !post || !document || !model
+---
+
+<BaseLayout metadata={metadata}>
+  {notFound ? (
+    <NotFoundPageView client:load navLocale={locale.NAV} />
+  ) : (
+    <SlugPageView
+      client:load
+      post={post}
+      model={model}
+      fullWidth={post.fullWidth ?? false}
+      homePath={config.path || '/'}
+      backLabel={locale.POST.BACK}
+      topLabel={locale.POST.TOP}
+      navLocale={locale.NAV}
+    />
+  )}
+</BaseLayout>

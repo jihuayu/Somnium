@@ -21,6 +21,7 @@
 }
 
 html {
+  --font-ibm-plex-sans: 'IBM Plex Sans';
   --scrollbarBG: #ffffff00;
   --thumbBG: #b8b8b8;
   scroll-behavior: smooth;

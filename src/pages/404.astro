@@ -1,0 +1,15 @@
+---
+import BaseLayout from '@/src/layouts/BaseLayout.astro'
+import NotFoundPageView from '@/components/views/NotFoundPageView'
+import loadLocale from '@/assets/i18n'
+import { config } from '@/lib/server/config'
+import { buildPageMetadata } from '@/lib/server/metadata'
+
+const locale = await loadLocale('basic', config.lang)
+const metadata = buildPageMetadata()
+Astro.response.status = 404
+---
+
+<BaseLayout metadata={metadata}>
+  <NotFoundPageView client:load navLocale={locale.NAV} />
+</BaseLayout>

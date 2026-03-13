@@ -4,18 +4,23 @@ import Header from '@/components/Header'
 import FooterServer from '@/components/FooterServer'
 import { ARTICLE_CONTENT_MAX_WIDTH_CLASS } from '@/consts'
 import { config } from '@/lib/server/config'
-import loadLocale from '@/assets/i18n'
+
+export interface NavLocale {
+  INDEX: string
+  ABOUT: string
+  RSS: string
+  SEARCH: string
+}
 
 interface ContainerServerProps {
   children: ReactNode
   layout?: string
   fullWidth?: boolean
   title?: string
+  navLocale: NavLocale
 }
 
-export default async function ContainerServer({ children, layout, fullWidth, title }: ContainerServerProps) {
-  const locale = await loadLocale('basic', config.lang)
-
+export default function ContainerServer({ children, layout, fullWidth, title, navLocale }: ContainerServerProps) {
   return (
     <div id="top">
       <div className={`wrapper ${config.font === 'serif' ? 'font-serif' : 'font-sans'}`}>
@@ -27,7 +32,7 @@ export default async function ContainerServer({ children, layout, fullWidth, tit
           path={config.path || '/'}
           showAbout={config.showAbout}
           autoCollapsedNavBar={config.autoCollapsedNavBar}
-          navLocale={locale.NAV}
+          navLocale={navLocale}
         />
         <main
           className={cn(

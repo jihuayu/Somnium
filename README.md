@@ -1,6 +1,6 @@
 # Somnium
 
-`Somnium` 是我的个人博客项目，基于 Notion 作为内容后台，使用 Next.js 构建，并可直接部署到 Vercel。
+`Somnium` 是我的个人博客项目，基于 Notion 作为内容后台，使用 Astro 构建，并可部署到支持 Node.js 的平台。
 
 ## 项目概览
 
@@ -8,7 +8,7 @@
 - 语言：中文（`zh-CN`）
 - 评论系统：Utterances
 - 数据来源：Notion Data Source（官方 API）
-- 技术栈：Next.js 16 + React 18 + Tailwind CSS
+- 技术栈：Astro 5 + React 18 + Tailwind CSS
 
 ## 功能特性
 
@@ -42,7 +42,7 @@ NOTION_WEBHOOK_VERIFICATION_TOKEN=your_notion_webhook_verification_token
 
 ### 3. 配置站点信息
 
-编辑 `config/blog.config.js`，重点修改：
+编辑 `config/blog.config.mjs`，重点修改：
 
 - `title` / `author` / `link`
 - `description`
@@ -55,7 +55,7 @@ NOTION_WEBHOOK_VERIFICATION_TOKEN=your_notion_webhook_verification_token
 pnpm dev
 ```
 
-默认访问：`http://localhost:3000`
+默认访问：`http://localhost:4321`
 
 ## 构建与运行
 
@@ -64,12 +64,12 @@ pnpm build
 pnpm start
 ```
 
-## 部署到 Vercel
+## 部署
 
-1. 将仓库导入 Vercel
-2. 在 Vercel 项目中配置环境变量（与本地一致）
-3. 执行部署
-4. 后续在 Notion 更新内容后，页面会按 ISR 策略增量更新
+1. 在目标平台配置环境变量（与本地一致）
+2. 执行 `pnpm build`
+3. 使用 `pnpm start` 启动 Node.js 服务
+4. 后续在 Notion 更新内容后，站点会通过服务端渲染和缓存失效接口刷新数据
 
 ## Notion Webhook 刷新缓存
 
@@ -110,14 +110,14 @@ POST /api/notion/webhook
 ## 项目结构
 
 ```text
-app/                 Next.js App Router 页面
+src/pages/            Astro 页面与 API 路由
 components/          通用组件
 layouts/             页面布局
 lib/                 数据获取与工具函数
 public/              静态资源
 styles/              全局样式
-config/              项目配置（如 blog.config.js、next-sitemap）
-next.config.js       Next.js 配置
+config/              项目配置（如 blog.config.js、blog.config.mjs）
+astro.config.mjs     Astro 配置
 ```
 
 ## 致谢

@@ -1,7 +1,0 @@
-import SearchLayout from '@/layouts/search'
-
-export const revalidate = 86400
-
-export default async function SearchPage() {
-  return <SearchLayout tags={{}} posts={[]} useNotionSearch loadTagsRemotely />
-}

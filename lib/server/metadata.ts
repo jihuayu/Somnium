@@ -1,6 +1,43 @@
-import type { Metadata } from 'next'
 import { config } from '@/lib/server/config'
 import { buildOgImageUrl, buildOpenGraphPayload } from '@jihuayu/notion-react/og'
+
+export interface PageMetadata {
+  title?: string
+  description?: string
+  applicationName?: string
+  creator?: string
+  publisher?: string
+  robots?: {
+    follow?: boolean
+    index?: boolean
+  }
+  keywords?: string[]
+  verification?: {
+    google?: string
+  }
+  alternates?: {
+    canonical?: string
+  }
+  openGraph?: {
+    title?: string
+    description?: string
+    url?: string
+    type?: string
+    locale?: string
+    siteName?: string
+    publishedTime?: string
+    authors?: string[]
+    images?: Array<{ url: string }>
+  }
+  twitter?: {
+    card?: string
+    title?: string
+    description?: string
+    images?: string[]
+    site?: string
+    creator?: string
+  }
+}
 
 interface PageMetadataOptions {
   title?: string
@@ -82,7 +119,7 @@ export function buildPageMetadata({
   type = 'website',
   date,
   ogImageUrl
-}: PageMetadataOptions = {}): Metadata {
+}: PageMetadataOptions = {}): PageMetadata {
   const pageTitle = title || config.title
   const pageDescription = description || config.description
   const siteUrl = buildSiteUrl()
@@ -130,7 +167,7 @@ export function buildPageMetadata({
     alternates: {
       canonical: ogPayload.canonicalUrl || pageUrl
     },
-    openGraph: ogPayload.openGraph as Metadata['openGraph'],
+    openGraph: ogPayload.openGraph as PageMetadata['openGraph'],
     twitter: {
       ...ogPayload.twitter,
       creator: twitterHandle

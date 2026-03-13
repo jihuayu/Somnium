@@ -1,4 +1,5 @@
 import ContainerServer from '@/components/ContainerServer'
+import type { NavLocale } from '@/components/ContainerServer'
 import SearchClient from '@/components/SearchClient'
 import { config } from '@/lib/server/config'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
@@ -9,6 +10,7 @@ interface SearchLayoutProps {
   currentTag?: string
   useNotionSearch?: boolean
   loadTagsRemotely?: boolean
+  navLocale: NavLocale
 }
 
 export default function SearchLayout({
@@ -16,10 +18,11 @@ export default function SearchLayout({
   posts,
   currentTag,
   useNotionSearch = false,
-  loadTagsRemotely = false
+  loadTagsRemotely = false,
+  navLocale
 }: SearchLayoutProps) {
   return (
-    <ContainerServer>
+    <ContainerServer navLocale={navLocale}>
       <SearchClient
         tags={tags}
         posts={posts}

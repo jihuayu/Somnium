@@ -1,6 +1,6 @@
 import api from '@/lib/server/notion-api'
 import { ONE_DAY_SECONDS } from '@/lib/server/cache'
-import { unstable_cache } from 'next/cache'
+import { unstable_cache } from '@/lib/server/runtimeCache'
 import type { NotionDocument, TocItem } from '@jihuayu/notion-react'
 import { normalizeNotionDocument, type RawNotionBlockCollection } from '@jihuayu/notion-react/normalize'
 

@@ -1,0 +1,25 @@
+---
+import BaseLayout from '@/src/layouts/BaseLayout.astro'
+import ListPageView from '@/components/views/ListPageView'
+import loadLocale from '@/assets/i18n'
+import { clientConfig, config } from '@/lib/server/config'
+import { buildPageMetadata } from '@/lib/server/metadata'
+import { getAllPosts } from '@/lib/notion'
+
+const locale = await loadLocale('basic', config.lang)
+const posts = await getAllPosts({ includePages: false })
+const postsToShow = posts.slice(0, clientConfig.postsPerPage)
+const showNext = posts.length > clientConfig.postsPerPage
+const metadata = buildPageMetadata()
+---
+
+<BaseLayout metadata={metadata}>
+  <ListPageView
+    client:load
+    posts={postsToShow}
+    page={1}
+    showNext={showNext}
+    navLocale={locale.NAV}
+    paginationLocale={locale.PAGINATION}
+  />
+</BaseLayout>

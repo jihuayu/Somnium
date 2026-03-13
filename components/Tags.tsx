@@ -1,5 +1,3 @@
-import Link from 'next/link'
-
 interface TagsProps {
   tags: Record<string, number>
   currentTag?: string
@@ -21,18 +19,17 @@ const Tags = ({ tags, currentTag }: TagsProps) => {
                   : 'bg-gray-100 border-gray-100 text-gray-400 dark:bg-night dark:border-gray-800'
               }`}
             >
-              <Link
+              <a
                 key={key}
                 href={
                   selected
                     ? '/search'
                     : `/tag/${encodeURIComponent(key)}`
                 }
-                prefetch={false}
                 className="px-4 py-2 block"
               >
                 {`${key} (${tags[key]})`}
-              </Link>
+              </a>
             </li>
           )
         })}

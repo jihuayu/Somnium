@@ -1,23 +1,14 @@
 import { FONTS_MISANS } from '@/consts'
 import {
   NotionRenderer as BaseNotionRenderer,
-  prepareNotionRenderModel,
-  type LinkPreviewMap,
-  type NotionDocument,
+  type NotionRenderModel,
   type NotionRenderOptions,
-  type PageHrefMap,
   type PagePreviewMap
 } from '@/packages/notion-react/src'
 import { config } from '@/lib/server/config'
-import { resolvePageHref } from '@/lib/notion/pageLinkMap'
-import { getLinkPreviewByNormalizedUrl } from '@/lib/server/linkPreview'
-import { highlightCodeToHtml } from '@/lib/server/shiki'
 
 interface NotionRendererProps {
-  document: NotionDocument | null
-  linkPreviewMap?: LinkPreviewMap
-  pageLinkMap?: PageHrefMap
-  pagePreviewMap?: PagePreviewMap
+  model: NotionRenderModel | null
 }
 
 function buildRenderOptions(): NotionRenderOptions {
@@ -42,22 +33,7 @@ function buildRenderOptions(): NotionRenderOptions {
   }
 }
 
-export default async function NotionRenderer({ document, linkPreviewMap = {}, pageLinkMap = {}, pagePreviewMap = {} }: NotionRendererProps) {
-  const model = await prepareNotionRenderModel(document, {
-    highlightCode: async (source, language) => {
-      const highlighted = await highlightCodeToHtml(source, language)
-      return {
-        html: highlighted.html,
-        displayLanguage: highlighted.displayLanguage
-      }
-    },
-    resolveLinkPreview: getLinkPreviewByNormalizedUrl,
-    resolvePageHref: id => resolvePageHref(id, pageLinkMap),
-    initialLinkPreviewMap: linkPreviewMap,
-    initialPageHrefMap: pageLinkMap,
-    initialPagePreviewMap: pagePreviewMap
-  })
-
+export default function NotionRenderer({ model }: NotionRendererProps) {
   if (!model) return null
 
   return (

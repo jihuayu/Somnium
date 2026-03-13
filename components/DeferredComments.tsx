@@ -1,17 +1,13 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import dynamic from 'next/dynamic'
+import Utterances from '@/components/Utterances'
 
 interface DeferredCommentsProps {
   issueTerm: string
   repo: string
   appearance: 'light' | 'dark' | 'auto'
 }
-
-const Utterances = dynamic(() => import('@/components/Utterances'), {
-  ssr: false
-})
 
 export default function DeferredComments({ issueTerm, repo, appearance }: DeferredCommentsProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)

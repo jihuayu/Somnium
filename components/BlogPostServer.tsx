@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { config } from '@/lib/server/config'
 import { formatDate } from '@/lib/formatDate'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
@@ -11,7 +10,7 @@ export default function BlogPostServer({ post }: BlogPostServerProps) {
   const blogPath = config.path || ''
 
   return (
-    <Link href={`${blogPath}/${post.slug}`} prefetch={false}>
+    <a href={`${blogPath}/${post.slug}`}>
       <article key={post.id} className="mb-6 md:mb-8">
         <header className="flex flex-col justify-between md:flex-row md:items-baseline">
           <h2 className="text-lg md:text-xl font-medium mb-2 cursor-pointer text-black dark:text-gray-100">
@@ -27,6 +26,6 @@ export default function BlogPostServer({ post }: BlogPostServerProps) {
           </p>
         </main>
       </article>
-    </Link>
+    </a>
   )
 }

@@ -12,22 +12,17 @@ import TagItem from '@/components/TagItem'
 import NotionRenderer from '@/components/NotionRenderer'
 import TableOfContents from '@/components/TableOfContents'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
-import type { NotionDocument } from '@/lib/notion/getPostBlocks'
-import type { LinkPreviewMap } from '@/lib/link-preview/types'
-import type { PageLinkMap } from '@/lib/notion/pageLinkMap'
-import type { PagePreviewMap } from '@/lib/notion/pagePreviewMap'
+import type { NotionRenderModel } from '@/packages/notion-react/src'
 
 interface PostProps {
   post: PostData
-  document: NotionDocument
+  model: NotionRenderModel
   fullWidth?: boolean
-  linkPreviewMap?: LinkPreviewMap
-  pageLinkMap?: PageLinkMap
-  pagePreviewMap?: PagePreviewMap
 }
 
 export default function Post(props: PostProps) {
-  const { post, document, fullWidth = false, linkPreviewMap = {}, pageLinkMap = {}, pagePreviewMap = {} } = props
+  const { post, model, fullWidth = false } = props
+  const document = model.document
 
   return (
     <article className={cn('flex flex-col', fullWidth ? 'md:px-24' : 'items-center')}>
@@ -62,7 +57,7 @@ export default function Post(props: PostProps) {
       )}
       <div className="self-stretch -mt-4 relative">
         <div className={fullWidth ? 'w-full px-4 md:px-24' : `mx-auto w-full ${ARTICLE_CONTENT_MAX_WIDTH_CLASS} px-4`}>
-          <NotionRenderer document={document} linkPreviewMap={linkPreviewMap} pageLinkMap={pageLinkMap} pagePreviewMap={pagePreviewMap} />
+          <NotionRenderer model={model} />
         </div>
         {!fullWidth && (
           <div

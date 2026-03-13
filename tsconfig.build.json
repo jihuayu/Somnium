@@ -18,6 +18,9 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
+    "types": [
+      "astro/client"
+    ],
     "baseUrl": ".",
     "paths": {
       "@/*": [
@@ -36,21 +39,18 @@
         "./packages/notion-react/src/og.ts"
       ]
     },
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ]
+    "plugins": []
   },
   "include": [
-    "next-env.d.ts",
-    ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts",
+    ".astro/types.d.ts",
     "**/*.mts",
     "**/*.ts",
-    "**/*.tsx"
+    "**/*.tsx",
+    "**/*.astro"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "app",
+    ".next"
   ]
 }
