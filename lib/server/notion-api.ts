@@ -81,6 +81,10 @@ async function retrieveDataSource(dataSourceId: string, signal?: AbortSignal): P
   return notionRequest(`/data_sources/${dataSourceId}`, { signal })
 }
 
+async function retrievePage(pageId: string, signal?: AbortSignal): Promise<any> {
+  return notionRequest(`/pages/${pageId}`, { signal })
+}
+
 async function queryDataSource(
   dataSourceId: string,
   body: Record<string, unknown> = {},
@@ -152,6 +156,7 @@ async function listAllBlockChildren(blockId: string, signal?: AbortSignal): Prom
 
 const notionApi = {
   retrieveDataSource,
+  retrievePage,
   queryDataSource,
   queryAllDataSourcePages,
   search,

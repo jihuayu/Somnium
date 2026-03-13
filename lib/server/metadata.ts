@@ -7,14 +7,26 @@ interface PageMetadataOptions {
   slug?: string
   type?: 'website' | 'article'
   date?: string | number | Date | null
+  ogImageUrl?: string
 }
 
 function trimSlashes(value: string): string {
   return value.replace(/^\/+|\/+$/g, '')
 }
 
+function buildSiteOrigin(): string {
+  const fallback = 'https://example.com'
+  const source = `${config.link || ''}`.trim() || fallback
+
+  try {
+    return new URL(source).origin.replace(/\/+$/g, '')
+  } catch {
+    return fallback
+  }
+}
+
 function buildSiteUrl(): string {
-  const root = config.link.replace(/\/+$/g, '')
+  const root = buildSiteOrigin()
   const basePath = trimSlashes(config.path || '')
   return basePath ? `${root}/${basePath}` : root
 }
@@ -28,6 +40,35 @@ function buildOgImageUrl(title: string): string {
   const ogBaseUrl = config.ogImageGenerateURL.replace(/\/+$/g, '')
   const logoUrl = 'https://nobelium.vercel.app/logo-for-dark-bg.svg'
   return `${ogBaseUrl}/${encodeURIComponent(title)}.png?theme=dark&md=1&fontSize=125px&images=${encodeURIComponent(logoUrl)}`
+}
+
+export function buildNotionOgImageUrl(pageId: string): string {
+  const routeUrl = new URL('/api/og/notion', buildSiteOrigin())
+  routeUrl.searchParams.set('pageId', pageId)
+  return routeUrl.toString()
+}
+
+function buildTwitterHandle(value: string): string | undefined {
+  const raw = `${value || ''}`.trim()
+  if (!raw) return undefined
+
+  if (raw.startsWith('@')) {
+    return raw.length > 1 ? raw : undefined
+  }
+
+  try {
+    const parsed = new URL(raw)
+    const hostname = parsed.hostname.toLowerCase()
+    if (hostname !== 'twitter.com' && hostname !== 'www.twitter.com' && hostname !== 'x.com' && hostname !== 'www.x.com') {
+      return undefined
+    }
+
+    const handle = parsed.pathname.split('/').filter(Boolean)[0]
+    if (!handle) return undefined
+    return `@${handle.replace(/^@+/, '')}`
+  } catch {
+    return undefined
+  }
 }
 
 function toIsoDate(value: string | number | Date | null | undefined): string | undefined {
@@ -44,21 +85,24 @@ export function buildPageMetadata({
   description,
   slug,
   type = 'website',
-  date
+  date,
+  ogImageUrl
 }: PageMetadataOptions = {}): Metadata {
   const pageTitle = title || config.title
   const pageDescription = description || config.description
   const siteUrl = buildSiteUrl()
   const pageUrl = buildPageUrl(siteUrl, slug)
-  const ogImageUrl = buildOgImageUrl(pageTitle)
+  const resolvedOgImageUrl = ogImageUrl || buildOgImageUrl(pageTitle)
   const publishedTime = toIsoDate(date)
+  const twitterHandle = buildTwitterHandle(config.socialLink || '')
 
   const openGraph = {
     locale: config.lang,
     title: pageTitle,
     description: pageDescription,
     url: pageUrl,
-    images: [{ url: ogImageUrl }],
+    siteName: config.title,
+    images: [{ url: resolvedOgImageUrl }],
     type,
     ...(type === 'article'
       ? {
@@ -71,6 +115,9 @@ export function buildPageMetadata({
   return {
     title: pageTitle,
     description: pageDescription,
+    applicationName: config.title,
+    creator: config.author,
+    publisher: config.title,
     robots: {
       follow: true,
       index: true
@@ -85,9 +132,11 @@ export function buildPageMetadata({
     openGraph,
     twitter: {
       card: 'summary_large_image',
+      site: twitterHandle,
+      creator: twitterHandle,
       title: pageTitle,
       description: pageDescription,
-      images: [ogImageUrl]
+      images: [resolvedOgImageUrl]
     }
   }
 }

@@ -5,7 +5,7 @@ import { unstable_cache } from 'next/cache'
 import { getAllPosts, getPostBlocks } from '@/lib/notion'
 import loadLocale from '@/assets/i18n'
 import ContainerServer from '@/components/ContainerServer'
-import { buildPageMetadata } from '@/lib/server/metadata'
+import { buildNotionOgImageUrl, buildPageMetadata } from '@/lib/server/metadata'
 import { buildPageLinkMap } from '@/lib/notion/pageLinkMap'
 import { config } from '@/lib/server/config'
 import { ONE_DAY_SECONDS } from '@/lib/server/cache'
@@ -50,7 +50,8 @@ export async function generateMetadata({ params }: SlugPageProps): Promise<Metad
     description: post.summary,
     slug: post.slug,
     type: 'article',
-    date: post.date
+    date: post.date,
+    ogImageUrl: buildNotionOgImageUrl(post.id)
   })
 }
 
