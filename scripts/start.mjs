@@ -6,6 +6,8 @@ import dotenv from 'dotenv'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const projectRoot = path.resolve(currentDir, '..')
 
+process.env.PORT ||= '3000'
+
 function loadEnvFile(fileName) {
   const filePath = path.join(projectRoot, fileName)
   if (!fs.existsSync(filePath)) return
