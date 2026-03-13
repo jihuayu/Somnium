@@ -1,78 +1,20 @@
 import api from '@/lib/server/notion-api'
 import { ONE_DAY_SECONDS } from '@/lib/server/cache'
 import { unstable_cache } from 'next/cache'
-import { getPlainTextFromRichText } from '@/lib/notion/render-utils'
+import type { NotionDocument, TocItem } from '@jihuayu/notion-react'
+import { normalizeNotionDocument, type RawNotionBlockCollection } from '@jihuayu/notion-react/normalize'
 
 const NOTION_BLOCK_FETCH_CONCURRENCY = 6
 const POST_BLOCKS_CACHE_REVALIDATE_SECONDS = ONE_DAY_SECONDS
 
-export interface TocItem {
-  id: string
-  text: string
-  indentLevel: number
-}
-
-export interface NotionDocument {
-  pageId: string
-  rootIds: string[]
-  blocksById: Record<string, any>
-  childrenById: Record<string, string[]>
-  toc: TocItem[]
-}
+export type { NotionDocument, TocItem }
 
 interface BuildNotionDocumentOptions {
   includeToc?: boolean
 }
 
-function getBlockRichText(block: any): any[] {
-  if (!block || !block.type) return []
-  const payload = block[block.type]
-  if (!payload || typeof payload !== 'object') return []
-  return payload.rich_text || []
-}
-
-function buildTableOfContents({ rootIds, blocksById, childrenById }: {
-  rootIds: string[]
-  blocksById: Record<string, any>
-  childrenById: Record<string, string[]>
-}): TocItem[] {
-  const headingLevel: Record<string, number> = {
-    heading_1: 0,
-    heading_2: 1,
-    heading_3: 2
-  }
-
-  const toc: TocItem[] = []
-  const walk = (blockIds: string[] = []) => {
-    for (const blockId of blockIds) {
-      const block = blocksById[blockId]
-      if (!block) continue
-
-      if (Object.prototype.hasOwnProperty.call(headingLevel, block.type)) {
-        const text = getPlainTextFromRichText(getBlockRichText(block), true)
-        if (text) {
-          toc.push({
-            id: block.id,
-            text,
-            indentLevel: headingLevel[block.type]
-          })
-        }
-      }
-
-      walk(childrenById[blockId] || [])
-    }
-  }
-
-  walk(rootIds)
-  return toc
-}
-
-async function collectDocumentBlocks(pageId: string): Promise<{
-  blocksById: Record<string, any>
-  childrenById: Record<string, string[]>
-}> {
-  const blocksById: Record<string, any> = {}
-  const childrenById: Record<string, string[]> = {}
+async function collectDocumentBlocks(pageId: string): Promise<Record<string, RawNotionBlockCollection>> {
+  const childrenByParentId: Record<string, RawNotionBlockCollection> = {}
   const pendingParentIds: string[] = [pageId]
   const visitedParents = new Set<string>()
   let inFlight = 0
@@ -98,15 +40,12 @@ async function collectDocumentBlocks(pageId: string): Promise<{
 
         api.listAllBlockChildren(parentId)
           .then((children) => {
-            childrenById[parentId] = children
-              .map((block: any) => `${block?.id || ''}`.trim())
-              .filter(Boolean)
+            childrenByParentId[parentId] = children
 
-            for (const block of children) {
+            for (const block of children as any[]) {
               const blockId = `${block?.id || ''}`.trim()
               if (!blockId) continue
 
-              blocksById[blockId] = block
               if (block.has_children && !visitedParents.has(blockId)) {
                 pendingParentIds.push(blockId)
               }
@@ -127,10 +66,7 @@ async function collectDocumentBlocks(pageId: string): Promise<{
     schedule()
   })
 
-  return {
-    blocksById,
-    childrenById
-  }
+  return childrenByParentId
 }
 
 export async function buildNotionDocument(
@@ -139,20 +75,12 @@ export async function buildNotionDocument(
 ): Promise<NotionDocument | null> {
   if (!pageId) return null
 
-  const { blocksById, childrenById } = await collectDocumentBlocks(pageId)
-
-  const rootIds = childrenById[pageId] || []
-  const toc = includeToc
-    ? buildTableOfContents({ rootIds, blocksById, childrenById })
-    : []
-
-  return {
+  const childBlocksByParentId = await collectDocumentBlocks(pageId)
+  return normalizeNotionDocument({
     pageId,
-    rootIds,
-    blocksById,
-    childrenById,
-    toc
-  }
+    childBlocksByParentId,
+    includeToc
+  })
 }
 
 const getCachedDocument = unstable_cache(

@@ -1,0 +1,55 @@
+{
+  "name": "@jihuayu/notion-react",
+  "version": "0.1.0",
+  "description": "React renderer for normalized Notion documents",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./normalize": {
+      "types": "./dist/normalize.d.ts",
+      "import": "./dist/normalize.js"
+    },
+    "./rss": {
+      "types": "./dist/rss.d.ts",
+      "import": "./dist/rss.js"
+    },
+    "./og": {
+      "types": "./dist/og.d.ts",
+      "import": "./dist/og.js"
+    },
+    "./styles.css": "./dist/styles.css"
+  },
+  "sideEffects": [
+    "./dist/styles.css"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "clean": "if exist dist rmdir /s /q dist",
+    "storybook": "storybook dev -p 6006 -c .storybook --disable-telemetry",
+    "storybook:build": "storybook build -c .storybook -o storybook-static --disable-telemetry"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0 || ^19.0.0",
+    "react-dom": "^18.2.0 || ^19.0.0"
+  },
+  "dependencies": {
+    "classnames": "^2.5.1",
+    "dayjs": "^1.11.19",
+    "feed": "^4.2.2",
+    "katex": "^0.16.33",
+    "mermaid": "^11.12.3"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.0"
+  }
+}
