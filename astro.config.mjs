@@ -2,13 +2,13 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'astro/config'
 import react from '@astrojs/react'
-import node from '@astrojs/node'
+import vercel from '@astrojs/vercel'
 
 const rootDir = fileURLToPath(new URL('./', import.meta.url))
 
 export default defineConfig({
   output: 'server',
-  adapter: node({ mode: 'standalone' }),
+  adapter: vercel(),
   integrations: [react()],
   vite: {
     resolve: {

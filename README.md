@@ -1,6 +1,6 @@
 # Somnium
 
-`Somnium` 是我的个人博客项目，基于 Notion 作为内容后台，使用 Astro 构建，并可部署到支持 Node.js 的平台。
+`Somnium` 是我的个人博客项目，基于 Notion 作为内容后台，使用 Astro 构建，并支持部署到 Vercel 等支持 Node.js 的平台。
 
 ## 项目概览
 
@@ -8,7 +8,7 @@
 - 语言：中文（`zh-CN`）
 - 评论系统：Utterances
 - 数据来源：Notion Data Source（官方 API）
-- 技术栈：Astro 5 + React 18 + Tailwind CSS
+- 技术栈：Astro 6 + React 18 + Tailwind CSS
 
 ## 功能特性
 
@@ -55,7 +55,7 @@ NOTION_WEBHOOK_VERIFICATION_TOKEN=your_notion_webhook_verification_token
 pnpm dev
 ```
 
-现在默认访问：`http://localhost:4321`
+默认访问：`http://localhost:4321`
 
 ## 构建与运行
 
@@ -68,8 +68,16 @@ pnpm start
 
 1. 在目标平台配置环境变量（与本地一致）
 2. 执行 `pnpm build`
-3. 使用 `pnpm start` 启动 Node.js 服务
+3. 使用 `pnpm start` 启动本地 Vercel 模拟服务
 4. 后续在 Notion 更新内容后，站点会通过服务端渲染和缓存失效接口刷新数据
+
+### Vercel 部署
+
+- 项目已使用 `@astrojs/vercel` 适配器，执行 `pnpm build` 会生成 Vercel 需要的部署产物
+- 建议在 Vercel 中使用 Node.js 24 运行时
+- `vercel.json` 已固定 `installCommand` 和 `buildCommand`，通常不需要再在面板里单独覆盖
+- 如果项目之前是 Next.js 分支复用同一个 Vercel 项目，请不要手动填写 Output Directory，保持为空即可
+- 本地 `pnpm start` 使用 `vercel dev --local`，用于在本机模拟 Vercel 运行环境
 
 ## Notion Webhook 刷新缓存
 

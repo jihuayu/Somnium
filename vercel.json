@@ -1,5 +1,6 @@
 {
   "installCommand": "corepack enable && pnpm install",
+  "buildCommand": "pnpm build",
   "cleanUrls": true,
   "trailingSlash": false,
   "headers": [

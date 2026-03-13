@@ -7,10 +7,13 @@
     "type": "git",
     "url": "https://github.com/jihuayu/somnium.git"
   },
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "dev": "pnpm run notion-react:build && astro dev --host",
     "build": "pnpm run notion-react:build && astro build",
-    "start": "node ./scripts/start.mjs",
+    "start": "vercel dev --local --listen 3000",
     "test": "node --import tsx --test tests/**/*.test.ts packages/*/tests/**/*.test.ts",
     "lint": "eslint .",
     "notion-react:build": "pnpm --filter @jihuayu/notion-react build",
@@ -18,15 +21,14 @@
     "notion-react:storybook:build": "storybook build -c packages/notion-react/.storybook -o packages/notion-react/storybook-static --disable-telemetry"
   },
   "dependencies": {
-    "@astrojs/node": "^9.5.0",
-    "@astrojs/react": "^4.4.0",
+    "@astrojs/react": "^5.0.0",
+    "@astrojs/vercel": "^10.0.0",
     "@fontsource/ibm-plex-sans": "^5.2.8",
     "@jihuayu/notion-react": "workspace:*",
     "@vercel/og": "^0.11.1",
-    "astro": "^5.10.0",
+    "astro": "^6.0.4",
     "classnames": "^2.5.1",
     "dayjs": "^1.11.20",
-    "dotenv": "^16.6.1",
     "feed": "^5.2.0",
     "image-size": "^2.0.2",
     "katex": "^0.16.38",
@@ -51,6 +53,7 @@
     "tsup": "^8.5.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
+    "vercel": "^50.32.5",
     "vite": "^6.3.6"
   },
   "browserslist": {
