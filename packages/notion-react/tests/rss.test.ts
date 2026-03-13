@@ -18,7 +18,19 @@ const document: NotionDocument = {
       id: 'paragraph-1',
       type: 'paragraph',
       paragraph: {
-        rich_text: [{ type: 'text', plain_text: 'RSS Body' }]
+        rich_text: [
+          { type: 'text', plain_text: 'RSS Body ' },
+          {
+            type: 'text',
+            plain_text: 'Internal Page',
+            text: {
+              content: 'Internal Page',
+              link: {
+                url: 'https://www.notion.so/workspace/Internal-Page-123456781234123412341234567890ab?pvs=4'
+              }
+            }
+          }
+        ]
       }
     },
     'bulleted-1': {
@@ -43,9 +55,14 @@ const document: NotionDocument = {
 }
 
 test('renderNotionDocumentToHtml renders grouped list blocks', () => {
-  const html = renderNotionDocumentToHtml(document)
+  const html = renderNotionDocumentToHtml(document, {
+    pageHrefMap: {
+      '123456781234123412341234567890ab': '/posts/internal-page'
+    }
+  })
   assert.match(html, /<h1>RSS Title<\/h1>/)
-  assert.match(html, /<p>RSS Body<\/p>/)
+  assert.match(html, /<p>RSS Body <a href="\/posts\/internal-page">Internal Page<\/a><\/p>/)
+  assert.match(html, /href="\/posts\/internal-page"/)
   assert.match(html, /<ul><li>First<\/li><li>Second<\/li><\/ul>/)
 })
 

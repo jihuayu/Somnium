@@ -386,6 +386,10 @@ export interface LinkPreviewData {
 
 export type LinkPreviewMap = Record<string, LinkPreviewData>
 export type PageHrefMap = Record<string, string>
+export interface PageHrefEntry {
+  id: string
+  slug: string
+}
 
 export interface HighlightedCode {
   html: string

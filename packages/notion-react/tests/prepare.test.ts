@@ -4,13 +4,29 @@ import { prepareNotionRenderModel, type NotionDocument } from '../src/index'
 
 const document: NotionDocument = {
   pageId: 'page-1',
-  rootIds: ['h1', 'code-1', 'code-2', 'bookmark-1', 'bookmark-2'],
+  rootIds: ['h1', 'paragraph-1', 'code-1', 'code-2', 'bookmark-1', 'bookmark-2'],
   blocksById: {
     h1: {
       id: 'h1',
       type: 'heading_1',
       heading_1: {
         rich_text: [{ type: 'text', plain_text: 'Hello' }]
+      }
+    },
+    'paragraph-1': {
+      id: 'paragraph-1',
+      type: 'paragraph',
+      paragraph: {
+        rich_text: [{
+          type: 'text',
+          plain_text: 'Internal page',
+          text: {
+            content: 'Internal page',
+            link: {
+              url: 'https://www.notion.so/workspace/Internal-Page-123456781234123412341234567890ab?pvs=4'
+            }
+          }
+        }]
       }
     },
     'code-1': {
@@ -41,13 +57,14 @@ const document: NotionDocument = {
     }
   },
   childrenById: {
-    'page-1': ['h1', 'code-1', 'code-2', 'bookmark-1', 'bookmark-2']
+    'page-1': ['h1', 'paragraph-1', 'code-1', 'code-2', 'bookmark-1', 'bookmark-2']
   }
 }
 
 test('prepareNotionRenderModel deduplicates highlight and link preview work and fills toc', async () => {
   let highlightCalls = 0
   let previewCalls = 0
+  let pageHrefCalls = 0
 
   const model = await prepareNotionRenderModel(document, {
     highlightCode: async (source, language) => {
@@ -67,11 +84,17 @@ test('prepareNotionRenderModel deduplicates highlight and link preview work and 
         image: '',
         icon: ''
       }
+    },
+    resolvePageHref: async (id) => {
+      pageHrefCalls += 1
+      return id === '123456781234123412341234567890ab' ? '/posts/internal-page' : null
     }
   })
 
   assert.ok(model)
   assert.equal(highlightCalls, 1)
   assert.equal(previewCalls, 1)
+  assert.equal(pageHrefCalls, 1)
   assert.equal(model?.toc[0]?.text, 'Hello')
+  assert.equal(model?.pageHrefMap['123456781234123412341234567890ab'], '/posts/internal-page')
 })

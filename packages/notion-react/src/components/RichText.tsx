@@ -5,10 +5,17 @@ import type {
   LinkPreviewMap,
   NotionRendererComponents,
   NotionRichText,
+  PageHrefMap,
   ResolvedNotionRenderOptions,
   UrlMentionPreviewData
 } from '../types'
-import { getAnnotationColorClasses, normalizeRichTextUrl, parseUrl } from '../utils/notion'
+import {
+  getAnnotationColorClasses,
+  isInternalHref,
+  normalizeRichTextUrl,
+  parseUrl,
+  rewriteNotionPageHref
+} from '../utils/notion'
 import DefaultDateMention from './DateMention'
 import DefaultUrlMention from './UrlMention'
 
@@ -105,11 +112,12 @@ function getUrlMentionPreviewData(
 interface RichTextProps {
   richText?: NotionRichText[]
   linkPreviewMap?: LinkPreviewMap
+  pageHrefMap?: PageHrefMap
   renderOptions: ResolvedNotionRenderOptions
   components?: NotionRendererComponents
 }
 
-export function RichText({ richText = [], linkPreviewMap = {}, renderOptions, components }: RichTextProps) {
+export function RichText({ richText = [], linkPreviewMap = {}, pageHrefMap = {}, renderOptions, components }: RichTextProps) {
   const DateMentionComponent = components?.leaves?.DateMention || DefaultDateMention
   const UrlMentionComponent = components?.leaves?.UrlMention || DefaultUrlMention
 
@@ -121,7 +129,8 @@ export function RichText({ richText = [], linkPreviewMap = {}, renderOptions, co
         const textContent = item.type === 'equation'
           ? (item as any).equation?.expression || ''
           : item.plain_text || ''
-        const href = getRichTextLink(item)
+        const rawHref = getRichTextLink(item)
+        const href = rewriteNotionPageHref(rawHref, pageHrefMap)
         const annotations = item.annotations || {}
         const { textColorClassName, backgroundColorClassName } = getAnnotationColorClasses(annotations)
 
@@ -180,8 +189,8 @@ export function RichText({ richText = [], linkPreviewMap = {}, renderOptions, co
           <a
             key={`${index}-${href}`}
             href={href}
-            target="_blank"
-            rel="noopener noreferrer"
+            target={isInternalHref(href) ? undefined : '_blank'}
+            rel={isInternalHref(href) ? undefined : 'noopener noreferrer'}
             className="text-blue-600 dark:text-blue-400 underline underline-offset-4"
           >
             {content}

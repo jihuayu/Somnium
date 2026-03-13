@@ -10,6 +10,7 @@ import { mapWithConcurrency } from './utils/promisePool'
 import {
   buildNotionPublicUrl,
   buildTableOfContents,
+  extractNotionPageIdFromUrl,
   getPlainTextFromRichText,
   normalizeCodeLanguage,
   normalizeNotionEntityId,
@@ -68,6 +69,33 @@ function collectPreviewUrlsFromRichText(richText: unknown, candidateUrls: Set<st
     }
     if (value.mention?.type === 'link_mention') {
       addPreviewCandidateUrl(candidateUrls, value.mention.link_mention?.href || value.href)
+    }
+  }
+}
+
+function collectPageHrefCandidateIdsFromRichText(richText: unknown, candidateIds: Set<string>) {
+  if (!Array.isArray(richText)) return
+  for (const item of richText) {
+    if (!item || typeof item !== 'object') continue
+    const value = item as {
+      type?: string
+      href?: string
+      text?: { link?: { url?: string } | null }
+      mention?: {
+        type?: string
+        link_mention?: { href?: string }
+      }
+    }
+
+    const rawCandidates = [
+      value.href,
+      value.type === 'text' ? value.text?.link?.url : '',
+      value.mention?.type === 'link_mention' ? value.mention.link_mention?.href : ''
+    ]
+
+    for (const rawCandidate of rawCandidates) {
+      const normalized = extractNotionPageIdFromUrl(rawCandidate)
+      if (normalized) candidateIds.add(normalized)
     }
   }
 }
@@ -137,6 +165,31 @@ function collectPageHrefCandidateIds(document: NotionDocument): string[] {
     if (block.type === 'child_page' || block.type === 'child_database') {
       const normalized = normalizeNotionEntityId(block.id)
       if (normalized) ids.add(normalized)
+    }
+
+    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).paragraph?.rich_text, ids)
+    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).heading_1?.rich_text, ids)
+    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).heading_2?.rich_text, ids)
+    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).heading_3?.rich_text, ids)
+    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).quote?.rich_text, ids)
+    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).callout?.rich_text, ids)
+    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).bulleted_list_item?.rich_text, ids)
+    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).numbered_list_item?.rich_text, ids)
+    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).to_do?.rich_text, ids)
+    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).toggle?.rich_text, ids)
+    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).template?.rich_text, ids)
+    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).embed?.caption, ids)
+    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).bookmark?.caption, ids)
+    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).image?.caption, ids)
+    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).video?.caption, ids)
+    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).audio?.caption, ids)
+    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).pdf?.caption, ids)
+    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).file?.caption, ids)
+    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).code?.caption, ids)
+    if (block.type === 'table_row') {
+      for (const cell of (block as any).table_row?.cells || []) {
+        collectPageHrefCandidateIdsFromRichText(cell, ids)
+      }
     }
   }
   return Array.from(ids)
@@ -226,7 +279,7 @@ async function buildResolvedLinkPreviewMap(
   return resolved
 }
 
-async function buildPageHrefMap(
+async function buildResolvedPageHrefMap(
   document: NotionDocument,
   options: PrepareNotionRenderModelOptions
 ): Promise<PageHrefMap> {
@@ -267,7 +320,7 @@ export async function prepareNotionRenderModel(
   const [highlightedCodeByBlockId, linkPreviewMap, pageHrefMap] = await Promise.all([
     buildHighlightedCodeMap(enrichedDocument, options),
     buildResolvedLinkPreviewMap(enrichedDocument, options),
-    buildPageHrefMap(enrichedDocument, options)
+    buildResolvedPageHrefMap(enrichedDocument, options)
   ])
 
   return {

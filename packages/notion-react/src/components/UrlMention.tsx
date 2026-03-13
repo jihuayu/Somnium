@@ -3,6 +3,7 @@
 import { useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import type { UrlMentionPreviewData, UrlMentionProps } from '../types'
+import { isInternalHref } from '../utils/notion'
 import { useFloatingHoverCard } from './useFloatingHoverCard'
 
 function renderUrlMentionIcon(href: string, iconUrl: string, isGithub: boolean) {
@@ -52,6 +53,8 @@ export default function UrlMention({ href, label, iconUrl = '', preview, isGithu
     () => mergePreviewData(buildFallbackPreview(href, label, iconUrl), preview || null),
     [href, iconUrl, label, preview]
   )
+  const isInternalLink = isInternalHref(href)
+  const isInternalPreviewLink = isInternalHref(resolvedPreview.href)
   const { triggerRef, cardRef, open, floatingStyle, openCard, scheduleClose, handleBlur } =
     useFloatingHoverCard<HTMLAnchorElement, HTMLAnchorElement>({
       enabled: !!resolvedPreview,
@@ -70,8 +73,8 @@ export default function UrlMention({ href, label, iconUrl = '', preview, isGithu
       <a
         ref={cardRef}
         href={resolvedPreview.href}
-        target="_blank"
-        rel="noopener noreferrer"
+        target={isInternalPreviewLink ? undefined : '_blank'}
+        rel={isInternalPreviewLink ? undefined : 'noopener noreferrer'}
         className="notion-url-mention-hover-card"
         style={floatingStyle}
         onMouseEnter={openCard}
@@ -107,8 +110,8 @@ export default function UrlMention({ href, label, iconUrl = '', preview, isGithu
         <a
           ref={triggerRef}
           href={href}
-          target="_blank"
-          rel="noopener noreferrer"
+          target={isInternalLink ? undefined : '_blank'}
+          rel={isInternalLink ? undefined : 'noopener noreferrer'}
           className="notion-url-mention notion-url-mention-link-preview"
           onMouseEnter={openCard}
           onMouseLeave={scheduleClose}

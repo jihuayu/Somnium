@@ -80,6 +80,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
     <RichText
       richText={richText}
       linkPreviewMap={model.linkPreviewMap}
+      pageHrefMap={model.pageHrefMap}
       renderOptions={resolvedRenderOptions}
       components={components}
     />

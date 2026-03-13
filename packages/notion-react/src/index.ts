@@ -6,7 +6,16 @@ export { default as UrlMention } from './components/UrlMention'
 export { default as MermaidBlock } from './components/MermaidBlock'
 export { default as LinkPreviewCard } from './components/LinkPreviewCard'
 export { RichText } from './components/RichText'
-export { getPlainTextFromRichText, normalizeNotionEntityId, buildNotionPublicUrl } from './utils/notion'
+export {
+  buildInternalSlugHref,
+  buildNotionPublicUrl,
+  buildPageHrefMap,
+  extractNotionPageIdFromUrl,
+  getPlainTextFromRichText,
+  normalizeNotionEntityId,
+  resolvePageHref,
+  rewriteNotionPageHref
+} from './utils/notion'
 export type {
   BlockRendererProps,
   DateMentionDisplayMode,
@@ -28,6 +37,7 @@ export type {
   NotionRendererComponents,
   NotionRendererProps,
   NotionRichText,
+  PageHrefEntry,
   PageHrefMap,
   PrepareNotionRenderModelOptions,
   TocItem,

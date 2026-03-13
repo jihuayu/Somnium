@@ -17,7 +17,21 @@ const model: NotionRenderModel = {
       paragraph: {
         id: 'paragraph',
         type: 'paragraph',
-        paragraph: { rich_text: [{ type: 'text', plain_text: 'Body' }] }
+        paragraph: {
+          rich_text: [
+            { type: 'text', plain_text: 'Body ' },
+            {
+              type: 'text',
+              plain_text: 'Internal',
+              text: {
+                content: 'Internal',
+                link: {
+                  url: 'https://www.notion.so/Internal-123456781234123412341234567890ab'
+                }
+              }
+            }
+          ]
+        }
       },
       code: {
         id: 'code',
@@ -39,7 +53,9 @@ const model: NotionRenderModel = {
     }
   },
   linkPreviewMap: {},
-  pageHrefMap: {}
+  pageHrefMap: {
+    '123456781234123412341234567890ab': '/posts/internal'
+  }
 }
 
 test('NotionRenderer renders normalized model', () => {
@@ -47,4 +63,6 @@ test('NotionRenderer renders normalized model', () => {
   assert.match(html, /Title/)
   assert.match(html, /Body/)
   assert.match(html, /TypeScript/)
+  assert.match(html, /href="\/posts\/internal"/)
+  assert.doesNotMatch(html, /href="\/posts\/internal"[^>]*target="_blank"/)
 })

@@ -5,6 +5,8 @@ import type {
   NotionFileReference,
   NotionLinkToPageBlock,
   NotionRichText,
+  PageHrefEntry,
+  PageHrefMap,
   NotionTextAnnotations,
   ResolvedNotionRenderOptions,
   TocItem
@@ -129,9 +131,71 @@ export function normalizeNotionEntityId(rawId?: string): string {
   return /^[0-9a-f]{32}$/.test(compact) ? compact : ''
 }
 
+function trimSlashes(value: string): string {
+  return `${value || ''}`.trim().replace(/^\/+|\/+$/g, '')
+}
+
+export function buildInternalSlugHref(basePath: string, slug: string): string {
+  const normalizedBase = trimSlashes(basePath)
+  const normalizedSlug = trimSlashes(slug)
+  if (!normalizedSlug) return normalizedBase ? `/${normalizedBase}` : '/'
+  return normalizedBase ? `/${normalizedBase}/${normalizedSlug}` : `/${normalizedSlug}`
+}
+
+export function buildPageHrefMap(entries: PageHrefEntry[], basePath = ''): PageHrefMap {
+  const map: PageHrefMap = {}
+  for (const entry of entries || []) {
+    const key = normalizeNotionEntityId(entry?.id)
+    const slug = `${entry?.slug || ''}`.trim()
+    if (!key || !slug) continue
+    map[key] = buildInternalSlugHref(basePath, slug)
+  }
+  return map
+}
+
 export function buildNotionPublicUrl(rawId: string): string {
   const normalized = normalizeNotionEntityId(rawId)
   return normalized ? `https://www.notion.so/${normalized}` : ''
+}
+
+export function resolvePageHref(rawId: string, pageHrefMap: PageHrefMap): string {
+  const normalized = normalizeNotionEntityId(rawId)
+  if (!normalized) return ''
+  return pageHrefMap[normalized] || buildNotionPublicUrl(normalized)
+}
+
+export function extractNotionPageIdFromUrl(rawUrl?: string | null): string {
+  const parsed = parseUrl(rawUrl)
+  if (!parsed) return ''
+
+  const hostname = parsed.hostname.toLowerCase()
+  if (hostname !== 'notion.so' && hostname !== 'www.notion.so') return ''
+
+  const uuidLikePattern = /([0-9a-f]{32}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/ig
+  const candidates = [parsed.pathname, ...parsed.pathname.split('/').filter(Boolean).map(decodePathSegment)]
+
+  for (const candidate of candidates) {
+    const matches = candidate.match(uuidLikePattern) || []
+    for (const match of matches.reverse()) {
+      const normalized = normalizeNotionEntityId(match)
+      if (normalized) return normalized
+    }
+  }
+
+  return ''
+}
+
+export function rewriteNotionPageHref(rawHref: string | null | undefined, pageHrefMap: PageHrefMap): string {
+  const href = `${rawHref || ''}`.trim()
+  if (!href) return ''
+  const notionPageId = extractNotionPageIdFromUrl(href)
+  if (!notionPageId) return href
+  return pageHrefMap[notionPageId] || href
+}
+
+export function isInternalHref(href: string | null | undefined): boolean {
+  const value = `${href || ''}`.trim()
+  return value.startsWith('/')
 }
 
 export function getBlockClassName(blockId: string): string {

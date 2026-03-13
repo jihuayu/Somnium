@@ -1,7 +1,9 @@
 import { unstable_cache } from 'next/cache'
 import { config } from '@/lib/server/config'
 import { ONE_DAY_SECONDS } from '@/lib/server/cache'
+import { getAllPosts } from '@/lib/notion/getAllPosts'
 import { buildNotionDocument } from '@/lib/notion/getPostBlocks'
+import { buildPageLinkMap, type PageLinkMap } from '@/lib/notion/pageLinkMap'
 import { generateRssFeed, renderNotionDocumentToHtml } from '@jihuayu/notion-react/rss'
 import { mapWithConcurrency } from '@/lib/utils/promisePool'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
@@ -40,6 +42,15 @@ const getCachedFeedDocument = unstable_cache(
   { revalidate: FEED_POST_BLOCKS_CACHE_SECONDS, tags: ['feed-post-blocks'] }
 )
 
+const getCachedFeedPageLinkMap = unstable_cache(
+  async () => {
+    const allPosts = await getAllPosts({ includePages: true })
+    return buildPageLinkMap(allPosts, config.path || '')
+  },
+  ['feed-page-link-map-v1'],
+  { revalidate: FEED_POST_BLOCKS_CACHE_SECONDS, tags: ['feed-post-blocks', 'page-link-map'] }
+)
+
 interface FeedContentPayload {
   html: string
 }
@@ -51,11 +62,11 @@ function fallbackFeedContent(post: PostData): FeedContentPayload {
   }
 }
 
-const createFeedContent = async (post: PostData): Promise<FeedContentPayload> => {
+const createFeedContent = async (post: PostData, pageLinkMap: PageLinkMap): Promise<FeedContentPayload> => {
   const document = await getCachedFeedDocument(post.id)
   if (!document) return fallbackFeedContent(post)
 
-  const html = renderNotionDocumentToHtml(document)
+  const html = renderNotionDocumentToHtml(document, { pageHrefMap: pageLinkMap })
   const fallback = fallbackFeedContent(post)
 
   return {
@@ -66,12 +77,13 @@ const createFeedContent = async (post: PostData): Promise<FeedContentPayload> =>
 export async function generateRss(posts: PostData[], siteOrigin?: string): Promise<string> {
   const year = new Date().getFullYear()
   const siteUrl = resolveSiteUrl(siteOrigin)
+  const pageLinkMap = await getCachedFeedPageLinkMap()
   const items = await mapWithConcurrency(posts, FEED_RENDER_CONCURRENCY, async (post) => {
     const postUrl = buildUrl(siteUrl, post.slug)
     let content = fallbackFeedContent(post)
 
     try {
-      content = await createFeedContent(post)
+      content = await createFeedContent(post, pageLinkMap)
     } catch (error) {
       console.error(`[feed] Failed to render post content for ${post.slug}:`, error)
     }
