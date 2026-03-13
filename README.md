@@ -55,7 +55,7 @@ NOTION_WEBHOOK_VERIFICATION_TOKEN=your_notion_webhook_verification_token
 pnpm dev
 ```
 
-默认访问：`http://localhost:4321`
+现在默认访问：`http://localhost:3000`
 
 ## 构建与运行
 
@@ -63,6 +63,8 @@ pnpm dev
 pnpm build
 pnpm start
 ```
+
+构建产物输出到 `.next/`，与原来的 Next.js 分支保持一致，便于在同一个 Vercel 项目中复用统一的构建输出目录约定。
 
 ## 部署
 
