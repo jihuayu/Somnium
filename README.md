@@ -85,9 +85,9 @@ POST /api/notion/webhook
 - `page.properties_updated`
 - `page.content_updated`
 - `page.deleted`
-- `page.undeleted`
-- `data_source.content_updated`
-- `data_source.schema_updated`
+- `page.undeleted`（不用）
+- `data_source.content_updated` （不用）
+- `data_source.schema_updated` （如果没有结构变更也不用）
 - `data_source.created`
 - `data_source.deleted`
 

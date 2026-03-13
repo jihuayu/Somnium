@@ -55,6 +55,40 @@ function applyRevalidation(tags: string[], paths: string[]) {
   }
 }
 
+function getPrewarmablePaths(paths: string[]): string[] {
+  return Array.from(new Set(
+    paths.filter(path => (
+      typeof path === 'string' &&
+      path.startsWith('/') &&
+      !path.startsWith('/api/') &&
+      !path.includes('[') &&
+      !path.includes(']')
+    ))
+  ))
+}
+
+async function prewarmPaths(req: NextRequest, paths: string[]): Promise<string[]> {
+  const targets = getPrewarmablePaths(paths)
+  if (!targets.length) return []
+
+  const origin = req.nextUrl.origin
+
+  await Promise.allSettled(
+    targets.map(async (path) => {
+      const url = new URL(path, origin)
+      await fetch(url, {
+        method: 'GET',
+        cache: 'no-store',
+        headers: {
+          'x-notion-webhook-prewarm': '1'
+        }
+      })
+    })
+  )
+
+  return targets
+}
+
 function jsonNoStore(body: Record<string, unknown>, status = 200) {
   return NextResponse.json(body, {
     status,
@@ -130,6 +164,7 @@ export async function POST(req: NextRequest) {
   }
 
   applyRevalidation(result.tags, result.paths)
+  const prewarmedPaths = await prewarmPaths(req, result.paths)
 
   return jsonNoStore({
     ok: true,
@@ -139,6 +174,7 @@ export async function POST(req: NextRequest) {
     entityId: result.entityId,
     tags: result.tags,
     paths: result.paths,
+    prewarmedPaths,
     timestamp: new Date().toISOString()
   })
 }
