@@ -36,6 +36,8 @@ NOTION_ACTIVE_USER=your_notion_user_id
 NOTION_PAGE_ID=your_home_page_id
 # 可选，不填时默认 2025-09-03
 NOTION_API_VERSION=2025-09-03
+# 可选：Notion Webhook 首次验证后保存下来的 token
+NOTION_WEBHOOK_VERIFICATION_TOKEN=your_notion_webhook_verification_token
 ```
 
 ### 3. 配置站点信息
@@ -68,6 +70,35 @@ pnpm start
 2. 在 Vercel 项目中配置环境变量（与本地一致）
 3. 执行部署
 4. 后续在 Notion 更新内容后，页面会按 ISR 策略增量更新
+
+## Notion Webhook 刷新缓存
+
+项目提供了一个 Notion Webhook 入口：
+
+```text
+POST /api/notion/webhook
+```
+
+建议在 Notion 集成的 Webhooks 配置中至少订阅这些事件：
+
+- `page.created`
+- `page.properties_updated`
+- `page.content_updated`
+- `page.deleted`
+- `page.undeleted`
+- `data_source.content_updated`
+- `data_source.schema_updated`
+- `data_source.created`
+- `data_source.deleted`
+
+首次创建订阅时，Notion 会向这个地址发送一个只包含 `verification_token` 的请求。你需要：
+
+1. 先把 webhook URL 指向站点的 `/api/notion/webhook`
+2. 在服务日志中拿到这次请求里的 `verification_token`
+3. 把它保存到 `NOTION_WEBHOOK_VERIFICATION_TOKEN`
+4. 回到 Notion 集成后台完成 Verify
+
+之后，当 Notion 页面内容、页面属性、Data Source 内容或结构发生变化时，站点会自动刷新相关缓存，包括首页、文章页、分页页、标签页、RSS 和 Tags API。
 
 ## 常用脚本
 

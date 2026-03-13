@@ -8,6 +8,7 @@ export const DEFAULT_CACHE_REVALIDATE_TAGS = [
   'notion-post-blocks',
   'notion-feed-posts',
   'feed-post-blocks',
+  'notion-og-page',
   'notion-search-schema',
   'link-preview-metadata',
   'page-link-map'
@@ -17,4 +18,24 @@ export const DEFAULT_CACHE_REVALIDATE_PATHS = [
   '/',
   '/search',
   '/feed'
+] as const
+
+export const NOTION_WEBHOOK_REVALIDATE_TAGS = [
+  'notion-posts',
+  'notion-post-blocks',
+  'notion-feed-posts',
+  'feed-post-blocks',
+  'notion-og-page',
+  'notion-search-schema',
+  'page-link-map'
+] as const
+
+export const NOTION_WEBHOOK_REVALIDATE_PATHS = [
+  '/',
+  '/search',
+  '/feed',
+  '/api/tags',
+  '/[slug]',
+  '/page/[page]',
+  '/tag/[tag]'
 ] as const
