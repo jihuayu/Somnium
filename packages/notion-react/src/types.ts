@@ -386,6 +386,7 @@ export interface LinkPreviewData {
 
 export type LinkPreviewMap = Record<string, LinkPreviewData>
 export type PageHrefMap = Record<string, string>
+export type PagePreviewMap = Record<string, LinkPreviewData>
 export interface PageHrefEntry {
   id: string
   slug: string
@@ -405,6 +406,7 @@ export interface NotionRenderModel {
   highlightedCodeByBlockId: HighlightedCodeByBlockId
   linkPreviewMap: LinkPreviewMap
   pageHrefMap: PageHrefMap
+  pagePreviewMap: PagePreviewMap
 }
 
 export type HighlightCodeResolver = (
@@ -414,13 +416,16 @@ export type HighlightCodeResolver = (
 
 export type LinkPreviewResolver = (url: string) => Promise<LinkPreviewData | null>
 export type PageHrefResolver = (id: string) => string | null | Promise<string | null>
+export type PagePreviewResolver = (id: string) => Promise<LinkPreviewData | null>
 
 export interface PrepareNotionRenderModelOptions {
   highlightCode?: HighlightCodeResolver
   resolveLinkPreview?: LinkPreviewResolver
   resolvePageHref?: PageHrefResolver
+  resolvePagePreview?: PagePreviewResolver
   initialLinkPreviewMap?: LinkPreviewMap
   initialPageHrefMap?: PageHrefMap
+  initialPagePreviewMap?: PagePreviewMap
 }
 
 export type DateMentionDisplayMode = 'notion' | 'relative' | 'absolute'

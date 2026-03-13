@@ -6,10 +6,12 @@ import type {
   NotionRendererComponents,
   NotionRichText,
   PageHrefMap,
+  PagePreviewMap,
   ResolvedNotionRenderOptions,
   UrlMentionPreviewData
 } from '../types'
 import {
+  extractNotionPageIdFromUrl,
   getAnnotationColorClasses,
   isInternalHref,
   normalizeRichTextUrl,
@@ -109,16 +111,26 @@ function getUrlMentionPreviewData(
   }
 }
 
-function buildInternalLinkPreviewData(href: string, label: string): UrlMentionPreviewData {
-  const normalizedHref = `${href || ''}`.trim() || '/'
-  const normalizedLabel = `${label || ''}`.trim() || normalizedHref
+function getInternalPagePreviewData(
+  rawHref: string,
+  href: string,
+  label: string,
+  pagePreviewMap: PagePreviewMap
+): UrlMentionPreviewData | null {
+  const pageId = extractNotionPageIdFromUrl(rawHref)
+  if (!pageId) return null
+
+  const preview = pagePreviewMap[pageId]
+  if (!preview) return null
+
+  const previewHref = `${preview.url || href}`.trim() || href
   return {
-    href: normalizedHref,
-    title: normalizedLabel,
-    description: normalizedHref,
-    icon: '',
-    image: '',
-    provider: 'internal link'
+    href: previewHref,
+    title: `${preview.title || ''}`.trim() || label,
+    description: `${preview.description || ''}`.trim(),
+    icon: `${preview.icon || ''}`.trim(),
+    image: `${preview.image || ''}`.trim(),
+    provider: getUrlMentionProvider(`${preview.hostname || ''}`, previewHref)
   }
 }
 
@@ -126,11 +138,12 @@ interface RichTextProps {
   richText?: NotionRichText[]
   linkPreviewMap?: LinkPreviewMap
   pageHrefMap?: PageHrefMap
+  pagePreviewMap?: PagePreviewMap
   renderOptions: ResolvedNotionRenderOptions
   components?: NotionRendererComponents
 }
 
-export function RichText({ richText = [], linkPreviewMap = {}, pageHrefMap = {}, renderOptions, components }: RichTextProps) {
+export function RichText({ richText = [], linkPreviewMap = {}, pageHrefMap = {}, pagePreviewMap = {}, renderOptions, components }: RichTextProps) {
   const DateMentionComponent = components?.leaves?.DateMention || DefaultDateMention
   const UrlMentionComponent = components?.leaves?.UrlMention || DefaultUrlMention
 
@@ -200,13 +213,14 @@ export function RichText({ richText = [], linkPreviewMap = {}, pageHrefMap = {},
 
         if (isInternalHref(href)) {
           const label = `${textContent || ''}`.trim() || href
+          const preview = getInternalPagePreviewData(rawHref || '', href, label, pagePreviewMap)
           return (
             <UrlMentionComponent
               key={`${index}-${href}`}
               href={href}
               label={label}
               iconUrl=""
-              preview={buildInternalLinkPreviewData(href, label)}
+              preview={preview}
               isGithub={false}
               variant="inline"
             >

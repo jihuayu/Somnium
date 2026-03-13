@@ -208,5 +208,15 @@ export const demoModel: NotionRenderModel = {
   },
   pageHrefMap: {
     [linkedPageId]: '/posts/notion-react'
+  },
+  pagePreviewMap: {
+    [linkedPageId]: {
+      url: '/posts/notion-react',
+      hostname: 'blog.jihuayu.com',
+      title: 'notion-react',
+      description: 'Workspace package preview',
+      image: 'https://blog.jihuayu.com/api/og/notion?pageId=11111111111111111111111111111111',
+      icon: '/favicon.svg'
+    }
   }
 }

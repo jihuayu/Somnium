@@ -55,6 +55,16 @@ const model: NotionRenderModel = {
   linkPreviewMap: {},
   pageHrefMap: {
     '123456781234123412341234567890ab': '/posts/internal'
+  },
+  pagePreviewMap: {
+    '123456781234123412341234567890ab': {
+      url: '/posts/internal',
+      hostname: 'blog.jihuayu.com',
+      title: 'Internal',
+      description: 'Internal page preview',
+      image: 'https://blog.jihuayu.com/api/og/notion?pageId=123456781234123412341234567890ab',
+      icon: '/favicon.svg'
+    }
   }
 }
 

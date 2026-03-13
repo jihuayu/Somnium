@@ -4,6 +4,7 @@ import type {
   NotionDocument,
   NotionRenderModel,
   PageHrefMap,
+  PagePreviewMap,
   PrepareNotionRenderModelOptions
 } from './types'
 import { mapWithConcurrency } from './utils/promisePool'
@@ -305,6 +306,33 @@ async function buildResolvedPageHrefMap(
   return resolved
 }
 
+async function buildResolvedPagePreviewMap(
+  document: NotionDocument,
+  options: PrepareNotionRenderModelOptions
+): Promise<PagePreviewMap> {
+  const resolved: PagePreviewMap = { ...(options.initialPagePreviewMap || {}) }
+  if (!options.resolvePagePreview) return resolved
+
+  const ids = collectPageHrefCandidateIds(document)
+  if (!ids.length) return resolved
+
+  const entries = await mapWithConcurrency(ids, LINK_PREVIEW_CONCURRENCY, async (id) => {
+    if (resolved[id]) return [id, resolved[id]] as const
+
+    try {
+      return [id, await options.resolvePagePreview!(id)] as const
+    } catch {
+      return [id, null] as const
+    }
+  })
+
+  for (const [id, preview] of entries) {
+    if (preview) resolved[id] = preview
+  }
+
+  return resolved
+}
+
 export async function prepareNotionRenderModel(
   document: NotionDocument | null,
   options: PrepareNotionRenderModelOptions = {}
@@ -317,10 +345,11 @@ export async function prepareNotionRenderModel(
     toc
   }
 
-  const [highlightedCodeByBlockId, linkPreviewMap, pageHrefMap] = await Promise.all([
+  const [highlightedCodeByBlockId, linkPreviewMap, pageHrefMap, pagePreviewMap] = await Promise.all([
     buildHighlightedCodeMap(enrichedDocument, options),
     buildResolvedLinkPreviewMap(enrichedDocument, options),
-    buildResolvedPageHrefMap(enrichedDocument, options)
+    buildResolvedPageHrefMap(enrichedDocument, options),
+    buildResolvedPagePreviewMap(enrichedDocument, options)
   ])
 
   return {
@@ -328,6 +357,7 @@ export async function prepareNotionRenderModel(
     toc,
     highlightedCodeByBlockId,
     linkPreviewMap,
-    pageHrefMap
+    pageHrefMap,
+    pagePreviewMap
   }
 }
