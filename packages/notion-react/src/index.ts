@@ -41,7 +41,6 @@ export type {
   PageHrefMap,
   PagePreviewMap,
   PrepareNotionRenderModelOptions,
-  PagePreviewResolver,
   TocItem,
   UnsupportedBlockProps,
   UrlMentionPreviewData,

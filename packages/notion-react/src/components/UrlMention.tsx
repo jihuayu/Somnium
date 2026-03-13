@@ -60,12 +60,12 @@ export default function UrlMention({
   children
 }: UrlMentionProps) {
   const resolvedPreview = useMemo(
-    () => mergePreviewData(buildFallbackPreview(href, label, iconUrl), preview || null),
+    () => preview ? mergePreviewData(buildFallbackPreview(href, label, iconUrl), preview) : null,
     [href, iconUrl, label, preview]
   )
   const isInline = variant === 'inline'
   const isInternalLink = isInternalHref(href)
-  const isInternalPreviewLink = isInternalHref(resolvedPreview.href)
+  const isInternalPreviewLink = resolvedPreview ? isInternalHref(resolvedPreview.href) : false
   const { triggerRef, cardRef, open, floatingStyle, openCard, scheduleClose, handleBlur } =
     useFloatingHoverCard<HTMLAnchorElement, HTMLAnchorElement>({
       enabled: !!resolvedPreview,

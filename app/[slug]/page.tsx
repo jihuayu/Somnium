@@ -7,6 +7,7 @@ import loadLocale from '@/assets/i18n'
 import ContainerServer from '@/components/ContainerServer'
 import { buildNotionOgImageUrl, buildPageMetadata } from '@/lib/server/metadata'
 import { buildPageLinkMap } from '@/lib/notion/pageLinkMap'
+import { buildPagePreviewMap } from '@/lib/notion/pagePreviewMap'
 import { config } from '@/lib/server/config'
 import { ONE_DAY_SECONDS } from '@/lib/server/cache'
 import SlugPostClient from './slug-client'
@@ -18,12 +19,14 @@ const getPostsBySlug = cache(async () => {
   return new Map(posts.map(post => [post.slug, post] as const))
 })
 const PAGE_LINK_MAP_CACHE_REVALIDATE_SECONDS = ONE_DAY_SECONDS
-const getPageLinkMap = unstable_cache(
+const getPageMaps = unstable_cache(
   async () => {
     const allPosts = await getAllPosts({ includePages: true })
-    return buildPageLinkMap(allPosts, config.path || '')
+    const pageLinkMap = buildPageLinkMap(allPosts, config.path || '')
+    const pagePreviewMap = buildPagePreviewMap(allPosts, pageLinkMap)
+    return { pageLinkMap, pagePreviewMap }
   },
-  ['page-link-map-v1'],
+  ['page-maps-v1'],
   { revalidate: PAGE_LINK_MAP_CACHE_REVALIDATE_SECONDS, tags: ['page-link-map'] }
 )
 
@@ -64,8 +67,8 @@ export default async function SlugPage({ params }: SlugPageProps) {
 
   const document = await getPostBlocks(post.id)
   if (!document) notFound()
-  const [pageLinkMap, locale] = await Promise.all([
-    getPageLinkMap(),
+  const [{ pageLinkMap, pagePreviewMap }, locale] = await Promise.all([
+    getPageMaps(),
     loadLocale('basic', config.lang)
   ])
 
@@ -85,6 +88,7 @@ export default async function SlugPage({ params }: SlugPageProps) {
         backLabel={locale.POST.BACK}
         topLabel={locale.POST.TOP}
         pageLinkMap={pageLinkMap}
+        pagePreviewMap={pagePreviewMap}
       />
     </ContainerServer>
   )

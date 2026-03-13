@@ -8,6 +8,7 @@ import type { PostData } from '@/lib/notion/filterPublishedPosts'
 import type { NotionDocument } from '@/lib/notion/getPostBlocks'
 import type { LinkPreviewMap } from '@/lib/link-preview/types'
 import type { PageLinkMap } from '@/lib/notion/pageLinkMap'
+import type { PagePreviewMap } from '@/lib/notion/pagePreviewMap'
 
 interface SlugPostClientProps {
   post: PostData
@@ -18,6 +19,7 @@ interface SlugPostClientProps {
   topLabel: string
   linkPreviewMap?: LinkPreviewMap
   pageLinkMap?: PageLinkMap
+  pagePreviewMap?: PagePreviewMap
 }
 
 export default function SlugPostClient({
@@ -28,7 +30,8 @@ export default function SlugPostClient({
   backLabel,
   topLabel,
   linkPreviewMap = {},
-  pageLinkMap = {}
+  pageLinkMap = {},
+  pagePreviewMap = {}
 }: SlugPostClientProps) {
   return (
     <>
@@ -38,6 +41,7 @@ export default function SlugPostClient({
         fullWidth={fullWidth}
         linkPreviewMap={linkPreviewMap}
         pageLinkMap={pageLinkMap}
+        pagePreviewMap={pagePreviewMap}
       />
 
       <div

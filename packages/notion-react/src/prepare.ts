@@ -281,14 +281,13 @@ async function buildResolvedLinkPreviewMap(
 }
 
 async function buildResolvedPageHrefMap(
-  document: NotionDocument,
+  pageIds: string[],
   options: PrepareNotionRenderModelOptions
 ): Promise<PageHrefMap> {
   const resolved: PageHrefMap = { ...(options.initialPageHrefMap || {}) }
-  const ids = collectPageHrefCandidateIds(document)
-  if (!ids.length) return resolved
+  if (!pageIds.length) return resolved
 
-  for (const id of ids) {
+  for (const id of pageIds) {
     if (resolved[id]) continue
     if (!options.resolvePageHref) {
       resolved[id] = buildNotionPublicUrl(id)
@@ -306,28 +305,17 @@ async function buildResolvedPageHrefMap(
   return resolved
 }
 
-async function buildResolvedPagePreviewMap(
-  document: NotionDocument,
+function buildResolvedPagePreviewMap(
+  pageIds: string[],
   options: PrepareNotionRenderModelOptions
-): Promise<PagePreviewMap> {
+): PagePreviewMap {
   const resolved: PagePreviewMap = { ...(options.initialPagePreviewMap || {}) }
-  if (!options.resolvePagePreview) return resolved
+  if (!pageIds.length) return resolved
+  const pageIdSet = new Set(pageIds)
 
-  const ids = collectPageHrefCandidateIds(document)
-  if (!ids.length) return resolved
-
-  const entries = await mapWithConcurrency(ids, LINK_PREVIEW_CONCURRENCY, async (id) => {
-    if (resolved[id]) return [id, resolved[id]] as const
-
-    try {
-      return [id, await options.resolvePagePreview!(id)] as const
-    } catch {
-      return [id, null] as const
-    }
-  })
-
-  for (const [id, preview] of entries) {
-    if (preview) resolved[id] = preview
+  for (const id of Object.keys(resolved)) {
+    if (pageIdSet.has(id)) continue
+    delete resolved[id]
   }
 
   return resolved
@@ -344,12 +332,13 @@ export async function prepareNotionRenderModel(
     ...document,
     toc
   }
+  const pageIds = collectPageHrefCandidateIds(enrichedDocument)
+  const pagePreviewMap = buildResolvedPagePreviewMap(pageIds, options)
 
-  const [highlightedCodeByBlockId, linkPreviewMap, pageHrefMap, pagePreviewMap] = await Promise.all([
+  const [highlightedCodeByBlockId, linkPreviewMap, pageHrefMap] = await Promise.all([
     buildHighlightedCodeMap(enrichedDocument, options),
     buildResolvedLinkPreviewMap(enrichedDocument, options),
-    buildResolvedPageHrefMap(enrichedDocument, options),
-    buildResolvedPagePreviewMap(enrichedDocument, options)
+    buildResolvedPageHrefMap(pageIds, options)
   ])
 
   return {

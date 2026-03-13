@@ -65,7 +65,6 @@ test('prepareNotionRenderModel deduplicates highlight and link preview work and 
   let highlightCalls = 0
   let previewCalls = 0
   let pageHrefCalls = 0
-  let pagePreviewCalls = 0
 
   const model = await prepareNotionRenderModel(document, {
     highlightCode: async (source, language) => {
@@ -90,18 +89,15 @@ test('prepareNotionRenderModel deduplicates highlight and link preview work and 
       pageHrefCalls += 1
       return id === '123456781234123412341234567890ab' ? '/posts/internal-page' : null
     },
-    resolvePagePreview: async (id) => {
-      pagePreviewCalls += 1
-      return id === '123456781234123412341234567890ab'
-        ? {
-            url: '/posts/internal-page',
-            hostname: 'blog.jihuayu.com',
-            title: 'Internal Page',
-            description: 'Preview body',
-            image: 'https://blog.jihuayu.com/api/og/notion?pageId=123456781234123412341234567890ab',
-            icon: '/favicon.svg'
-          }
-        : null
+    initialPagePreviewMap: {
+      '123456781234123412341234567890ab': {
+        url: '/posts/internal-page',
+        hostname: 'blog.jihuayu.com',
+        title: 'Internal Page',
+        description: 'Preview body',
+        image: 'https://blog.jihuayu.com/api/og/notion?pageId=123456781234123412341234567890ab',
+        icon: '/favicon.png'
+      }
     }
   })
 
@@ -109,7 +105,6 @@ test('prepareNotionRenderModel deduplicates highlight and link preview work and 
   assert.equal(highlightCalls, 1)
   assert.equal(previewCalls, 1)
   assert.equal(pageHrefCalls, 1)
-  assert.equal(pagePreviewCalls, 1)
   assert.equal(model?.toc[0]?.text, 'Hello')
   assert.equal(model?.pageHrefMap['123456781234123412341234567890ab'], '/posts/internal-page')
   assert.equal(model?.pagePreviewMap['123456781234123412341234567890ab']?.image, 'https://blog.jihuayu.com/api/og/notion?pageId=123456781234123412341234567890ab')
