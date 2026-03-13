@@ -7,14 +7,9 @@ import node from '@astrojs/node'
 const rootDir = fileURLToPath(new URL('./', import.meta.url))
 
 export default defineConfig({
-  outDir: '.next',
   output: 'server',
   adapter: node({ mode: 'standalone' }),
   integrations: [react()],
-  build: {
-    client: './static',
-    server: './server'
-  },
   vite: {
     resolve: {
       alias: [

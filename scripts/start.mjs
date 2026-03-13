@@ -6,8 +6,6 @@ import dotenv from 'dotenv'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const projectRoot = path.resolve(currentDir, '..')
 
-process.env.PORT ||= '3000'
-
 function loadEnvFile(fileName) {
   const filePath = path.join(projectRoot, fileName)
   if (!fs.existsSync(filePath)) return
@@ -17,4 +15,5 @@ function loadEnvFile(fileName) {
 loadEnvFile('.env')
 loadEnvFile('.env.local')
 
-await import(pathToFileURL(path.join(projectRoot, '.next/server/entry.mjs')).href)
+
+await import(pathToFileURL(path.join(projectRoot, 'dist/server/entry.mjs')).href)

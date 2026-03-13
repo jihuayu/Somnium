@@ -8,7 +8,7 @@
     "url": "https://github.com/jihuayu/somnium.git"
   },
   "scripts": {
-    "dev": "pnpm run notion-react:build && astro dev --host --port 3000",
+    "dev": "pnpm run notion-react:build && astro dev --host",
     "build": "pnpm run notion-react:build && astro build",
     "start": "node ./scripts/start.mjs",
     "test": "node --import tsx --test tests/**/*.test.ts packages/*/tests/**/*.test.ts",
