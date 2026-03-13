@@ -1,4 +1,5 @@
 /* NOTION CSS OVERRIDE */
+@reference './globals.css';
 
 :root {
   /* 阅读排版参数：参考 solazy / onojyun / geedea 的正文节奏做折中 */

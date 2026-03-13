@@ -1,4 +1,3 @@
-import { Feed } from 'feed'
 import { unstable_cache } from 'next/cache'
 import { config } from '@/lib/server/config'
 import { ONE_DAY_SECONDS } from '@/lib/server/cache'
@@ -329,6 +328,7 @@ const createFeedContent = async (post: PostData): Promise<FeedContentPayload> =>
 }
 
 export async function generateRss(posts: PostData[], siteOrigin?: string): Promise<string> {
+  const { Feed } = await import('feed')
   const year = new Date().getFullYear()
   const siteUrl = resolveSiteUrl(siteOrigin)
   const feed = new Feed({
