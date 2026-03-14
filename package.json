@@ -13,13 +13,13 @@
     "start": "next start",
     "test": "node --import tsx --test tests/**/*.test.ts packages/*/tests/**/*.test.ts",
     "lint": "eslint .",
-    "postbuild": "next-sitemap --config config/next-sitemap.config.js",
     "notion-react:build": "pnpm --filter @jihuayu/notion-react build",
     "notion-react:storybook": "storybook dev -p 6006 -c packages/notion-react/.storybook --disable-telemetry",
     "notion-react:storybook:build": "storybook build -c packages/notion-react/.storybook -o packages/notion-react/storybook-static --disable-telemetry"
   },
   "dependencies": {
     "@jihuayu/notion-react": "workspace:*",
+    "@vercel/analytics": "^2.0.1",
     "@vercel/og": "^0.11.1",
     "@vercel/speed-insights": "^2.0.0",
     "classnames": "^2.5.1",

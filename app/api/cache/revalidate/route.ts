@@ -150,7 +150,12 @@ function applyRevalidation(tags: string[], paths: string[]) {
   }
 
   for (const path of paths) {
-    revalidatePath(path, 'page')
+    if (path.includes('[') || path.includes(']')) {
+      revalidatePath(path, 'page')
+      continue
+    }
+
+    revalidatePath(path)
   }
 }
 

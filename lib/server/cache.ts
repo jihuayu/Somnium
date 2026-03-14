@@ -4,6 +4,7 @@ export const ONE_DAY_SECONDS = 60 * 60 * 24
 export const SEVEN_DAYS_SECONDS = ONE_DAY_SECONDS * 7
 
 export const DEFAULT_CACHE_REVALIDATE_TAGS = [
+  'sitemap',
   'notion-posts',
   'notion-post-blocks',
   'notion-feed-posts',
@@ -17,10 +18,12 @@ export const DEFAULT_CACHE_REVALIDATE_TAGS = [
 export const DEFAULT_CACHE_REVALIDATE_PATHS = [
   '/',
   '/search',
-  '/feed'
+  '/feed',
+  '/sitemap.xml'
 ] as const
 
 export const NOTION_WEBHOOK_REVALIDATE_TAGS = [
+  'sitemap',
   'notion-posts',
   'notion-post-blocks',
   'notion-feed-posts',
@@ -34,6 +37,7 @@ export const NOTION_WEBHOOK_REVALIDATE_PATHS = [
   '/',
   '/search',
   '/feed',
+  '/sitemap.xml',
   '/api/tags',
   // Dynamic route patterns are intentional here. The webhook layer resolves
   // concrete page paths when possible and uses these patterns only for broad

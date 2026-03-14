@@ -1,5 +1,6 @@
 import '@jihuayu/notion-react/styles.css'
 import '@/styles/globals.css'
+import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Metadata } from 'next'
 import Script from 'next/script'
@@ -102,6 +103,7 @@ export default async function RootLayout({
       </head>
       <body className="bg-day dark:bg-night">
         {children}
+        <Analytics />
         <SpeedInsights />
       </body>
     </html>
