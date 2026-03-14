@@ -48,6 +48,7 @@ NOTION_WEBHOOK_VERIFICATION_TOKEN=your_notion_webhook_verification_token
 - `description`
 - `seo.keywords`
 - `comment`（如 Utterances）
+- `linkPreview.useOgProxy` / `linkPreview.ogProxyBaseUrl`（开启并指定外部 OG 代理）
 
 ### 4. 启动开发服务器
 

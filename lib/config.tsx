@@ -19,6 +19,10 @@ export interface BlogConfig {
   autoCollapsedNavBar: boolean
   ogImageGenerateURL: string
   socialLink: string
+  linkPreview?: {
+    useOgProxy: boolean
+    ogProxyBaseUrl: string
+  }
   notionDateMention?: {
     display: 'notion' | 'relative' | 'absolute'
     includeTime: 'auto' | 'always' | 'never'

@@ -18,6 +18,10 @@ const BLOG = {
   autoCollapsedNavBar: false,
   ogImageGenerateURL: 'https://og-image-craigary.vercel.app',
   socialLink: 'https://twitter.com/jihuayu123',
+  linkPreview: {
+    useOgProxy: true,
+    ogProxyBaseUrl: 'https://og-proxy.raw2.cc'
+  },
   notionDateMention: {
     display: 'relative',
     includeTime: 'always',
