@@ -5,7 +5,7 @@ module.exports = {
     tsconfigPath: './tsconfig.build.json'
   },
   webpack: (config) => {
-    config.resolve.alias['@jihuayu/notion-react'] = path.resolve(__dirname, 'packages/notion-react/src/index.ts')
+    config.resolve.alias['@jihuayu/notion-react$'] = path.resolve(__dirname, 'packages/notion-react/src/index.ts')
     config.resolve.alias['@jihuayu/notion-react/normalize'] = path.resolve(__dirname, 'packages/notion-react/src/normalize.ts')
     config.resolve.alias['@jihuayu/notion-react/rss'] = path.resolve(__dirname, 'packages/notion-react/src/rss.ts')
     config.resolve.alias['@jihuayu/notion-react/og'] = path.resolve(__dirname, 'packages/notion-react/src/og.ts')

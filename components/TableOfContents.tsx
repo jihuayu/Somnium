@@ -16,7 +16,8 @@ export default function TableOfContents({ toc, className, style }: TableOfConten
   }
 
   return (
-    <aside
+    <nav
+      aria-label="Table of contents"
       className={cn(className, 'pl-2 text-sm text-zinc-700/70 dark:text-neutral-400')}
       style={style}
     >
@@ -32,6 +33,6 @@ export default function TableOfContents({ toc, className, style }: TableOfConten
           </a>
         </div>
       ))}
-    </aside>
+    </nav>
   )
 }

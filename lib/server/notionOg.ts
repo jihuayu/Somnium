@@ -1,12 +1,16 @@
 import cjk from '@/lib/cjk'
+import { getAllPosts } from '@/lib/notion/getAllPosts'
 import { mapPageToOgData, type PageOgData } from '@/lib/notion/pageOgData'
+import { normalizeNotionUuid } from '@/lib/notion/postMapper'
 import { unstable_cache } from 'next/cache'
+import { parsePublicHttpUrl } from './url'
 import { config } from './config'
 import api from './notion-api'
 
 const NOTION_OG_PAGE_CACHE_REVALIDATE_SECONDS = 300
 const FONT_CACHE_REVALIDATE_SECONDS = 60 * 60 * 24 * 30
 const MAX_OG_COVER_BYTES = 8 * 1024 * 1024
+const OG_COVER_FETCH_TIMEOUT_MS = 5000
 const GOOGLE_FONTS_USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
 
@@ -23,6 +27,17 @@ const getCachedOgPage = unstable_cache(
     return mapPageToOgData(page)
   },
   ['notion-og-page'],
+  { revalidate: NOTION_OG_PAGE_CACHE_REVALIDATE_SECONDS, tags: ['notion-posts', 'notion-og-page'] }
+)
+
+const getCachedPublishedOgPageIds = unstable_cache(
+  async () => {
+    const posts = await getAllPosts({ includePages: true })
+    return posts
+      .map(post => normalizeNotionUuid(post.id))
+      .filter(Boolean)
+  },
+  ['notion-og-page-allowlist'],
   { revalidate: NOTION_OG_PAGE_CACHE_REVALIDATE_SECONDS, tags: ['notion-posts', 'notion-og-page'] }
 )
 
@@ -97,8 +112,20 @@ function decodeBase64ToArrayBuffer(value: string): ArrayBuffer {
 }
 
 export async function getPageOgData(pageId: string): Promise<PageOgData | null> {
-  const normalizedPageId = `${pageId || ''}`.trim()
+  const normalizedPageId = normalizeNotionUuid(pageId)
   if (!normalizedPageId) return null
+  return getCachedOgPage(normalizedPageId)
+}
+
+export async function getPublishedPageOgData(pageId: string): Promise<PageOgData | null> {
+  const normalizedPageId = normalizeNotionUuid(pageId)
+  if (!normalizedPageId) return null
+
+  const publishedPageIds = await getCachedPublishedOgPageIds()
+  if (!publishedPageIds.includes(normalizedPageId)) {
+    return null
+  }
+
   return getCachedOgPage(normalizedPageId)
 }
 
@@ -128,12 +155,46 @@ export async function loadOgFonts(parts: string[]): Promise<OgFontDescriptor[]> 
   ]
 }
 
+async function readLimitedResponseBytes(response: Response, maxBytes: number): Promise<Buffer | null> {
+  if (!response.body) {
+    const bytes = Buffer.from(await response.arrayBuffer())
+    return bytes.byteLength <= maxBytes ? bytes : null
+  }
+
+  const reader = response.body.getReader()
+  const chunks: Buffer[] = []
+  let totalBytes = 0
+
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    if (!value?.byteLength) continue
+
+    totalBytes += value.byteLength
+    if (totalBytes > maxBytes) {
+      await reader.cancel().catch(() => undefined)
+      return null
+    }
+
+    chunks.push(Buffer.from(value))
+  }
+
+  return Buffer.concat(chunks)
+}
+
 export async function fetchCoverDataUrl(coverUrl: string): Promise<string> {
-  const sourceUrl = `${coverUrl || ''}`.trim()
+  const sourceUrl = parsePublicHttpUrl(coverUrl)
   if (!sourceUrl) return ''
 
-  const response = await fetch(sourceUrl, { cache: 'no-store' })
+  const response = await fetch(sourceUrl, {
+    cache: 'no-store',
+    redirect: 'follow',
+    signal: AbortSignal.timeout(OG_COVER_FETCH_TIMEOUT_MS)
+  })
   if (!response.ok) return ''
+
+  const finalUrl = parsePublicHttpUrl(response.url)
+  if (!finalUrl) return ''
 
   const contentType = `${response.headers.get('content-type') || ''}`.split(';')[0].trim().toLowerCase()
   if (!contentType.startsWith('image/')) return ''
@@ -141,8 +202,8 @@ export async function fetchCoverDataUrl(coverUrl: string): Promise<string> {
   const contentLength = Number(response.headers.get('content-length') || 0)
   if (contentLength > MAX_OG_COVER_BYTES) return ''
 
-  const bytes = Buffer.from(await response.arrayBuffer())
-  if (bytes.byteLength > MAX_OG_COVER_BYTES) return ''
+  const bytes = await readLimitedResponseBytes(response, MAX_OG_COVER_BYTES)
+  if (!bytes) return ''
 
   return `data:${contentType};base64,${bytes.toString('base64')}`
 }

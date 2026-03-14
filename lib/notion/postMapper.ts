@@ -2,6 +2,41 @@ import dayjs from '@/lib/dayjs'
 import { config as BLOG } from '@/lib/server/config'
 import type { PostData } from './filterPublishedPosts'
 
+interface NotionRichTextItem {
+  plain_text?: string | null
+}
+
+interface NotionSelectOption {
+  name?: string | null
+}
+
+export interface NotionProperty {
+  type?: string
+  title?: NotionRichTextItem[]
+  rich_text?: NotionRichTextItem[]
+  select?: NotionSelectOption | null
+  status?: NotionSelectOption | null
+  multi_select?: NotionSelectOption[]
+  date?: {
+    start?: string | null
+  } | null
+}
+
+export type NotionProperties = Record<string, NotionProperty | undefined>
+
+interface NotionPageParent {
+  type?: string
+  data_source_id?: string
+  database_id?: string
+}
+
+export interface NotionPageLike {
+  id?: string
+  created_time?: string
+  properties?: NotionProperties
+  parent?: NotionPageParent | null
+}
+
 export function normalizeNotionUuid(id?: string): string {
   const raw = id?.trim()
   if (!raw) return ''
@@ -24,7 +59,7 @@ export function normalizeNotionUuid(id?: string): string {
   return raw
 }
 
-export function getPropertyByName(properties: Record<string, any>, fieldName: string): any {
+export function getPropertyByName<T>(properties: Record<string, T | undefined>, fieldName: string): T | null {
   if (!properties || !fieldName) return null
   if (properties[fieldName]) return properties[fieldName]
 
@@ -38,11 +73,11 @@ export function getPropertyByName(properties: Record<string, any>, fieldName: st
   return null
 }
 
-function getPlainTextFromRichText(richText: any[] = []): string {
+function getPlainTextFromRichText(richText: NotionRichTextItem[] = []): string {
   return richText.map(item => item?.plain_text || '').join('')
 }
 
-function getSelectPropertyValue(property: any): string | null {
+function getSelectPropertyValue(property: NotionProperty | null): string | null {
   if (!property) return null
   if (property.type === 'select') {
     return property.select?.name || null
@@ -53,12 +88,12 @@ function getSelectPropertyValue(property: any): string | null {
   return null
 }
 
-function getDatePropertyStart(property: any): string | null {
+function getDatePropertyStart(property: NotionProperty | null): string | null {
   if (!property || property.type !== 'date') return null
   return property.date?.start || null
 }
 
-export function mapPageToPost(page: any): PostData {
+export function mapPageToPost(page: NotionPageLike): PostData {
   const properties = page?.properties || {}
 
   const title = getPlainTextFromRichText(
@@ -74,8 +109,8 @@ export function mapPageToPost(page: any): PostData {
   const type = getSelectPropertyValue(getPropertyByName(properties, 'type'))
   const status = getSelectPropertyValue(getPropertyByName(properties, 'status'))
   const tags = (getPropertyByName(properties, 'tags')?.multi_select || [])
-    .map((item: any) => item?.name)
-    .filter(Boolean) as string[]
+    .map(item => item?.name || '')
+    .filter((item): item is string => !!item)
 
   const dateStart = getDatePropertyStart(getPropertyByName(properties, 'date'))
   const date = dateStart
@@ -83,7 +118,7 @@ export function mapPageToPost(page: any): PostData {
     : dayjs(page?.created_time).valueOf()
 
   return {
-    id: page?.id,
+    id: page?.id || '',
     title,
     slug,
     summary,
@@ -95,7 +130,7 @@ export function mapPageToPost(page: any): PostData {
   }
 }
 
-export function getPageParentDataSourceId(page: any): string {
+export function getPageParentDataSourceId(page: NotionPageLike): string {
   const parent = page?.parent
   if (!parent) return ''
 

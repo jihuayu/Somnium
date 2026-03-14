@@ -7,7 +7,7 @@ import {
   type NotionRenderOptions,
   type PageHrefMap,
   type PagePreviewMap
-} from '@/packages/notion-react/src'
+} from '@jihuayu/notion-react'
 import { config } from '@/lib/server/config'
 import { resolvePageHref } from '@/lib/notion/pageLinkMap'
 import { getLinkPreviewByNormalizedUrl } from '@/lib/server/linkPreview'

@@ -1,4 +1,5 @@
 import { ONE_DAY_SECONDS } from '@/lib/server/cache'
+import { normalizeHttpUrl } from '@/lib/server/url'
 
 interface LinkPreviewImageProxyRule {
   id: string
@@ -27,17 +28,6 @@ const IMAGE_PROXY_RULES: LinkPreviewImageProxyRule[] = [
     cacheTtlSeconds: ONE_DAY_SECONDS
   }
 ]
-
-export function normalizeHttpUrl(rawUrl: string): URL | null {
-  if (!rawUrl) return null
-  try {
-    const parsed = new URL(rawUrl)
-    if (!['http:', 'https:'].includes(parsed.protocol)) return null
-    return parsed
-  } catch {
-    return null
-  }
-}
 
 export function resolveLinkPreviewImageProxy(rawUrl: string): {
   normalizedUrl: string

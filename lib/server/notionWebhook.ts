@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { buildInternalSlugHref } from '@/lib/notion/pageLinkMap'
-import { mapPageToPost, normalizeNotionUuid } from '@/lib/notion/postMapper'
+import { mapPageToPost, normalizeNotionUuid, type NotionProperties } from '@/lib/notion/postMapper'
 import {
   NOTION_WEBHOOK_REVALIDATE_PATHS,
   NOTION_WEBHOOK_REVALIDATE_TAGS
@@ -117,10 +117,10 @@ export function computeNotionWebhookSignature(rawBody: string, verificationToken
 
 export function isValidNotionWebhookSignature(
   rawBody: string,
-  verificationToken: string,
+  secret: string,
   signatureHeader: string | null
 ): boolean {
-  const expectedToken = verificationToken.trim()
+  const expectedToken = secret.trim()
   const actualSignature = `${signatureHeader || ''}`.trim()
 
   if (!expectedToken || !actualSignature) return false
@@ -162,10 +162,11 @@ function getHomePath(basePath = ''): string {
 function getPagePathFromPayload(payload: NotionWebhookPayload, basePath = ''): string {
   const data = payload.data
   if (!data || typeof data !== 'object') return ''
+  const properties = (data as { properties?: NotionProperties }).properties || {}
 
   const post = mapPageToPost({
     id: getEntityId(payload),
-    properties: (data as Record<string, unknown>).properties || {}
+    properties
   })
   const slug = `${post?.slug || ''}`.trim()
   return slug ? buildInternalSlugHref(basePath, slug) : ''

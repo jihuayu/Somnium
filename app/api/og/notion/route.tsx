@@ -1,6 +1,6 @@
 import { ImageResponse } from '@vercel/og'
 import { config } from '@/lib/server/config'
-import { fetchCoverDataUrl, getPageOgData, loadOgFonts } from '@/lib/server/notionOg'
+import { fetchCoverDataUrl, getPublishedPageOgData, loadOgFonts } from '@/lib/server/notionOg'
 
 export const runtime = 'nodejs'
 
@@ -214,19 +214,35 @@ export async function GET(request: Request) {
     return new Response('Missing pageId', { status: 400 })
   }
 
-  let title = config.title
-  let summary = ''
-  let coverDataUrl = ''
+  let page = null
 
   try {
-    const page = await getPageOgData(pageId)
-    title = normalizeText(page?.title || config.title, 120) || config.title
-    summary = normalizeText(page?.summary || '', 240)
-    if (page?.coverUrl) {
-      coverDataUrl = await fetchCoverDataUrl(page.coverUrl)
-    }
+    page = await getPublishedPageOgData(pageId)
   } catch (error) {
-    console.error(`[og] Failed to generate Notion OG data for page ${pageId}:`, error)
+    console.error(`[og] Failed to load Notion OG data for page ${pageId}:`, error)
+    return new Response('Failed to load page', {
+      status: 500,
+      headers: { 'cache-control': 'no-store' }
+    })
+  }
+
+  if (!page) {
+    return new Response('Not found', {
+      status: 404,
+      headers: { 'cache-control': 'no-store' }
+    })
+  }
+
+  const title = normalizeText(page.title || config.title, 120) || config.title
+  const summary = normalizeText(page.summary || '', 240)
+  let coverDataUrl = ''
+
+  if (page.coverUrl) {
+    try {
+      coverDataUrl = await fetchCoverDataUrl(page.coverUrl)
+    } catch (error) {
+      console.error(`[og] Failed to fetch cover for page ${pageId}:`, error)
+    }
   }
 
   let fonts: Awaited<ReturnType<typeof loadOgFonts>> = []

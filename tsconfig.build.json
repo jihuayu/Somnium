@@ -23,6 +23,9 @@
       "@/*": [
         "./*"
       ],
+      "server-only": [
+        "./node_modules/next/dist/compiled/server-only/empty.js"
+      ],
       "@jihuayu/notion-react": [
         "./packages/notion-react/src/index.ts"
       ],

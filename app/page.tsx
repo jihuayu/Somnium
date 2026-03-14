@@ -1,4 +1,4 @@
-import { clientConfig } from '@/lib/server/config'
+import { config } from '@/lib/server/config'
 import ContainerServer from '@/components/ContainerServer'
 import BlogPostServer from '@/components/BlogPostServer'
 import Pagination from '@/components/Pagination'
@@ -8,9 +8,9 @@ export const revalidate = 300
 
 export default async function HomePage() {
   const posts = await getAllPosts({ includePages: false })
-  const postsToShow = posts.slice(0, clientConfig.postsPerPage)
+  const postsToShow = posts.slice(0, config.postsPerPage)
   const totalPosts = posts.length
-  const showNext = totalPosts > clientConfig.postsPerPage
+  const showNext = totalPosts > config.postsPerPage
 
   return (
     <ContainerServer>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useDeferredValue, useEffect, useMemo, useState } from 'react'
+import { useDeferredValue, useEffect, useId, useMemo, useState } from 'react'
 import BlogPost from '@/components/BlogPost'
 import Tags from '@/components/Tags'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
@@ -31,6 +31,9 @@ export default function SearchClient({
   lang,
   timezone
 }: SearchClientProps) {
+  const searchInputId = useId()
+  const searchHintId = useId()
+  const searchStatusId = useId()
   const [searchValue, setSearchValue] = useState('')
   const deferredSearchValue = useDeferredValue(searchValue)
   const [displayTags, setDisplayTags] = useState<Record<string, number>>(tags || {})
@@ -112,10 +115,10 @@ export default function SearchClient({
           throw new Error(payload?.error || 'Search request failed')
         }
         setRemotePosts(Array.isArray(payload?.posts) ? payload.posts : [])
-      } catch (error: any) {
+      } catch (error: unknown) {
         if (controller.signal.aborted) return
         setRemotePosts([])
-        setSearchError(error?.message || 'Search failed')
+        setSearchError(error instanceof Error ? error.message : 'Search failed')
       } finally {
         if (!controller.signal.aborted) {
           setIsSearching(false)
@@ -149,13 +152,34 @@ export default function SearchClient({
   const notionSearchHint = isQueryTooShort
     ? `Type at least ${MIN_SEARCH_QUERY_LENGTH} characters to search posts in Notion.`
     : 'Type keywords to search posts in Notion.'
+  const searchLabel = currentTag ? `Search posts in ${currentTag}` : 'Search articles'
+  const statusMessage = isSearching
+    ? 'Searching posts.'
+    : searchError
+      ? `Search failed: ${searchError}`
+      : showNotionSearchHint
+        ? notionSearchHint
+        : showEmptyState
+          ? 'No posts found.'
+          : ''
+  const describedBy = [
+    showNotionSearchHint ? searchHintId : '',
+    statusMessage ? searchStatusId : ''
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   return (
     <>
       <div className="relative">
+        <label htmlFor={searchInputId} className="sr-only">
+          {searchLabel}
+        </label>
         <input
+          id={searchInputId}
           type="text"
           value={searchValue}
+          aria-describedby={describedBy || undefined}
           placeholder={
             currentTag ? `Search in #${currentTag}` : 'Search Articles'
           }
@@ -168,6 +192,8 @@ export default function SearchClient({
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
+          aria-hidden="true"
+          focusable="false"
         >
           <path
             strokeLinecap="round"
@@ -182,17 +208,22 @@ export default function SearchClient({
         currentTag={currentTag}
       />
       <div className="article-container my-8">
+        {statusMessage && (
+          <p id={searchStatusId} className="sr-only" aria-live="polite" aria-atomic="true">
+            {statusMessage}
+          </p>
+        )}
         {showNotionSearchHint && (
-          <p className="text-gray-500 dark:text-gray-300">{notionSearchHint}</p>
+          <p id={searchHintId} className="text-gray-500 dark:text-gray-300">{notionSearchHint}</p>
         )}
         {isSearching && (
-          <p className="text-gray-500 dark:text-gray-300">Searching...</p>
+          <p className="text-gray-500 dark:text-gray-300" role="status">Searching...</p>
         )}
         {!isSearching && !!searchError && (
-          <p className="text-red-500 dark:text-red-400">{searchError}</p>
+          <p className="text-red-500 dark:text-red-400" role="alert">{searchError}</p>
         )}
         {showEmptyState && (
-          <p className="text-gray-500 dark:text-gray-300">No posts found.</p>
+          <p className="text-gray-500 dark:text-gray-300" role="status">No posts found.</p>
         )}
         {filteredBlogPosts.slice(0, 20).map(post => (
           <BlogPost key={post.id} post={post} blogPath={blogPath} lang={lang} timezone={timezone} />

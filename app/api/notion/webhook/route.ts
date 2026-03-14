@@ -21,6 +21,10 @@ function getConfiguredVerificationToken(): string {
   )
 }
 
+function getConfiguredSignatureSecret(): string {
+  return process.env.NOTION_WEBHOOK_SIGNATURE_SECRET?.trim() || ''
+}
+
 function getConfiguredDataSourceId(): string {
   return normalizeNotionUuid(process.env.NOTION_DATA_SOURCE_ID)
 }
@@ -67,14 +71,9 @@ function getPrewarmablePaths(paths: string[]): string[] {
   ))
 }
 
-async function prewarmPaths(req: NextRequest, paths: string[]): Promise<string[]> {
-  const targets = getPrewarmablePaths(paths)
-  if (!targets.length) return []
-
-  const origin = req.nextUrl.origin
-
+async function prewarmPaths(origin: string, paths: string[]): Promise<void> {
   await Promise.allSettled(
-    targets.map(async (path) => {
+    paths.map(async (path) => {
       const url = new URL(path, origin)
       await fetch(url, {
         method: 'GET',
@@ -85,8 +84,6 @@ async function prewarmPaths(req: NextRequest, paths: string[]): Promise<string[]
       })
     })
   )
-
-  return targets
 }
 
 function jsonNoStore(body: Record<string, unknown>, status = 200) {
@@ -99,8 +96,7 @@ function jsonNoStore(body: Record<string, unknown>, status = 200) {
 export async function POST(req: NextRequest) {
   const rawBody = await req.text()
 
-  let payload
-    = {} as ReturnType<typeof parseNotionWebhookPayload>
+  let payload: ReturnType<typeof parseNotionWebhookPayload> = {}
   try {
     payload = parseNotionWebhookPayload(rawBody)
   } catch {
@@ -108,6 +104,7 @@ export async function POST(req: NextRequest) {
   }
 
   const configuredVerificationToken = getConfiguredVerificationToken()
+  const configuredSignatureSecret = getConfiguredSignatureSecret()
   const requestVerificationToken = `${payload.verification_token || ''}`.trim()
   const signatureHeader = req.headers.get('x-notion-signature')
 
@@ -127,19 +124,18 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  if (!configuredVerificationToken) {
-    return jsonNoStore(
-      { error: 'Server is missing NOTION_WEBHOOK_VERIFICATION_TOKEN' },
-      500
-    )
-  }
-
-  if (!requestVerificationToken || requestVerificationToken !== configuredVerificationToken) {
+  if (configuredVerificationToken && (!requestVerificationToken || requestVerificationToken !== configuredVerificationToken)) {
     return jsonNoStore({ error: 'Unauthorized' }, 401)
   }
 
-  if (signatureHeader && !isValidNotionWebhookSignature(rawBody, configuredVerificationToken, signatureHeader)) {
-    return jsonNoStore({ error: 'Invalid signature' }, 401)
+  if (configuredSignatureSecret) {
+    if (!signatureHeader) {
+      return jsonNoStore({ error: 'Missing signature' }, 401)
+    }
+
+    if (!isValidNotionWebhookSignature(rawBody, configuredSignatureSecret, signatureHeader)) {
+      return jsonNoStore({ error: 'Invalid signature' }, 401)
+    }
   }
 
   const result = await resolveNotionWebhookRevalidation(payload, {
@@ -164,7 +160,8 @@ export async function POST(req: NextRequest) {
   }
 
   applyRevalidation(result.tags, result.paths)
-  const prewarmedPaths = await prewarmPaths(req, result.paths)
+  const scheduledPrewarmPaths = getPrewarmablePaths(result.paths)
+  void prewarmPaths(req.nextUrl.origin, scheduledPrewarmPaths)
 
   return jsonNoStore({
     ok: true,
@@ -174,7 +171,7 @@ export async function POST(req: NextRequest) {
     entityId: result.entityId,
     tags: result.tags,
     paths: result.paths,
-    prewarmedPaths,
+    scheduledPrewarmPaths,
     timestamp: new Date().toISOString()
   })
 }

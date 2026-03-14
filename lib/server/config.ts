@@ -1,17 +1,7 @@
+import 'server-only'
 import type { BlogConfig } from '@/lib/config'
-import config from '@/config/blog.config'
+import rawConfig from '@/config/blog.config'
 
-// If we need to strip out some private fields
-const clientConfig: BlogConfig = { ...config }
+const config: BlogConfig = rawConfig
 
-for (const key of [
-  'notionAccessToken',
-  'notionPageId',
-  'notionIntegrationToken',
-  'notionDataSourceId',
-  'notionApiVersion'
-] as const) {
-  delete (clientConfig as any)[key]
-}
-
-export { config, clientConfig }
+export { config }
