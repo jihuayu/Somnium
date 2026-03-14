@@ -6,6 +6,12 @@ import { buildNotionOgImageUrl, buildPageMetadata } from '../lib/server/metadata
 test('mapPageToOgData reads title summary and external cover', () => {
   const data = mapPageToOgData({
     id: 'page-1',
+    created_time: '2024-01-01T00:00:00.000Z',
+    last_edited_time: '2024-01-02T00:00:00.000Z',
+    parent: {
+      type: 'data_source_id',
+      data_source_id: 'source-1'
+    },
     cover: {
       type: 'external',
       external: { url: 'https://example.com/cover.jpg' }
@@ -34,6 +40,12 @@ test('mapPageToOgData reads title summary and external cover', () => {
 test('mapPageToOgData supports file covers and missing summary', () => {
   const data = mapPageToOgData({
     id: 'page-2',
+    created_time: '2024-01-01T00:00:00.000Z',
+    last_edited_time: '2024-01-02T00:00:00.000Z',
+    parent: {
+      type: 'data_source_id',
+      data_source_id: 'source-1'
+    },
     cover: {
       type: 'file',
       file: { url: 'https://notion.so/signed-image' }

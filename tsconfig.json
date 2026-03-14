@@ -28,18 +28,6 @@
       ],
       "server-only": [
         "./node_modules/next/dist/compiled/server-only/empty.js"
-      ],
-      "@jihuayu/notion-react": [
-        "./packages/notion-react/src/index.ts"
-      ],
-      "@jihuayu/notion-react/normalize": [
-        "./packages/notion-react/src/normalize.ts"
-      ],
-      "@jihuayu/notion-react/rss": [
-        "./packages/notion-react/src/rss.ts"
-      ],
-      "@jihuayu/notion-react/og": [
-        "./packages/notion-react/src/og.ts"
       ]
     },
     "plugins": [

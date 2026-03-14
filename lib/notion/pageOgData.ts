@@ -52,7 +52,7 @@ function getRichTextPropertyValue(properties: NotionProperties, fieldName: strin
 }
 
 function getPageCover(page: NotionPageForOg): Pick<PageOgData, 'coverUrl' | 'coverType'> {
-  const cover = page?.cover
+  const cover = page.cover
   if (!cover || typeof cover !== 'object') {
     return { coverUrl: '', coverType: null }
   }
@@ -75,11 +75,11 @@ function getPageCover(page: NotionPageForOg): Pick<PageOgData, 'coverUrl' | 'cov
 }
 
 export function mapPageToOgData(page: NotionPageForOg): PageOgData {
-  const properties = page?.properties || {}
+  const properties = page.properties
   const { coverUrl, coverType } = getPageCover(page)
 
   return {
-    id: `${page?.id || ''}`.trim(),
+    id: page.id.trim(),
     title: getPageTitle(properties),
     summary: getRichTextPropertyValue(properties, 'summary'),
     coverUrl,

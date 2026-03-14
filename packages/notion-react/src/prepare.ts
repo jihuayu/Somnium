@@ -57,45 +57,45 @@ interface CodeBlockPayload {
 function getBlockRichTextCollections(block: NotionBlock): NotionRichText[][] {
   switch (block.type) {
     case 'paragraph':
-      return [block.paragraph?.rich_text || []]
+      return [block.paragraph.rich_text]
     case 'heading_1':
-      return [block.heading_1?.rich_text || []]
+      return [block.heading_1.rich_text]
     case 'heading_2':
-      return [block.heading_2?.rich_text || []]
+      return [block.heading_2.rich_text]
     case 'heading_3':
-      return [block.heading_3?.rich_text || []]
+      return [block.heading_3.rich_text]
     case 'quote':
-      return [block.quote?.rich_text || []]
+      return [block.quote.rich_text]
     case 'callout':
-      return [block.callout?.rich_text || []]
+      return [block.callout.rich_text]
     case 'bulleted_list_item':
-      return [block.bulleted_list_item?.rich_text || []]
+      return [block.bulleted_list_item.rich_text]
     case 'numbered_list_item':
-      return [block.numbered_list_item?.rich_text || []]
+      return [block.numbered_list_item.rich_text]
     case 'to_do':
-      return [block.to_do?.rich_text || []]
+      return [block.to_do.rich_text]
     case 'toggle':
-      return [block.toggle?.rich_text || []]
+      return [block.toggle.rich_text]
     case 'template':
-      return [block.template?.rich_text || []]
+      return [block.template.rich_text]
     case 'embed':
-      return [block.embed?.caption || []]
+      return [block.embed.caption || []]
     case 'bookmark':
-      return [block.bookmark?.caption || []]
+      return [block.bookmark.caption || []]
     case 'image':
-      return [block.image?.caption || []]
+      return [block.image.caption || []]
     case 'video':
-      return [block.video?.caption || []]
+      return [block.video.caption || []]
     case 'audio':
-      return [block.audio?.caption || []]
+      return [block.audio.caption || []]
     case 'pdf':
-      return [block.pdf?.caption || []]
+      return [block.pdf.caption || []]
     case 'file':
-      return [block.file?.caption || []]
+      return [block.file.caption || []]
     case 'code':
-      return [block.code?.caption || []]
+      return [block.code.caption || []]
     case 'table_row':
-      return block.table_row?.cells || []
+      return block.table_row.cells
     default:
       return []
   }
@@ -104,11 +104,11 @@ function getBlockRichTextCollections(block: NotionBlock): NotionRichText[][] {
 function getPreviewTargetUrl(block: NotionBlock): string {
   switch (block.type) {
     case 'embed':
-      return `${block.embed?.url || ''}`.trim()
+      return `${block.embed.url || ''}`.trim()
     case 'bookmark':
-      return `${block.bookmark?.url || ''}`.trim()
+      return `${block.bookmark.url || ''}`.trim()
     case 'link_preview':
-      return `${block.link_preview?.url || ''}`.trim()
+      return `${block.link_preview.url || ''}`.trim()
     default:
       return ''
   }
@@ -117,10 +117,10 @@ function getPreviewTargetUrl(block: NotionBlock): string {
 function getLinkToPageTargetIds(block: NotionBlock): string[] {
   if (block.type !== 'link_to_page') return []
   return [
-    block.link_to_page?.page_id,
-    block.link_to_page?.database_id,
-    block.link_to_page?.block_id,
-    block.link_to_page?.comment_id
+    block.link_to_page.page_id,
+    block.link_to_page.database_id,
+    block.link_to_page.block_id,
+    block.link_to_page.comment_id
   ].filter((value): value is string => Boolean(value))
 }
 
@@ -128,10 +128,10 @@ function collectCodeBlockPayloads(document: NotionDocument): CodeBlockPayload[] 
   const payloads: CodeBlockPayload[] = []
   for (const block of Object.values(document.blocksById || {})) {
     if (!block || block.type !== 'code') continue
-    const language = `${block.code?.language || ''}`.trim()
+    const language = `${block.code.language || ''}`.trim()
     payloads.push({
       blockId: block.id,
-      source: getPlainTextFromRichText(block.code?.rich_text || []),
+      source: getPlainTextFromRichText(block.code.rich_text),
       language,
       normalizedLanguage: normalizeCodeLanguage(language)
     })

@@ -192,11 +192,11 @@ function isListItemBlock(block: NotionBlock | undefined): block is NotionBullete
 function getListItemRichText(block: NotionBulletedListItemBlock | NotionNumberedListItemBlock | NotionToDoBlock): NotionRichText[] {
   switch (block.type) {
     case 'bulleted_list_item':
-      return block.bulleted_list_item?.rich_text || []
+      return block.bulleted_list_item.rich_text
     case 'numbered_list_item':
-      return block.numbered_list_item?.rich_text || []
+      return block.numbered_list_item.rich_text
     case 'to_do':
-      return block.to_do?.rich_text || []
+      return block.to_do.rich_text
   }
 }
 
@@ -210,7 +210,7 @@ function renderListItemHtml(
   const childHtml = renderBlockListHtml(childrenById[block.id] || [], blocksById, childrenById, options)
 
   if (block.type === 'to_do') {
-    const marker = block.to_do?.checked ? '&#x2611;' : '&#x2610;'
+    const marker = block.to_do.checked ? '&#x2611;' : '&#x2610;'
     return `<li>${marker} ${text}${childHtml}</li>`
   }
 
@@ -223,22 +223,21 @@ function renderTableHtml(
   childrenById: Record<string, string[]>,
   options: RenderNotionHtmlOptions
 ): string {
-  const table = block.table || {}
+  const table = block.table
   const rows = (childrenById[block.id] || [])
     .map(id => blocksById[id])
     .filter(isTableRowBlock)
 
   const widthFromSchema = Number(table.table_width) || 0
   const widthFromRows = rows.reduce((max, row) => {
-    const cells = row.table_row?.cells
-    return Math.max(max, Array.isArray(cells) ? cells.length : 0)
+    return Math.max(max, row.table_row.cells.length)
   }, 0)
   const columnCount = Math.max(widthFromSchema, widthFromRows)
 
   if (!rows.length || !columnCount) return ''
 
   const body = rows.map((row, rowIndex) => {
-    const cells = Array.isArray(row.table_row?.cells) ? row.table_row.cells : []
+    const cells = row.table_row.cells
     const rowHtml = Array.from({ length: columnCount }).map((_, colIndex) => {
       const cellRichText = cells[colIndex] || []
       const content = renderRichTextHtml(cellRichText, options) || '&nbsp;'
@@ -254,14 +253,14 @@ function renderTableHtml(
 
 function renderPageReferenceHtml(block: NotionLinkToPageBlock | Extract<NotionBlock, { type: 'child_page' | 'child_database' }>, pageHrefMap: Record<string, string>): string {
   const rawTargetId = block.type === 'link_to_page'
-    ? `${block.link_to_page?.page_id || block.link_to_page?.database_id || block.link_to_page?.block_id || block.link_to_page?.comment_id || block.id || ''}`.trim()
+    ? `${block.link_to_page.page_id || block.link_to_page.database_id || block.link_to_page.block_id || block.link_to_page.comment_id || block.id || ''}`.trim()
     : `${block.id || ''}`.trim()
   const href = resolvePageHref(rawTargetId, pageHrefMap)
   const label = block.type === 'link_to_page'
     ? getLinkToPageLabel(block.link_to_page)
     : block.type === 'child_page'
-      ? `${block.child_page?.title || ''}`.trim() || 'Untitled'
-      : `${block.child_database?.title || ''}`.trim() || 'Untitled'
+      ? `${block.child_page.title || ''}`.trim() || 'Untitled'
+      : `${block.child_database.title || ''}`.trim() || 'Untitled'
 
   return href
     ? `<p><a${renderHrefHtml(href)}>${escapeHtml(label)}</a></p>`
@@ -282,92 +281,92 @@ function renderBlockHtml(
 
   switch (block.type) {
     case 'paragraph': {
-      const text = renderRichTextHtml(block.paragraph?.rich_text || [], options)
+      const text = renderRichTextHtml(block.paragraph.rich_text, options)
       return `${text ? `<p>${text}</p>` : ''}${childHtml}`
     }
     case 'heading_1': {
-      const text = renderRichTextHtml(block.heading_1?.rich_text || [], options)
+      const text = renderRichTextHtml(block.heading_1.rich_text, options)
       return `${text ? `<h1>${text}</h1>` : ''}${childHtml}`
     }
     case 'heading_2': {
-      const text = renderRichTextHtml(block.heading_2?.rich_text || [], options)
+      const text = renderRichTextHtml(block.heading_2.rich_text, options)
       return `${text ? `<h2>${text}</h2>` : ''}${childHtml}`
     }
     case 'heading_3': {
-      const text = renderRichTextHtml(block.heading_3?.rich_text || [], options)
+      const text = renderRichTextHtml(block.heading_3.rich_text, options)
       return `${text ? `<h3>${text}</h3>` : ''}${childHtml}`
     }
     case 'quote': {
-      const text = renderRichTextHtml(block.quote?.rich_text || [], options)
+      const text = renderRichTextHtml(block.quote.rich_text, options)
       return `${text ? `<blockquote>${text}</blockquote>` : ''}${childHtml}`
     }
     case 'callout': {
-      const text = renderRichTextHtml(block.callout?.rich_text || [], options)
-      const emoji = block.callout?.icon?.type === 'emoji' ? block.callout.icon.emoji || '' : ''
+      const text = renderRichTextHtml(block.callout.rich_text, options)
+      const emoji = block.callout.icon?.type === 'emoji' ? block.callout.icon.emoji || '' : ''
       const prefix = emoji ? `${escapeHtml(emoji)} ` : ''
       return `${text ? `<blockquote>${prefix}${text}</blockquote>` : ''}${childHtml}`
     }
     case 'equation': {
-      const expression = `${block.equation?.expression || ''}`.trim()
+      const expression = `${block.equation.expression || ''}`.trim()
       return `${expression ? `<p><code>${escapeHtml(expression)}</code></p>` : ''}${childHtml}`
     }
     case 'code': {
-      const code = block.code || {}
-      const source = escapeHtml(getPlainTextFromRichText(code.rich_text || [], false))
+      const code = block.code
+      const source = escapeHtml(getPlainTextFromRichText(code.rich_text, false))
       const language = code.language ? ` class="language-${escapeHtml(code.language)}"` : ''
       return `<pre><code${language}>${source}</code></pre>${childHtml}`
     }
     case 'toggle': {
-      const text = renderRichTextHtml(block.toggle?.rich_text || [], options)
+      const text = renderRichTextHtml(block.toggle.rich_text, options)
       return `<details><summary>${text || 'Toggle'}</summary>${childHtml}</details>`
     }
     case 'template': {
-      const text = renderRichTextHtml(block.template?.rich_text || [], options)
+      const text = renderRichTextHtml(block.template.rich_text, options)
       return `${text ? `<p>${text}</p>` : ''}${childHtml}`
     }
     case 'image': {
-      const source = block.image?.type === 'external' ? block.image.external?.url : block.image?.file?.url
-      const caption = renderRichTextHtml(block.image?.caption || [], options)
-      const alt = escapeHtml(getPlainTextFromRichText(block.image?.caption || [], true) || 'Notion image')
+      const source = block.image.type === 'external' ? block.image.external?.url : block.image.file?.url
+      const caption = renderRichTextHtml(block.image.caption || [], options)
+      const alt = escapeHtml(getPlainTextFromRichText(block.image.caption || [], true) || 'Notion image')
       return source
         ? `<figure><img src="${escapeHtml(source)}" alt="${alt}" />${caption ? `<figcaption>${caption}</figcaption>` : ''}</figure>${childHtml}`
         : childHtml
     }
     case 'video': {
       const source = getFileBlockUrl(block.video)
-      const caption = renderRichTextHtml(block.video?.caption || [], options)
+      const caption = renderRichTextHtml(block.video.caption || [], options)
       const name = escapeHtml(getFileBlockName(block.video, source))
       return `${source ? `<p><a${renderHrefHtml(source)}>${name}</a></p>` : ''}${caption ? `<p>${caption}</p>` : ''}${childHtml}`
     }
     case 'audio': {
       const source = getFileBlockUrl(block.audio)
-      const caption = renderRichTextHtml(block.audio?.caption || [], options)
+      const caption = renderRichTextHtml(block.audio.caption || [], options)
       const name = escapeHtml(getFileBlockName(block.audio, source))
       return `${source ? `<p><a${renderHrefHtml(source)}>${name}</a></p>` : ''}${caption ? `<p>${caption}</p>` : ''}${childHtml}`
     }
     case 'pdf': {
       const source = getFileBlockUrl(block.pdf)
-      const caption = renderRichTextHtml(block.pdf?.caption || [], options)
+      const caption = renderRichTextHtml(block.pdf.caption || [], options)
       return `${source ? `<p><a${renderHrefHtml(source)}>Open PDF</a></p>` : ''}${caption ? `<p>${caption}</p>` : ''}${childHtml}`
     }
     case 'file': {
       const source = getFileBlockUrl(block.file)
-      const caption = renderRichTextHtml(block.file?.caption || [], options)
+      const caption = renderRichTextHtml(block.file.caption || [], options)
       const name = escapeHtml(getFileBlockName(block.file, source))
       return `${source ? `<p><a${renderHrefHtml(source)}>${name}</a></p>` : ''}${caption ? `<p>${caption}</p>` : ''}${childHtml}`
     }
     case 'embed': {
-      const url = `${block.embed?.url || ''}`.trim()
-      const caption = renderRichTextHtml(block.embed?.caption || [], options)
+      const url = `${block.embed.url || ''}`.trim()
+      const caption = renderRichTextHtml(block.embed.caption || [], options)
       return `${url ? `<p><a${renderHrefHtml(url)}>${escapeHtml(url)}</a></p>` : ''}${caption ? `<p>${caption}</p>` : ''}${childHtml}`
     }
     case 'bookmark': {
-      const url = `${block.bookmark?.url || ''}`.trim()
-      const caption = renderRichTextHtml(block.bookmark?.caption || [], options)
+      const url = `${block.bookmark.url || ''}`.trim()
+      const caption = renderRichTextHtml(block.bookmark.caption || [], options)
       return `${url ? `<p><a${renderHrefHtml(url)}>${escapeHtml(url)}</a></p>` : ''}${caption ? `<p>${caption}</p>` : ''}${childHtml}`
     }
     case 'link_preview': {
-      const url = `${block.link_preview?.url || ''}`.trim()
+      const url = `${block.link_preview.url || ''}`.trim()
       return `${url ? `<p><a${renderHrefHtml(url)}>${escapeHtml(url)}</a></p>` : ''}${childHtml}`
     }
     case 'divider':

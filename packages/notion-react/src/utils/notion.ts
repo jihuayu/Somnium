@@ -221,11 +221,11 @@ export function getCalloutIconUrl(icon: unknown): string {
 function getBlockRichText(block: NotionBlock): NotionRichText[] {
   switch (block.type) {
     case 'heading_1':
-      return block.heading_1?.rich_text || []
+      return block.heading_1.rich_text
     case 'heading_2':
-      return block.heading_2?.rich_text || []
+      return block.heading_2.rich_text
     case 'heading_3':
-      return block.heading_3?.rich_text || []
+      return block.heading_3.rich_text
     default:
       return []
   }

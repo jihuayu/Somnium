@@ -28,17 +28,44 @@ export interface NotionProperty {
 
 export type NotionProperties = Record<string, NotionProperty | undefined>
 
-interface NotionPageParent {
+export interface NotionPageParent {
   type?: string
   data_source_id?: string
   database_id?: string
 }
 
 export interface NotionPageLike {
-  id?: string
-  created_time?: string
-  properties?: NotionProperties
+  id: string
+  created_time: string
+  last_edited_time: string
+  properties: NotionProperties
   parent?: NotionPageParent | null
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+function assertValidNotionPage(page: NotionPageLike): void {
+  if (!`${page.id || ''}`.trim()) {
+    throw new Error('Notion page is missing a valid id')
+  }
+
+  if (!`${page.created_time || ''}`.trim()) {
+    throw new Error(`Notion page ${page.id} is missing created_time`)
+  }
+
+  if (!`${page.last_edited_time || ''}`.trim()) {
+    throw new Error(`Notion page ${page.id} is missing last_edited_time`)
+  }
+
+  if (!isRecord(page.properties)) {
+    throw new Error(`Notion page ${page.id} is missing properties`)
+  }
+
+  if (!isRecord(page.parent)) {
+    throw new Error(`Notion page ${page.id} is missing parent`)
+  }
 }
 
 export function normalizeNotionUuid(id?: string): string {
@@ -98,7 +125,8 @@ function getDatePropertyStart(property: NotionProperty | null): string | null {
 }
 
 export function mapPageToPost(page: NotionPageLike, { timeZone = BLOG.timezone }: MapPageToPostOptions = {}): PostData {
-  const properties = page?.properties || {}
+  assertValidNotionPage(page)
+  const properties = page.properties
 
   const title = getPlainTextFromRichText(
     getPropertyByName(properties, 'title')?.title || []
@@ -119,10 +147,10 @@ export function mapPageToPost(page: NotionPageLike, { timeZone = BLOG.timezone }
   const dateStart = getDatePropertyStart(getPropertyByName(properties, 'date'))
   const date = dateStart
     ? dayjs.tz(dateStart, timeZone).valueOf()
-    : dayjs(page?.created_time).valueOf()
+    : dayjs(page.created_time).valueOf()
 
   return {
-    id: page?.id || '',
+    id: page.id,
     title,
     slug,
     summary,
@@ -134,8 +162,8 @@ export function mapPageToPost(page: NotionPageLike, { timeZone = BLOG.timezone }
   }
 }
 
-export function getPageParentDataSourceId(page: NotionPageLike): string {
-  const parent = page?.parent
+export function getPageParentDataSourceId(page: Pick<NotionPageLike, 'parent'>): string {
+  const parent = page.parent
   if (!parent) return ''
 
   if (parent.type === 'data_source_id') {

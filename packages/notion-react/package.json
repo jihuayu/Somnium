@@ -13,19 +13,33 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.js",
+      "default": "./dist/client.js"
+    },
+    "./prepare": {
+      "types": "./dist/prepare.d.ts",
+      "import": "./dist/prepare.js",
+      "default": "./dist/prepare.js"
     },
     "./normalize": {
       "types": "./dist/normalize.d.ts",
-      "import": "./dist/normalize.js"
+      "import": "./dist/normalize.js",
+      "default": "./dist/normalize.js"
     },
     "./rss": {
       "types": "./dist/rss.d.ts",
-      "import": "./dist/rss.js"
+      "import": "./dist/rss.js",
+      "default": "./dist/rss.js"
     },
     "./og": {
       "types": "./dist/og.d.ts",
-      "import": "./dist/og.js"
+      "import": "./dist/og.js",
+      "default": "./dist/og.js"
     },
     "./styles.css": "./dist/styles.css"
   },

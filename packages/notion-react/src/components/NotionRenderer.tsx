@@ -158,20 +158,20 @@ export default function NotionRenderer({ model, components, renderOptions, class
 
   const renderBulletedListItem = (block: NotionBulletedListItemBlock) => renderBlockWithOverride(block, () => (
     <li key={block.id} className={getBlockClassName(block.id)}>
-      <div className="notion-text whitespace-pre-wrap">{renderRichText(block.bulleted_list_item?.rich_text || [])}</div>
+      <div className="notion-text whitespace-pre-wrap">{renderRichText(block.bulleted_list_item.rich_text)}</div>
       {renderChildren(block.id)}
     </li>
   ))
 
   const renderNumberedListItem = (block: NotionNumberedListItemBlock) => renderBlockWithOverride(block, () => (
     <li key={block.id} className={getBlockClassName(block.id)}>
-      <div className="notion-text whitespace-pre-wrap">{renderRichText(block.numbered_list_item?.rich_text || [])}</div>
+      <div className="notion-text whitespace-pre-wrap">{renderRichText(block.numbered_list_item.rich_text)}</div>
       {renderChildren(block.id)}
     </li>
   ))
 
   const renderToDoItem = (block: NotionToDoBlock) => renderBlockWithOverride(block, () => {
-    const checked = !!block.to_do?.checked
+    const checked = !!block.to_do.checked
     return (
       <div key={block.id} className={cn(getBlockClassName(block.id), 'notion-to-do-block')}>
         <div className="notion-to-do-item flex items-baseline gap-1">
@@ -184,7 +184,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
               )}
             </span>
           </span>
-          <div className="notion-to-do-body flex-1 min-w-0 whitespace-pre-wrap">{renderRichText(block.to_do?.rich_text || [])}</div>
+          <div className="notion-to-do-body flex-1 min-w-0 whitespace-pre-wrap">{renderRichText(block.to_do.rich_text)}</div>
         </div>
         <div className="pl-7">{renderChildren(block.id)}</div>
       </div>
@@ -192,7 +192,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
   })
 
   const renderColumnBlock = (block: NotionColumnBlock) => renderBlockWithOverride(block, () => (
-    <div key={block.id} className={getBlockClassName(block.id)} style={{ flex: block.column?.width_ratio || 1, minWidth: 0 }}>
+    <div key={block.id} className={getBlockClassName(block.id)} style={{ flex: block.column.width_ratio || 1, minWidth: 0 }}>
       {renderChildren(block.id)}
     </div>
   ))
@@ -232,7 +232,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
       case 'paragraph': {
         return renderBlockWithOverride(block, () => (
           <div key={block.id} className={baseClassName}>
-            {block.paragraph?.rich_text?.length ? <p className="notion-text whitespace-pre-wrap">{renderRichText(block.paragraph.rich_text)}</p> : null}
+            {block.paragraph.rich_text.length ? <p className="notion-text whitespace-pre-wrap">{renderRichText(block.paragraph.rich_text)}</p> : null}
             {renderChildren(block.id)}
           </div>
         ))
@@ -242,10 +242,10 @@ export default function NotionRenderer({ model, components, renderOptions, class
       case 'heading_3':
         return renderBlockWithOverride(block, () => {
           const richText = block.type === 'heading_1'
-            ? block.heading_1?.rich_text || []
+            ? block.heading_1.rich_text
             : block.type === 'heading_2'
-              ? block.heading_2?.rich_text || []
-              : block.heading_3?.rich_text || []
+              ? block.heading_2.rich_text
+              : block.heading_3.rich_text
           const headingClass = cn(
             'font-semibold text-inherit scroll-mt-20',
             block.type === 'heading_1' && 'text-[2rem] leading-[1.24] mt-12 mb-3',
@@ -266,7 +266,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
         return renderBlockWithOverride(block, () => (
           <div key={block.id} className={baseClassName}>
             <blockquote className="notion-quote border-l-4 border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 rounded-r-md whitespace-pre-wrap">
-              {renderRichText(block.quote?.rich_text || [])}
+              {renderRichText(block.quote.rich_text)}
             </blockquote>
             {renderChildren(block.id)}
           </div>
@@ -274,15 +274,15 @@ export default function NotionRenderer({ model, components, renderOptions, class
       }
       case 'callout': {
         return renderBlockWithOverride(block, () => {
-          const emoji = block.callout?.icon?.type === 'emoji' ? block.callout.icon.emoji : ''
-          const iconUrl = getCalloutIconUrl(block.callout?.icon || null)
+          const emoji = block.callout.icon?.type === 'emoji' ? block.callout.icon.emoji : ''
+          const iconUrl = getCalloutIconUrl(block.callout.icon || null)
           return (
             <div key={block.id} className={baseClassName}>
               <div className="notion-callout my-4 rounded-md border border-zinc-200 dark:border-zinc-700 px-3 py-2 flex items-start">
                 <span className="notion-page-icon-inline flex-none">
                   {emoji ? <span aria-hidden="true">{emoji}</span> : iconUrl ? <img src={iconUrl} alt="" className="h-[1.05em] w-[1.05em] object-contain" /> : <span aria-hidden="true">i</span>}
                 </span>
-                <div className="notion-callout-text whitespace-pre-wrap">{renderRichText(block.callout?.rich_text || [])}</div>
+                <div className="notion-callout-text whitespace-pre-wrap">{renderRichText(block.callout.rich_text)}</div>
               </div>
               {renderChildren(block.id)}
             </div>
@@ -291,7 +291,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
       }
       case 'equation': {
         return renderBlockWithOverride(block, () => {
-          const expression = block.equation?.expression || ''
+          const expression = block.equation.expression || ''
           return (
             <div key={block.id} className={baseClassName}>
               {expression
@@ -304,8 +304,8 @@ export default function NotionRenderer({ model, components, renderOptions, class
       }
       case 'code': {
         return renderBlockWithOverride(block, () => {
-          const source = getPlainTextFromRichText(block.code?.rich_text || [])
-          const language = normalizeCodeLanguage(block.code?.language || '')
+          const source = getPlainTextFromRichText(block.code.rich_text)
+          const language = normalizeCodeLanguage(block.code.language || '')
           if (language === 'mermaid') {
             return (
               <div key={block.id} className={baseClassName}>
@@ -320,7 +320,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
             <div key={block.id} className={baseClassName}>
               <div className="notion-code-block my-5 overflow-hidden">
                 <span className="notion-code-language notion-code-language-floating">
-                  {highlighted?.displayLanguage || `${block.code?.language || ''}`.trim() || 'plain text'}
+                  {highlighted?.displayLanguage || `${block.code.language || ''}`.trim() || 'plain text'}
                 </span>
                 <div
                   className="notion-code-content"
@@ -334,8 +334,8 @@ export default function NotionRenderer({ model, components, renderOptions, class
       }
       case 'image': {
         return renderBlockWithOverride(block, () => {
-          const source = block.image?.type === 'external' ? block.image.external?.url : block.image?.file?.url
-          const caption = block.image?.caption || []
+          const source = block.image.type === 'external' ? block.image.external?.url : block.image.file?.url
+          const caption = block.image.caption || []
           const captionText = getPlainTextFromRichText(caption)
           if (!source) {
             return <Unsupported key={block.id} block={block} className={baseClassName} message="Unsupported image source" />
@@ -368,7 +368,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
           return (
             <details key={block.id} className={cn(baseClassName, 'nobelium-toggle callout-wrap my-3', !hasChildren && 'nobelium-toggle-empty')}>
               <summary className="nobelium-toggle-summary">
-                <span className="collapsed-label nobelium-toggle-title whitespace-pre-wrap">{renderRichText(block.toggle?.rich_text || [])}</span>
+                <span className="collapsed-label nobelium-toggle-title whitespace-pre-wrap">{renderRichText(block.toggle.rich_text)}</span>
                 <span className="button-wrap expand-icon" aria-hidden="true">
                   <svg width="24" height="24" viewBox="0 0 24 24" role="presentation">
                     <path d="M8.67383 5.36887L12.0427 2L15.4116 5.36887" />
@@ -394,7 +394,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
       case 'template': {
         return renderBlockWithOverride(block, () => (
           <div key={block.id} className={baseClassName}>
-            {block.template?.rich_text?.length ? <p className="notion-text whitespace-pre-wrap">{renderRichText(block.template.rich_text)}</p> : null}
+            {block.template.rich_text.length ? <p className="notion-text whitespace-pre-wrap">{renderRichText(block.template.rich_text)}</p> : null}
             {renderChildren(block.id)}
           </div>
         ))
@@ -420,7 +420,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
         ))
       case 'link_to_page': {
         return renderBlockWithOverride(block, () => {
-          const targetId = `${block.link_to_page?.page_id || block.link_to_page?.database_id || block.link_to_page?.block_id || block.link_to_page?.comment_id || ''}`.trim()
+          const targetId = `${block.link_to_page.page_id || block.link_to_page.database_id || block.link_to_page.block_id || block.link_to_page.comment_id || ''}`.trim()
           const href = model.pageHrefMap[normalizeNotionEntityId(targetId)] || buildNotionPublicUrl(targetId)
           return (
             <div key={block.id} className={baseClassName}>
@@ -435,7 +435,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
           const href = model.pageHrefMap[normalizeNotionEntityId(block.id)] || buildNotionPublicUrl(block.id)
           return (
             <div key={block.id} className={baseClassName}>
-              {renderPageReferenceCard(`${block.child_page?.title || ''}`.trim() || 'Untitled page', href, baseClassName, 'Pg')}
+              {renderPageReferenceCard(`${block.child_page.title || ''}`.trim() || 'Untitled page', href, baseClassName, 'Pg')}
               {renderChildren(block.id)}
             </div>
           )
@@ -446,7 +446,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
           const href = model.pageHrefMap[normalizeNotionEntityId(block.id)] || buildNotionPublicUrl(block.id)
           return (
             <div key={block.id} className={baseClassName}>
-              {renderPageReferenceCard(`${block.child_database?.title || ''}`.trim() || 'Untitled database', href, baseClassName, 'DB')}
+              {renderPageReferenceCard(`${block.child_database.title || ''}`.trim() || 'Untitled database', href, baseClassName, 'DB')}
               {renderChildren(block.id)}
             </div>
           )
@@ -454,7 +454,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
       }
       case 'synced_block': {
         return renderBlockWithOverride(block, () => {
-          const syncedFrom = block.synced_block?.synced_from?.block_id || ''
+          const syncedFrom = block.synced_block.synced_from?.block_id || ''
           const hasChildren = (childrenById[block.id] || []).length > 0
           return (
             <div key={block.id} className={baseClassName}>
@@ -469,10 +469,10 @@ export default function NotionRenderer({ model, components, renderOptions, class
         return null
       case 'embed': {
         return renderBlockWithOverride(block, () => {
-          const embedUrl = block.embed?.url || ''
+          const embedUrl = block.embed.url || ''
           const iframeUrl = resolveEmbedIframeUrl(embedUrl)
           const normalizedEmbedUrl = normalizeRichTextUrl(embedUrl)
-          const caption = block.embed?.caption || []
+          const caption = block.embed.caption || []
           return (
             <div key={block.id} className={baseClassName}>
               <div className="my-4">
@@ -500,8 +500,8 @@ export default function NotionRenderer({ model, components, renderOptions, class
       }
       case 'bookmark': {
         return renderBlockWithOverride(block, () => {
-          const bookmarkUrl = block.bookmark?.url || ''
-          const caption = block.bookmark?.caption || []
+          const bookmarkUrl = block.bookmark.url || ''
+          const caption = block.bookmark.caption || []
           return (
             <div key={block.id} className={baseClassName}>
               {bookmarkUrl ? renderLinkPreviewCard(bookmarkUrl, normalizeRichTextUrl(bookmarkUrl)) : <Unsupported block={block} className="my-4" message="Unsupported bookmark block" />}
@@ -515,7 +515,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
         return renderBlockWithOverride(block, () => {
           const source = getFileBlockUrl(block.video)
           const iframeUrl = resolveEmbedIframeUrl(source)
-          const caption = block.video?.caption || []
+          const caption = block.video.caption || []
           return (
             <div key={block.id} className={baseClassName}>
               <div className="my-4">
@@ -538,7 +538,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
       case 'audio': {
         return renderBlockWithOverride(block, () => {
           const source = getFileBlockUrl(block.audio)
-          const caption = block.audio?.caption || []
+          const caption = block.audio.caption || []
           return (
             <div key={block.id} className={baseClassName}>
               <div className="my-4">
@@ -553,7 +553,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
       case 'pdf': {
         return renderBlockWithOverride(block, () => {
           const source = getFileBlockUrl(block.pdf)
-          const caption = block.pdf?.caption || []
+          const caption = block.pdf.caption || []
           return (
             <div key={block.id} className={baseClassName}>
               <div className="my-4 rounded-md border border-zinc-200 dark:border-zinc-700 overflow-hidden">
@@ -577,7 +577,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
       case 'file': {
         return renderBlockWithOverride(block, () => {
           const fileUrl = getFileBlockUrl(block.file)
-          const caption = block.file?.caption || []
+          const caption = block.file.caption || []
           return (
             <div key={block.id} className={baseClassName}>
               {!fileUrl
@@ -603,8 +603,8 @@ export default function NotionRenderer({ model, components, renderOptions, class
       case 'table': {
         return renderBlockWithOverride(block, () => {
           const rows = (childrenById[block.id] || []).map(id => blocksById[id]).filter(isTableRowBlock)
-          const widthFromSchema = Number(block.table?.table_width) || 0
-          const widthFromRows = rows.reduce((max, row) => Math.max(max, row.table_row?.cells?.length || 0), 0)
+          const widthFromSchema = Number(block.table.table_width) || 0
+          const widthFromRows = rows.reduce((max, row) => Math.max(max, row.table_row.cells.length), 0)
           const columnCount = Math.max(widthFromSchema, widthFromRows)
           if (!rows.length || !columnCount) return <Unsupported key={block.id} block={block} className={baseClassName} message="Unsupported table block" />
 
@@ -616,9 +616,9 @@ export default function NotionRenderer({ model, components, renderOptions, class
                     {rows.map((row, rowIndex) => (
                       <tr key={row.id || `${block.id}-${rowIndex}`}>
                         {Array.from({ length: columnCount }).map((_, colIndex) => {
-                          const cellRichText = row.table_row?.cells?.[colIndex] || []
-                          const isColumnHeader = !!block.table?.has_column_header && rowIndex === 0
-                          const isRowHeader = !!block.table?.has_row_header && colIndex === 0
+                          const cellRichText = row.table_row.cells[colIndex] || []
+                          const isColumnHeader = !!block.table.has_column_header && rowIndex === 0
+                          const isRowHeader = !!block.table.has_row_header && colIndex === 0
                           const isHeader = isColumnHeader || isRowHeader
                           return isHeader
                             ? (
@@ -647,7 +647,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
       case 'link_preview': {
         return renderBlockWithOverride(block, () => (
           <div key={block.id} className={baseClassName}>
-            {block.link_preview?.url
+            {block.link_preview.url
               ? renderLinkPreviewCard(block.link_preview.url, normalizeRichTextUrl(block.link_preview.url))
               : <Unsupported block={block} className="my-4" message="Unsupported link preview block" />}
             {renderChildren(block.id)}

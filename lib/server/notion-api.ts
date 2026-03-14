@@ -43,9 +43,9 @@ interface NotionApiError extends Error {
 
 interface NotionPaginatedResponse<T> {
   object?: 'list' | string
-  results?: T[] | null
-  has_more?: boolean
-  next_cursor?: string | null
+  results: T[]
+  has_more: boolean
+  next_cursor: string | null
 }
 
 interface NotionDataSourcePropertySchema {
@@ -64,6 +64,55 @@ export type NotionPageResponse = NotionPageLike
 export type NotionDataSourceQueryResponse = NotionPaginatedResponse<NotionPageResponse>
 export type NotionSearchResponse = NotionPaginatedResponse<Record<string, unknown>>
 export type NotionBlockChildrenResponse = NotionPaginatedResponse<RawNotionBlock>
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+function assertNotionPageResponse(value: unknown): asserts value is NotionPageResponse {
+  if (!isRecord(value)) {
+    throw new Error('Invalid Notion page response: expected object')
+  }
+
+  const id = typeof value.id === 'string' ? value.id.trim() : ''
+  if (!id) {
+    throw new Error('Invalid Notion page response: missing id')
+  }
+
+  if (typeof value.created_time !== 'string' || !value.created_time.trim()) {
+    throw new Error(`Invalid Notion page response for ${id}: missing created_time`)
+  }
+
+  if (typeof value.last_edited_time !== 'string' || !value.last_edited_time.trim()) {
+    throw new Error(`Invalid Notion page response for ${id}: missing last_edited_time`)
+  }
+
+  if (!isRecord(value.properties)) {
+    throw new Error(`Invalid Notion page response for ${id}: missing properties`)
+  }
+
+  if (!isRecord(value.parent)) {
+    throw new Error(`Invalid Notion page response for ${id}: missing parent`)
+  }
+}
+
+function assertPaginatedResponse<T>(value: unknown, label: string): asserts value is NotionPaginatedResponse<T> {
+  if (!isRecord(value)) {
+    throw new Error(`Invalid Notion ${label} response: expected object`)
+  }
+
+  if (!Array.isArray(value.results)) {
+    throw new Error(`Invalid Notion ${label} response: missing results array`)
+  }
+
+  if (typeof value.has_more !== 'boolean') {
+    throw new Error(`Invalid Notion ${label} response: missing has_more boolean`)
+  }
+
+  if (value.next_cursor !== null && typeof value.next_cursor !== 'string') {
+    throw new Error(`Invalid Notion ${label} response: invalid next_cursor`)
+  }
+}
 
 async function notionRequest<T = unknown>(
   path: string,
@@ -122,7 +171,9 @@ async function retrieveDataSource(dataSourceId: string, signal?: AbortSignal): P
 }
 
 async function retrievePage(pageId: string, signal?: AbortSignal): Promise<NotionPageResponse> {
-  return notionRequest<NotionPageResponse>(`/pages/${pageId}`, { signal })
+  const response = await notionRequest<unknown>(`/pages/${pageId}`, { signal })
+  assertNotionPageResponse(response)
+  return response
 }
 
 async function queryDataSource(
@@ -130,11 +181,14 @@ async function queryDataSource(
   body: Record<string, unknown> = {},
   signal?: AbortSignal
 ): Promise<NotionDataSourceQueryResponse> {
-  return notionRequest<NotionDataSourceQueryResponse>(`/data_sources/${dataSourceId}/query`, {
+  const response = await notionRequest<unknown>(`/data_sources/${dataSourceId}/query`, {
     method: 'POST',
     body,
     signal
   })
+  assertPaginatedResponse<NotionPageResponse>(response, 'data source query')
+  response.results.forEach(assertNotionPageResponse)
+  return response
 }
 
 async function queryAllDataSourcePages(
@@ -152,19 +206,21 @@ async function queryAllDataSourcePages(
       ...(nextCursor ? { start_cursor: nextCursor } : {})
     }, signal)
 
-    results.push(...(response.results || []))
-    nextCursor = response?.has_more ? response?.next_cursor : null
+    results.push(...response.results)
+    nextCursor = response.has_more ? response.next_cursor : null
   } while (nextCursor)
 
   return results
 }
 
 async function search(body: Record<string, unknown> = {}, signal?: AbortSignal): Promise<NotionSearchResponse> {
-  return notionRequest<NotionSearchResponse>('/search', {
+  const response = await notionRequest<unknown>('/search', {
     method: 'POST',
     body,
     signal
   })
+  assertPaginatedResponse<Record<string, unknown>>(response, 'search')
+  return response
 }
 
 async function listBlockChildren(
@@ -178,7 +234,9 @@ async function listBlockChildren(
   if (startCursor) {
     searchParams.set('start_cursor', startCursor)
   }
-  return notionRequest<NotionBlockChildrenResponse>(`/blocks/${blockId}/children?${searchParams.toString()}`, { signal })
+  const response = await notionRequest<unknown>(`/blocks/${blockId}/children?${searchParams.toString()}`, { signal })
+  assertPaginatedResponse<RawNotionBlock>(response, 'block children')
+  return response
 }
 
 async function listAllBlockChildren(blockId: string, signal?: AbortSignal): Promise<RawNotionBlock[]> {
@@ -187,8 +245,8 @@ async function listAllBlockChildren(blockId: string, signal?: AbortSignal): Prom
 
   do {
     const response = await listBlockChildren(blockId, nextCursor, signal)
-    results.push(...(response.results || []))
-    nextCursor = response?.has_more ? response?.next_cursor : null
+    results.push(...response.results)
+    nextCursor = response.has_more ? response.next_cursor : null
   } while (nextCursor)
 
   return results

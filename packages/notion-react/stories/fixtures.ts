@@ -122,7 +122,8 @@ export const demoModel: NotionRenderModel = {
         type: 'table',
         table: {
           table_width: 2,
-          has_column_header: true
+          has_column_header: true,
+          has_row_header: false
         },
         has_children: true
       },

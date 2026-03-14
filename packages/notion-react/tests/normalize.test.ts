@@ -84,3 +84,19 @@ test('normalizeNotionDocument coerces unknown block types into unsupported block
   assert.equal(document.blocksById['custom-1']?.type, 'unsupported')
   assert.equal(document.blocksById['custom-1']?.unsupported?.originalType, 'custom_widget')
 })
+
+test('normalizeNotionDocument coerces invalid known block payloads into unsupported blocks', () => {
+  const document = normalizeNotionDocument({
+    pageId: 'page-4',
+    rootBlocks: [
+      {
+        id: 'bookmark-invalid',
+        type: 'bookmark',
+        bookmark: {}
+      }
+    ]
+  })
+
+  assert.equal(document.blocksById['bookmark-invalid']?.type, 'unsupported')
+  assert.equal(document.blocksById['bookmark-invalid']?.unsupported?.originalType, 'bookmark')
+})

@@ -1,13 +1,12 @@
-import { FONTS_MISANS } from '@/consts'
 import {
-  NotionRenderer as BaseNotionRenderer,
-  prepareNotionRenderModel,
   type LinkPreviewMap,
   type NotionDocument,
   type NotionRenderOptions,
   type PageHrefMap,
   type PagePreviewMap
 } from '@jihuayu/notion-react'
+import { prepareNotionRenderModel } from '@jihuayu/notion-react/prepare'
+import NotionRendererClient from '@/components/NotionRendererClient'
 import { config } from '@/lib/server/config'
 import { resolvePageHref } from '@/lib/notion/pageLinkMap'
 import { getLinkPreviewByNormalizedUrl } from '@/lib/server/linkPreview'
@@ -61,10 +60,9 @@ export default async function NotionRenderer({ document, linkPreviewMap = {}, pa
   if (!model) return null
 
   return (
-    <BaseNotionRenderer
+    <NotionRendererClient
       model={model}
       renderOptions={buildRenderOptions()}
-      style={{ ['--notion-font-family' as string]: FONTS_MISANS.join(', ') }}
     />
   )
 }

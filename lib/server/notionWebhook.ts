@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { buildInternalSlugHref } from '@/lib/notion/pageLinkMap'
+import { getPropertyByName } from '@/lib/notion/postMapper'
 import { mapPageToPost, normalizeNotionUuid, type NotionProperties } from '@/lib/notion/postMapper'
 import {
   NOTION_WEBHOOK_REVALIDATE_PATHS,
@@ -142,11 +143,7 @@ function getPagePathFromPayload(payload: NotionWebhookPayload, basePath = ''): s
   if (!data || typeof data !== 'object') return ''
   const properties = (data as { properties?: NotionProperties }).properties || {}
 
-  const post = mapPageToPost({
-    id: getEntityId(payload),
-    properties
-  })
-  const slug = `${post?.slug || ''}`.trim()
+  const slug = `${getPropertyByName(properties, 'slug')?.rich_text?.map(item => item?.plain_text || '').join('') || ''}`.trim()
   return slug ? buildInternalSlugHref(basePath, slug) : ''
 }
 
