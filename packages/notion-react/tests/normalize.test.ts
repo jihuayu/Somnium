@@ -68,3 +68,19 @@ test('normalizeNotionDocument also supports nested children arrays', () => {
   assert.deepEqual(document.childrenById['toggle-2'], ['paragraph-2'])
   assert.equal(document.blocksById['paragraph-2']?.type, 'paragraph')
 })
+
+test('normalizeNotionDocument coerces unknown block types into unsupported blocks', () => {
+  const document = normalizeNotionDocument({
+    pageId: 'page-3',
+    rootBlocks: [
+      {
+        id: 'custom-1',
+        type: 'custom_widget',
+        has_children: false
+      }
+    ]
+  })
+
+  assert.equal(document.blocksById['custom-1']?.type, 'unsupported')
+  assert.equal(document.blocksById['custom-1']?.unsupported?.originalType, 'custom_widget')
+})

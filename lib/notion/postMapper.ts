@@ -2,6 +2,10 @@ import dayjs from '@/lib/dayjs'
 import { config as BLOG } from '@/lib/server/config'
 import type { PostData } from './filterPublishedPosts'
 
+interface MapPageToPostOptions {
+  timeZone?: string
+}
+
 interface NotionRichTextItem {
   plain_text?: string | null
 }
@@ -93,7 +97,7 @@ function getDatePropertyStart(property: NotionProperty | null): string | null {
   return property.date?.start || null
 }
 
-export function mapPageToPost(page: NotionPageLike): PostData {
+export function mapPageToPost(page: NotionPageLike, { timeZone = BLOG.timezone }: MapPageToPostOptions = {}): PostData {
   const properties = page?.properties || {}
 
   const title = getPlainTextFromRichText(
@@ -114,7 +118,7 @@ export function mapPageToPost(page: NotionPageLike): PostData {
 
   const dateStart = getDatePropertyStart(getPropertyByName(properties, 'date'))
   const date = dateStart
-    ? dayjs.tz(dateStart, BLOG.timezone).valueOf()
+    ? dayjs.tz(dateStart, timeZone).valueOf()
     : dayjs(page?.created_time).valueOf()
 
   return {

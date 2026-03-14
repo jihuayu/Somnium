@@ -13,25 +13,45 @@ import { ONE_DAY_SECONDS } from '@/lib/server/cache'
 import SlugPostClient from './slug-client'
 
 export const revalidate = 86400
-const getPosts = cache(async () => getAllPosts({ includePages: true }))
-const getPostsBySlug = cache(async () => {
-  const posts = await getPosts()
-  return new Map(posts.map(post => [post.slug, post] as const))
-})
 const PAGE_LINK_MAP_CACHE_REVALIDATE_SECONDS = ONE_DAY_SECONDS
-const getPageMaps = unstable_cache(
+const getCachedPageMaps = unstable_cache(
   async () => {
     const allPosts = await getAllPosts({ includePages: true })
     const pageLinkMap = buildPageLinkMap(allPosts, config.path || '')
-    const pagePreviewMap = buildPagePreviewMap(allPosts, pageLinkMap)
+    const pagePreviewMap = buildPagePreviewMap(allPosts, pageLinkMap, {
+      siteUrl: config.link || '',
+      buildImageUrl: buildNotionOgImageUrl
+    })
     return { pageLinkMap, pagePreviewMap }
   },
   ['page-maps-v1'],
   { revalidate: PAGE_LINK_MAP_CACHE_REVALIDATE_SECONDS, tags: ['page-link-map'] }
 )
+const getSlugPageState = cache(async () => {
+  const posts = await getAllPosts({ includePages: true })
+  const postsBySlug = new Map(posts.map(post => [post.slug, post] as const))
+  const cachedPageMaps = await getCachedPageMaps()
+
+  const pageLinkMap = Object.keys(cachedPageMaps.pageLinkMap).length
+    ? cachedPageMaps.pageLinkMap
+    : buildPageLinkMap(posts, config.path || '')
+  const pagePreviewMap = Object.keys(cachedPageMaps.pagePreviewMap).length
+    ? cachedPageMaps.pagePreviewMap
+    : buildPagePreviewMap(posts, pageLinkMap, {
+      siteUrl: config.link || '',
+      buildImageUrl: buildNotionOgImageUrl
+    })
+
+  return {
+    posts,
+    postsBySlug,
+    pageLinkMap,
+    pagePreviewMap
+  }
+})
 
 export async function generateStaticParams() {
-  const posts = await getPosts()
+  const { posts } = await getSlugPageState()
   return posts.map(row => ({
     slug: row.slug
   }))
@@ -43,7 +63,7 @@ interface SlugPageProps {
 
 export async function generateMetadata({ params }: SlugPageProps): Promise<Metadata> {
   const { slug } = await params
-  const postsBySlug = await getPostsBySlug()
+  const { postsBySlug } = await getSlugPageState()
   const post = postsBySlug.get(slug)
 
   if (!post) return buildPageMetadata()
@@ -60,15 +80,14 @@ export async function generateMetadata({ params }: SlugPageProps): Promise<Metad
 
 export default async function SlugPage({ params }: SlugPageProps) {
   const { slug } = await params
-  const postsBySlug = await getPostsBySlug()
+  const { postsBySlug, pageLinkMap, pagePreviewMap } = await getSlugPageState()
   const post = postsBySlug.get(slug)
 
   if (!post) notFound()
 
   const document = await getPostBlocks(post.id)
   if (!document) notFound()
-  const [{ pageLinkMap, pagePreviewMap }, locale] = await Promise.all([
-    getPageMaps(),
+  const [locale] = await Promise.all([
     loadLocale('basic', config.lang)
   ])
 

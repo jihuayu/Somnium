@@ -7,18 +7,28 @@ import { mapPageToPost, normalizeNotionUuid } from './postMapper'
 
 const POSTS_CACHE_REVALIDATE_SECONDS = ONE_DAY_SECONDS
 
-async function fetchAllPosts(includePages: boolean): Promise<PostData[]> {
-  const dataSourceId = normalizeNotionUuid(process.env.NOTION_DATA_SOURCE_ID)
+interface NotionPostsDependencies {
+  apiClient?: Pick<typeof api, 'queryAllDataSourcePages'>
+  dataSourceId?: string
+  sortByDate?: boolean
+}
+
+async function fetchAllPosts(includePages: boolean, {
+  apiClient = api,
+  dataSourceId: rawDataSourceId = process.env.NOTION_DATA_SOURCE_ID,
+  sortByDate = BLOG.sortByDate
+}: NotionPostsDependencies = {}): Promise<PostData[]> {
+  const dataSourceId = normalizeNotionUuid(rawDataSourceId)
   if (!dataSourceId) {
     throw new Error('Missing required environment variable: NOTION_DATA_SOURCE_ID')
   }
 
-  const pages = await api.queryAllDataSourcePages(dataSourceId)
-  const data = pages.map(mapPageToPost).filter(post => post?.id)
+  const pages = await apiClient.queryAllDataSourcePages(dataSourceId)
+  const data = pages.map(page => mapPageToPost(page)).filter(post => post?.id)
 
   const posts = filterPublishedPosts({ posts: data, includePages })
 
-  if (BLOG.sortByDate) {
+  if (sortByDate) {
     posts.sort((a, b) => b.date - a.date)
   }
 
@@ -45,4 +55,11 @@ export async function getAllPosts({ includePages = false }: { includePages: bool
     ? await getCachedPostsAndPages()
     : await getCachedPostsOnly()
   return posts.slice()
+}
+
+export async function getAllPostsWithDependencies(
+  { includePages = false }: { includePages: boolean },
+  dependencies: NotionPostsDependencies
+): Promise<PostData[]> {
+  return fetchAllPosts(includePages, dependencies)
 }

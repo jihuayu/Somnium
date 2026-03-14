@@ -6,8 +6,10 @@ import { resolveLinkPreviewByAdapter, type ParsedLinkPreviewMetadata } from '@/l
 import { getHostnameFromUrl } from '@/lib/server/url'
 import { ONE_DAY_SECONDS } from '@/lib/server/cache'
 import { config } from '@/lib/server/config'
+import { warnServerError } from '@/lib/server/logging'
 import {
   buildOgProxyApiUrl as buildOgProxyApiUrlWithBase,
+  decodeEntities,
   mapOgProxyPayloadToPreview,
   normalizeConfiguredUrl,
   parseCharsetFromContentType
@@ -17,15 +19,6 @@ export { normalizePreviewUrl } from '@/lib/link-preview/normalize'
 
 const LINK_PREVIEW_CACHE_REVALIDATE_SECONDS = ONE_DAY_SECONDS
 const LINK_PREVIEW_MAX_HTML_BYTES = 256 * 1024
-
-function decodeEntities(input = ''): string {
-  return input
-    .replaceAll('&amp;', '&')
-    .replaceAll('&lt;', '<')
-    .replaceAll('&gt;', '>')
-    .replaceAll('&quot;', '"')
-    .replaceAll('&#39;', "'")
-}
 
 function pickMetaValue(entries: Map<string, string>, keys: string[]): string {
   for (const key of keys) {
@@ -185,7 +178,8 @@ async function fetchLinkPreviewViaOgProxy(normalizedUrl: string, fallback: LinkP
 
     const payload = await response.json()
     return mapOgProxyPayloadToPreview(normalizedUrl, fallback, payload)
-  } catch {
+  } catch (error) {
+    warnServerError('link-preview:og-proxy', error, { normalizedUrl })
     return null
   } finally {
     clearTimeout(timeout)
@@ -253,7 +247,8 @@ async function fetchLinkPreviewDirect(normalizedUrl: string, fallback: LinkPrevi
     }
 
     return data
-  } catch {
+  } catch (error) {
+    warnServerError('link-preview:direct', error, { normalizedUrl })
     return fallback
   } finally {
     clearTimeout(timeout)

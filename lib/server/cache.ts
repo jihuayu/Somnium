@@ -35,6 +35,9 @@ export const NOTION_WEBHOOK_REVALIDATE_PATHS = [
   '/search',
   '/feed',
   '/api/tags',
+  // Dynamic route patterns are intentional here. The webhook layer resolves
+  // concrete page paths when possible and uses these patterns only for broad
+  // schema-level invalidation.
   '/[slug]',
   '/page/[page]',
   '/tag/[tag]'

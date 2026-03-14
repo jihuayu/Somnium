@@ -19,6 +19,13 @@ const ibmPlexSans = IBM_Plex_Sans({
 
 const defaultMetadata = buildPageMetadata()
 
+function sanitizeThemeColor(value: string, fallback: string): string {
+  const normalized = `${value || ''}`.trim()
+  return /^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(normalized)
+    ? normalized
+    : fallback
+}
+
 export const metadata: Metadata = {
   ...defaultMetadata,
   icons: {
@@ -45,8 +52,8 @@ export default async function RootLayout({
   }
   const colorSchemeClass = initialColorScheme[config.appearance] || ''
 
-  const dayBg = config.lightBackground || '#ffffff'
-  const nightBg = config.darkBackground || '#111827'
+  const dayBg = sanitizeThemeColor(config.lightBackground, '#ffffff')
+  const nightBg = sanitizeThemeColor(config.darkBackground, '#111827')
   const themeBootstrapScript = `(() => {
     const appearance = ${JSON.stringify(config.appearance)};
     const root = document.documentElement;
@@ -71,11 +78,11 @@ export default async function RootLayout({
       <head>
         {config.appearance === 'auto' ? (
           <>
-            <meta name="theme-color" content={config.lightBackground} media="(prefers-color-scheme: light)" />
-            <meta name="theme-color" content={config.darkBackground} media="(prefers-color-scheme: dark)" />
+            <meta name="theme-color" content={dayBg} media="(prefers-color-scheme: light)" />
+            <meta name="theme-color" content={nightBg} media="(prefers-color-scheme: dark)" />
           </>
         ) : (
-          <meta name="theme-color" content={config.appearance === 'dark' ? config.darkBackground : config.lightBackground} />
+          <meta name="theme-color" content={config.appearance === 'dark' ? nightBg : dayBg} />
         )}
         <style dangerouslySetInnerHTML={{
           __html: `

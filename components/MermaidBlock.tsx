@@ -24,6 +24,38 @@ function isDarkMode(): boolean {
   return document.documentElement.classList.contains('dark')
 }
 
+function sanitizeRenderedSvg(svg: string): string {
+  if (typeof DOMParser === 'undefined') return svg
+
+  const documentNode = new DOMParser().parseFromString(svg, 'image/svg+xml')
+  const root = documentNode.documentElement
+  if (!root || root.nodeName.toLowerCase() === 'parsererror') {
+    throw new Error('Failed to sanitize Mermaid SVG')
+  }
+
+  for (const selector of ['script', 'foreignObject', 'iframe', 'object', 'embed']) {
+    for (const element of Array.from(root.querySelectorAll(selector))) {
+      element.remove()
+    }
+  }
+
+  for (const element of Array.from(root.querySelectorAll('*'))) {
+    for (const attribute of Array.from(element.attributes)) {
+      const name = attribute.name.toLowerCase()
+      const value = attribute.value.trim()
+      if (name.startsWith('on')) {
+        element.removeAttribute(attribute.name)
+        continue
+      }
+      if ((name === 'href' || name === 'xlink:href') && /^javascript:/i.test(value)) {
+        element.removeAttribute(attribute.name)
+      }
+    }
+  }
+
+  return root.outerHTML
+}
+
 export default function MermaidBlock({ code, className }: MermaidBlockProps) {
   const hostRef = useRef<HTMLDivElement | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -133,7 +165,7 @@ export default function MermaidBlock({ code, className }: MermaidBlockProps) {
           return
         }
 
-        container.innerHTML = svg
+        container.innerHTML = sanitizeRenderedSvg(svg)
         bindFunctions?.(container)
         setRenderError('')
       } catch (error) {

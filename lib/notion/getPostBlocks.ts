@@ -3,6 +3,7 @@ import { ONE_DAY_SECONDS } from '@/lib/server/cache'
 import { unstable_cache } from 'next/cache'
 import type { NotionDocument, TocItem } from '@jihuayu/notion-react'
 import { normalizeNotionDocument, type RawNotionBlockCollection } from '@jihuayu/notion-react/normalize'
+import { drainWithConcurrency } from '@/lib/utils/promisePool'
 
 const NOTION_BLOCK_FETCH_CONCURRENCY = 6
 const POST_BLOCKS_CACHE_REVALIDATE_SECONDS = ONE_DAY_SECONDS
@@ -13,62 +14,34 @@ interface BuildNotionDocumentOptions {
   includeToc?: boolean
 }
 
+interface NotionBlocksDependencies {
+  apiClient?: Pick<typeof api, 'listAllBlockChildren'>
+}
+
 interface NotionChildBlock {
   id?: string
   has_children?: boolean
 }
 
-async function collectDocumentBlocks(pageId: string): Promise<Record<string, RawNotionBlockCollection>> {
+async function collectDocumentBlocks(
+  pageId: string,
+  { apiClient = api }: NotionBlocksDependencies = {}
+): Promise<Record<string, RawNotionBlockCollection>> {
   const childrenByParentId: Record<string, RawNotionBlockCollection> = {}
-  const pendingParentIds: string[] = [pageId]
   const visitedParents = new Set<string>()
-  let inFlight = 0
 
-  await new Promise<void>((resolve, reject) => {
-    let settled = false
+  await drainWithConcurrency([pageId], NOTION_BLOCK_FETCH_CONCURRENCY, async (parentId, enqueue) => {
+    if (!parentId || visitedParents.has(parentId)) return
 
-    const schedule = () => {
-      if (settled) return
+    visitedParents.add(parentId)
+    const children = await apiClient.listAllBlockChildren(parentId)
+    childrenByParentId[parentId] = children
 
-      if (pendingParentIds.length === 0 && inFlight === 0) {
-        settled = true
-        resolve()
-        return
-      }
-
-      while (inFlight < NOTION_BLOCK_FETCH_CONCURRENCY && pendingParentIds.length > 0) {
-        const parentId = pendingParentIds.shift()
-        if (!parentId || visitedParents.has(parentId)) continue
-
-        visitedParents.add(parentId)
-        inFlight += 1
-
-        api.listAllBlockChildren(parentId)
-          .then((children) => {
-            childrenByParentId[parentId] = children
-
-            for (const block of children as NotionChildBlock[]) {
-              const blockId = `${block?.id || ''}`.trim()
-              if (!blockId) continue
-
-              if (block.has_children && !visitedParents.has(blockId)) {
-                pendingParentIds.push(blockId)
-              }
-            }
-          })
-          .catch((error) => {
-            if (settled) return
-            settled = true
-            reject(error)
-          })
-          .finally(() => {
-            inFlight -= 1
-            schedule()
-          })
-      }
+    for (const block of children as NotionChildBlock[]) {
+      const blockId = `${block?.id || ''}`.trim()
+      if (!blockId || !block.has_children || visitedParents.has(blockId)) continue
+      enqueue(blockId)
     }
-
-    schedule()
   })
 
   return childrenByParentId
@@ -76,11 +49,12 @@ async function collectDocumentBlocks(pageId: string): Promise<Record<string, Raw
 
 export async function buildNotionDocument(
   pageId: string,
-  { includeToc = true }: BuildNotionDocumentOptions = {}
+  { includeToc = true }: BuildNotionDocumentOptions = {},
+  dependencies?: NotionBlocksDependencies
 ): Promise<NotionDocument | null> {
   if (!pageId) return null
 
-  const childBlocksByParentId = await collectDocumentBlocks(pageId)
+  const childBlocksByParentId = await collectDocumentBlocks(pageId, dependencies)
   return normalizeNotionDocument({
     pageId,
     childBlocksByParentId,

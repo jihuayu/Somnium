@@ -23,7 +23,7 @@ interface OgProxyPayload {
   } | null
 }
 
-function decodeEntities(input = ''): string {
+export function decodeEntities(input = ''): string {
   return input
     .replaceAll('&amp;', '&')
     .replaceAll('&lt;', '<')

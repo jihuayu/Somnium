@@ -22,3 +22,31 @@ export async function mapWithConcurrency<T, R>(
   await Promise.all(Array.from({ length: workerCount }, () => worker()))
   return results
 }
+
+export async function drainWithConcurrency<T>(
+  initialItems: T[],
+  concurrency: number,
+  worker: (item: T, enqueue: (nextItem: T) => void, index: number) => Promise<void>
+): Promise<void> {
+  const size = Math.max(1, Math.floor(concurrency || 1))
+  if (!initialItems.length) return
+
+  const queue = [...initialItems]
+  let nextIndex = 0
+
+  const enqueue = (nextItem: T) => {
+    queue.push(nextItem)
+  }
+
+  async function runner() {
+    while (true) {
+      const currentIndex = nextIndex
+      nextIndex += 1
+      if (currentIndex >= queue.length) break
+      await worker(queue[currentIndex], enqueue, currentIndex)
+    }
+  }
+
+  const workerCount = Math.min(size, queue.length)
+  await Promise.all(Array.from({ length: workerCount }, () => runner()))
+}

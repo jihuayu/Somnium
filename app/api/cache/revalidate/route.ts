@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath, revalidateTag } from 'next/cache'
+import { safeCompareStrings } from '@/lib/server/safeCompare'
 import {
   DEFAULT_CACHE_REVALIDATE_PATHS,
   DEFAULT_CACHE_REVALIDATE_TAGS
@@ -173,7 +174,7 @@ async function handle(req: NextRequest) {
   }
 
   const token = resolveRequestToken(req, body)
-  if (!token || token !== serverToken) {
+  if (!token || !safeCompareStrings(token, serverToken)) {
     return NextResponse.json(
       { error: 'Unauthorized' },
       { status: 401, headers: { 'Cache-Control': 'no-store' } }

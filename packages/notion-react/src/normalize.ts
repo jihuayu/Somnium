@@ -1,5 +1,13 @@
-import type { NotionBlock, NotionDocument } from './types'
+import type { NotionBlock, NotionBlockType, NotionDocument } from './types'
 import { buildTableOfContents } from './utils/notion'
+
+const KNOWN_BLOCK_TYPES = new Set<NotionBlockType>([
+  'paragraph', 'heading_1', 'heading_2', 'heading_3', 'quote', 'callout', 'equation', 'code', 'image',
+  'column', 'column_list', 'toggle', 'template', 'table_of_contents', 'link_to_page', 'child_page',
+  'child_database', 'synced_block', 'breadcrumb', 'embed', 'bookmark', 'video', 'audio', 'pdf', 'file',
+  'table', 'table_row', 'link_preview', 'divider', 'bulleted_list_item', 'numbered_list_item', 'to_do',
+  'unsupported'
+])
 
 export interface RawNotionBlock extends Record<string, unknown> {
   id?: string
@@ -42,8 +50,16 @@ function toNormalizedBlock(block: RawNotionBlock, nestedChildrenKey: string): No
   const id = `${block?.id || ''}`.trim()
   if (!id) return null
 
-  const normalizedType = `${block?.type || 'unsupported'}`.trim() || 'unsupported'
-  const normalizedBlock = { ...block, id, type: normalizedType }
+  const rawType = `${block?.type || 'unsupported'}`.trim() || 'unsupported'
+  const normalizedType = KNOWN_BLOCK_TYPES.has(rawType as NotionBlockType)
+    ? rawType as NotionBlockType
+    : 'unsupported'
+  const normalizedBlock = {
+    ...block,
+    id,
+    type: normalizedType,
+    ...(normalizedType === 'unsupported' ? { unsupported: { originalType: rawType } } : {})
+  }
   delete normalizedBlock[nestedChildrenKey]
 
   return normalizedBlock as NotionBlock

@@ -4,6 +4,7 @@ import api from '@/lib/server/notion-api'
 import { buildInternalSlugHref } from '@/lib/notion/pageLinkMap'
 import { getPageParentDataSourceId, mapPageToPost, normalizeNotionUuid } from '@/lib/notion/postMapper'
 import { config } from '@/lib/server/config'
+import { warnServerError } from '@/lib/server/logging'
 import {
   isNotionVerificationRequest,
   isValidNotionWebhookSignature,
@@ -33,7 +34,8 @@ async function resolvePageParentDataSourceId(pageId: string): Promise<string> {
   try {
     const page = await api.retrievePage(pageId)
     return getPageParentDataSourceId(page)
-  } catch {
+  } catch (error) {
+    warnServerError('notion-webhook:resolve-parent', error, { pageId })
     return ''
   }
 }
@@ -44,7 +46,8 @@ async function resolvePagePath(pageId: string): Promise<string> {
     const post = mapPageToPost(page)
     const slug = `${post?.slug || ''}`.trim()
     return slug ? buildInternalSlugHref(config.path || '', slug) : ''
-  } catch {
+  } catch (error) {
+    warnServerError('notion-webhook:resolve-path', error, { pageId })
     return ''
   }
 }

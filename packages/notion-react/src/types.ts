@@ -134,39 +134,38 @@ export interface NotionCaptionedPayload extends NotionFileReference {
   name?: string
 }
 
-export interface NotionBlockBase {
+export interface NotionBlockBase<TType extends NotionBlockType = NotionBlockType> {
   id: string
-  type: NotionBlockType | string
+  type: TType
   has_children?: boolean
-  [key: string]: unknown
 }
 
-export interface NotionParagraphBlock extends NotionBlockBase {
+export interface NotionParagraphBlock extends NotionBlockBase<'paragraph'> {
   type: 'paragraph'
   paragraph?: { rich_text?: NotionRichText[] }
 }
 
-export interface NotionHeading1Block extends NotionBlockBase {
+export interface NotionHeading1Block extends NotionBlockBase<'heading_1'> {
   type: 'heading_1'
   heading_1?: { rich_text?: NotionRichText[] }
 }
 
-export interface NotionHeading2Block extends NotionBlockBase {
+export interface NotionHeading2Block extends NotionBlockBase<'heading_2'> {
   type: 'heading_2'
   heading_2?: { rich_text?: NotionRichText[] }
 }
 
-export interface NotionHeading3Block extends NotionBlockBase {
+export interface NotionHeading3Block extends NotionBlockBase<'heading_3'> {
   type: 'heading_3'
   heading_3?: { rich_text?: NotionRichText[] }
 }
 
-export interface NotionQuoteBlock extends NotionBlockBase {
+export interface NotionQuoteBlock extends NotionBlockBase<'quote'> {
   type: 'quote'
   quote?: { rich_text?: NotionRichText[] }
 }
 
-export interface NotionCalloutBlock extends NotionBlockBase {
+export interface NotionCalloutBlock extends NotionBlockBase<'callout'> {
   type: 'callout'
   callout?: {
     rich_text?: NotionRichText[]
@@ -179,12 +178,12 @@ export interface NotionCalloutBlock extends NotionBlockBase {
   }
 }
 
-export interface NotionEquationBlock extends NotionBlockBase {
+export interface NotionEquationBlock extends NotionBlockBase<'equation'> {
   type: 'equation'
   equation?: { expression?: string }
 }
 
-export interface NotionCodeBlock extends NotionBlockBase {
+export interface NotionCodeBlock extends NotionBlockBase<'code'> {
   type: 'code'
   code?: {
     language?: string
@@ -193,35 +192,35 @@ export interface NotionCodeBlock extends NotionBlockBase {
   }
 }
 
-export interface NotionImageBlock extends NotionBlockBase {
+export interface NotionImageBlock extends NotionBlockBase<'image'> {
   type: 'image'
   image?: NotionCaptionedPayload
 }
 
-export interface NotionColumnBlock extends NotionBlockBase {
+export interface NotionColumnBlock extends NotionBlockBase<'column'> {
   type: 'column'
   column?: { width_ratio?: number }
 }
 
-export interface NotionColumnListBlock extends NotionBlockBase {
+export interface NotionColumnListBlock extends NotionBlockBase<'column_list'> {
   type: 'column_list'
 }
 
-export interface NotionToggleBlock extends NotionBlockBase {
+export interface NotionToggleBlock extends NotionBlockBase<'toggle'> {
   type: 'toggle'
   toggle?: { rich_text?: NotionRichText[] }
 }
 
-export interface NotionTemplateBlock extends NotionBlockBase {
+export interface NotionTemplateBlock extends NotionBlockBase<'template'> {
   type: 'template'
   template?: { rich_text?: NotionRichText[] }
 }
 
-export interface NotionTableOfContentsBlock extends NotionBlockBase {
+export interface NotionTableOfContentsBlock extends NotionBlockBase<'table_of_contents'> {
   type: 'table_of_contents'
 }
 
-export interface NotionLinkToPageBlock extends NotionBlockBase {
+export interface NotionLinkToPageBlock extends NotionBlockBase<'link_to_page'> {
   type: 'link_to_page'
   link_to_page?: {
     type?: 'page_id' | 'database_id' | 'block_id' | 'comment_id'
@@ -232,17 +231,17 @@ export interface NotionLinkToPageBlock extends NotionBlockBase {
   }
 }
 
-export interface NotionChildPageBlock extends NotionBlockBase {
+export interface NotionChildPageBlock extends NotionBlockBase<'child_page'> {
   type: 'child_page'
   child_page?: { title?: string }
 }
 
-export interface NotionChildDatabaseBlock extends NotionBlockBase {
+export interface NotionChildDatabaseBlock extends NotionBlockBase<'child_database'> {
   type: 'child_database'
   child_database?: { title?: string }
 }
 
-export interface NotionSyncedBlock extends NotionBlockBase {
+export interface NotionSyncedBlock extends NotionBlockBase<'synced_block'> {
   type: 'synced_block'
   synced_block?: {
     synced_from?: {
@@ -251,41 +250,41 @@ export interface NotionSyncedBlock extends NotionBlockBase {
   }
 }
 
-export interface NotionBreadcrumbBlock extends NotionBlockBase {
+export interface NotionBreadcrumbBlock extends NotionBlockBase<'breadcrumb'> {
   type: 'breadcrumb'
 }
 
-export interface NotionEmbedBlock extends NotionBlockBase {
+export interface NotionEmbedBlock extends NotionBlockBase<'embed'> {
   type: 'embed'
   embed?: { url?: string, caption?: NotionRichText[] }
 }
 
-export interface NotionBookmarkBlock extends NotionBlockBase {
+export interface NotionBookmarkBlock extends NotionBlockBase<'bookmark'> {
   type: 'bookmark'
   bookmark?: { url?: string, caption?: NotionRichText[] }
 }
 
-export interface NotionVideoBlock extends NotionBlockBase {
+export interface NotionVideoBlock extends NotionBlockBase<'video'> {
   type: 'video'
   video?: NotionCaptionedPayload
 }
 
-export interface NotionAudioBlock extends NotionBlockBase {
+export interface NotionAudioBlock extends NotionBlockBase<'audio'> {
   type: 'audio'
   audio?: NotionCaptionedPayload
 }
 
-export interface NotionPdfBlock extends NotionBlockBase {
+export interface NotionPdfBlock extends NotionBlockBase<'pdf'> {
   type: 'pdf'
   pdf?: NotionCaptionedPayload
 }
 
-export interface NotionFileBlock extends NotionBlockBase {
+export interface NotionFileBlock extends NotionBlockBase<'file'> {
   type: 'file'
   file?: NotionCaptionedPayload
 }
 
-export interface NotionTableBlock extends NotionBlockBase {
+export interface NotionTableBlock extends NotionBlockBase<'table'> {
   type: 'table'
   table?: {
     table_width?: number
@@ -294,35 +293,42 @@ export interface NotionTableBlock extends NotionBlockBase {
   }
 }
 
-export interface NotionTableRowBlock extends NotionBlockBase {
+export interface NotionTableRowBlock extends NotionBlockBase<'table_row'> {
   type: 'table_row'
   table_row?: { cells?: NotionRichText[][] }
 }
 
-export interface NotionLinkPreviewBlock extends NotionBlockBase {
+export interface NotionLinkPreviewBlock extends NotionBlockBase<'link_preview'> {
   type: 'link_preview'
   link_preview?: { url?: string }
 }
 
-export interface NotionDividerBlock extends NotionBlockBase {
+export interface NotionDividerBlock extends NotionBlockBase<'divider'> {
   type: 'divider'
 }
 
-export interface NotionBulletedListItemBlock extends NotionBlockBase {
+export interface NotionBulletedListItemBlock extends NotionBlockBase<'bulleted_list_item'> {
   type: 'bulleted_list_item'
   bulleted_list_item?: { rich_text?: NotionRichText[] }
 }
 
-export interface NotionNumberedListItemBlock extends NotionBlockBase {
+export interface NotionNumberedListItemBlock extends NotionBlockBase<'numbered_list_item'> {
   type: 'numbered_list_item'
   numbered_list_item?: { rich_text?: NotionRichText[] }
 }
 
-export interface NotionToDoBlock extends NotionBlockBase {
+export interface NotionToDoBlock extends NotionBlockBase<'to_do'> {
   type: 'to_do'
   to_do?: {
     rich_text?: NotionRichText[]
     checked?: boolean
+  }
+}
+
+export interface NotionUnsupportedBlock extends NotionBlockBase<'unsupported'> {
+  type: 'unsupported'
+  unsupported?: {
+    originalType?: string
   }
 }
 
@@ -359,7 +365,7 @@ export type NotionBlock =
   | NotionBulletedListItemBlock
   | NotionNumberedListItemBlock
   | NotionToDoBlock
-  | NotionBlockBase
+  | NotionUnsupportedBlock
 
 export interface TocItem {
   id: string

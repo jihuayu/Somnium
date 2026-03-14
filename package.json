@@ -8,8 +8,8 @@
     "url": "https://github.com/jihuayu/somnium.git"
   },
   "scripts": {
-    "dev": "pnpm run notion-react:build && next dev --webpack",
-    "build": "pnpm run notion-react:build && next build --webpack",
+    "dev": "pnpm run notion-react:build && next dev",
+    "build": "pnpm run notion-react:build && next build",
     "start": "next start",
     "test": "node --import tsx --test tests/**/*.test.ts packages/*/tests/**/*.test.ts",
     "lint": "eslint .",

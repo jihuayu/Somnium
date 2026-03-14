@@ -1,16 +1,17 @@
 const path = require('path')
 
+const notionReactAliases = {
+  '@': path.resolve(__dirname),
+  '@jihuayu/notion-react': path.resolve(__dirname, 'packages/notion-react/src/index.ts'),
+  '@jihuayu/notion-react/normalize': path.resolve(__dirname, 'packages/notion-react/src/normalize.ts'),
+  '@jihuayu/notion-react/rss': path.resolve(__dirname, 'packages/notion-react/src/rss.ts'),
+  '@jihuayu/notion-react/og': path.resolve(__dirname, 'packages/notion-react/src/og.ts'),
+  '@jihuayu/notion-react/styles.css': path.resolve(__dirname, 'packages/notion-react/src/styles.css')
+}
+
 module.exports = {
   typescript: {
     tsconfigPath: './tsconfig.build.json'
-  },
-  webpack: (config) => {
-    config.resolve.alias['@jihuayu/notion-react$'] = path.resolve(__dirname, 'packages/notion-react/src/index.ts')
-    config.resolve.alias['@jihuayu/notion-react/normalize'] = path.resolve(__dirname, 'packages/notion-react/src/normalize.ts')
-    config.resolve.alias['@jihuayu/notion-react/rss'] = path.resolve(__dirname, 'packages/notion-react/src/rss.ts')
-    config.resolve.alias['@jihuayu/notion-react/og'] = path.resolve(__dirname, 'packages/notion-react/src/og.ts')
-    config.resolve.alias['@jihuayu/notion-react/styles.css'] = path.resolve(__dirname, 'packages/notion-react/src/styles.css')
-    return config
   },
   images: {
     remotePatterns: [
@@ -36,13 +37,6 @@ module.exports = {
   },
   turbopack: {
     root: path.resolve(__dirname),
-    resolveAlias: {
-      '@': path.resolve(__dirname),
-      '@jihuayu/notion-react': path.resolve(__dirname, 'packages/notion-react/src/index.ts'),
-      '@jihuayu/notion-react/normalize': path.resolve(__dirname, 'packages/notion-react/src/normalize.ts'),
-      '@jihuayu/notion-react/rss': path.resolve(__dirname, 'packages/notion-react/src/rss.ts'),
-      '@jihuayu/notion-react/og': path.resolve(__dirname, 'packages/notion-react/src/og.ts'),
-      '@jihuayu/notion-react/styles.css': path.resolve(__dirname, 'packages/notion-react/src/styles.css')
-    }
+    resolveAlias: notionReactAliases
   }
 }

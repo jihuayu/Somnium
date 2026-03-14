@@ -46,50 +46,28 @@ export interface NotionWebhookResolution {
 const PAGE_EVENT_PREFIX = 'page.'
 const DATA_SOURCE_EVENT_PREFIX = 'data_source.'
 const DATABASE_EVENT_PREFIX = 'database.'
-const HOME_ONLY_PAGE_EVENT_TYPES = new Set([
-  'page.created',
-  'page.undeleted'
-])
-const SINGLE_PAGE_EVENT_TYPES = new Set([
-  'page.content_updated',
-  'page.properties_updated'
-])
-const HOME_AND_PAGE_EVENT_TYPES = new Set([
-  'page.deleted',
-  'page.moved'
-])
-const IGNORED_CONTAINER_CONTENT_EVENT_TYPES = new Set([
-  'data_source.content_updated',
-  'database.content_updated'
-])
-const BROAD_CONTAINER_SCHEMA_EVENT_TYPES = new Set([
-  'data_source.schema_updated',
-  'database.schema_updated'
-])
+type NotionWebhookEventAction = 'home' | 'page' | 'home-and-page' | 'ignore' | 'schema'
 
-const RELEVANT_PAGE_EVENT_TYPES = new Set([
-  'page.created',
-  'page.deleted',
-  'page.moved',
-  'page.properties_updated',
-  'page.content_updated',
-  'page.undeleted'
-])
-
-const RELEVANT_CONTAINER_EVENT_TYPES = new Set([
-  'data_source.created',
-  'data_source.deleted',
-  'data_source.moved',
-  'data_source.schema_updated',
-  'data_source.content_updated',
-  'data_source.undeleted',
-  'database.created',
-  'database.deleted',
-  'database.moved',
-  'database.schema_updated',
-  'database.content_updated',
-  'database.undeleted'
-])
+const EVENT_ACTIONS: Record<string, NotionWebhookEventAction> = {
+  'page.created': 'home',
+  'page.undeleted': 'home',
+  'page.content_updated': 'page',
+  'page.properties_updated': 'page',
+  'page.deleted': 'home-and-page',
+  'page.moved': 'home-and-page',
+  'data_source.created': 'home',
+  'data_source.deleted': 'home',
+  'data_source.moved': 'home',
+  'data_source.schema_updated': 'schema',
+  'data_source.content_updated': 'ignore',
+  'data_source.undeleted': 'home',
+  'database.created': 'home',
+  'database.deleted': 'home',
+  'database.moved': 'home',
+  'database.schema_updated': 'schema',
+  'database.content_updated': 'ignore',
+  'database.undeleted': 'home'
+}
 
 function normalizeVerificationToken(value: unknown): string {
   return typeof value === 'string' ? value.trim() : ''
@@ -148,11 +126,11 @@ function getParentRef(payload: NotionWebhookPayload): NotionParentRef {
 }
 
 function isRelevantPageEvent(eventType: string): boolean {
-  return RELEVANT_PAGE_EVENT_TYPES.has(eventType)
+  return eventType.startsWith(PAGE_EVENT_PREFIX) && eventType in EVENT_ACTIONS
 }
 
 function isRelevantContainerEvent(eventType: string): boolean {
-  return RELEVANT_CONTAINER_EVENT_TYPES.has(eventType)
+  return (eventType.startsWith(DATA_SOURCE_EVENT_PREFIX) || eventType.startsWith(DATABASE_EVENT_PREFIX)) && eventType in EVENT_ACTIONS
 }
 
 function getHomePath(basePath = ''): string {
@@ -190,66 +168,62 @@ async function resolveTargetsForEvent(
 ): Promise<{ tags: string[], paths: string[], reason: string, shouldRevalidate: boolean }> {
   const eventType = getEventType(payload)
   const homePath = getHomePath(options.basePath)
+  const action = EVENT_ACTIONS[eventType]
 
-  if (HOME_ONLY_PAGE_EVENT_TYPES.has(eventType)) {
-    return {
-      tags: [],
-      paths: [homePath],
-      reason: 'revalidate-home',
-      shouldRevalidate: true
+  switch (action) {
+    case 'home':
+      return {
+        tags: [],
+        paths: [homePath],
+        reason: 'revalidate-home',
+        shouldRevalidate: true
+      }
+    case 'page': {
+      const pagePath = await resolvePagePath(payload, options)
+      return pagePath
+        ? {
+            tags: [],
+            paths: [pagePath],
+            reason: 'revalidate-page',
+            shouldRevalidate: true
+          }
+        : {
+            tags: [],
+            paths: [],
+            reason: 'missing-page-path',
+            shouldRevalidate: false
+          }
     }
-  }
-
-  if (SINGLE_PAGE_EVENT_TYPES.has(eventType)) {
-    const pagePath = await resolvePagePath(payload, options)
-    return pagePath
-      ? {
-          tags: [],
-          paths: [pagePath],
-          reason: 'revalidate-page',
-          shouldRevalidate: true
-        }
-      : {
-          tags: [],
-          paths: [],
-          reason: 'missing-page-path',
-          shouldRevalidate: false
-        }
-  }
-
-  if (HOME_AND_PAGE_EVENT_TYPES.has(eventType)) {
-    const pagePath = await resolvePagePath(payload, options)
-    return {
-      tags: [],
-      paths: unique([homePath, pagePath]),
-      reason: 'revalidate-home-and-page',
-      shouldRevalidate: true
+    case 'home-and-page': {
+      const pagePath = await resolvePagePath(payload, options)
+      return {
+        tags: [],
+        paths: unique([homePath, pagePath]),
+        reason: 'revalidate-home-and-page',
+        shouldRevalidate: true
+      }
     }
-  }
-
-  if (IGNORED_CONTAINER_CONTENT_EVENT_TYPES.has(eventType)) {
-    return {
-      tags: [],
-      paths: [],
-      reason: 'ignored-container-content-event',
-      shouldRevalidate: false
-    }
-  }
-
-  if (BROAD_CONTAINER_SCHEMA_EVENT_TYPES.has(eventType)) {
-    return {
-      tags: unique(NOTION_WEBHOOK_REVALIDATE_TAGS),
-      paths: unique(NOTION_WEBHOOK_REVALIDATE_PATHS),
-      reason: 'revalidate-schema',
-      shouldRevalidate: true
-    }
-  }
-
-  return {
-    tags: [],
-    paths: [homePath],
-    reason: 'revalidate-home',
-    shouldRevalidate: true
+    case 'ignore':
+      return {
+        tags: [],
+        paths: [],
+        reason: 'ignored-container-content-event',
+        shouldRevalidate: false
+      }
+    case 'schema':
+      return {
+        tags: unique(NOTION_WEBHOOK_REVALIDATE_TAGS),
+        paths: unique(NOTION_WEBHOOK_REVALIDATE_PATHS),
+        reason: 'revalidate-schema',
+        shouldRevalidate: true
+      }
+    default:
+      return {
+        tags: [],
+        paths: [homePath],
+        reason: 'revalidate-home',
+        shouldRevalidate: true
+      }
   }
 }
 

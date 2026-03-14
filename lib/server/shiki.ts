@@ -1,5 +1,6 @@
 import { createHighlighter, type BundledLanguage, type Highlighter, type SpecialLanguage } from 'shiki'
 import { createHash } from 'node:crypto'
+import { warnServerError } from '@/lib/server/logging'
 
 export interface HighlightedCode {
   html: string
@@ -134,7 +135,9 @@ function readHighlightCache(key: string): { html: string, language: string } | n
 }
 
 function writeHighlightCache(key: string, value: { html: string, language: string }) {
-  if (highlightHtmlCache.size >= SHIKI_HIGHLIGHT_CACHE_MAX_ENTRIES) {
+  if (highlightHtmlCache.has(key)) {
+    highlightHtmlCache.delete(key)
+  } else if (highlightHtmlCache.size >= SHIKI_HIGHLIGHT_CACHE_MAX_ENTRIES) {
     const oldestKey = highlightHtmlCache.keys().next().value
     if (typeof oldestKey === 'string' && oldestKey) {
       highlightHtmlCache.delete(oldestKey)
@@ -188,7 +191,8 @@ export async function highlightCodeToHtml(source: string, rawLanguage: string): 
     }
     writeHighlightCache(cacheKey, { html: result.html, language: result.language })
     return result
-  } catch {
+  } catch (error) {
+    warnServerError('shiki:highlight', error, { language, displayLanguage })
     const result = {
       html: renderFallbackHtml(source),
       language: 'plaintext',

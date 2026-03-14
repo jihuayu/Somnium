@@ -20,6 +20,13 @@ interface SearchPostsOptions {
   includePages?: boolean
   limit?: number
   signal?: AbortSignal
+  dependencies?: SearchPostsDependencies
+}
+
+interface SearchPostsDependencies {
+  apiClient?: Pick<typeof api, 'retrieveDataSource' | 'queryDataSource'>
+  dataSourceId?: string
+  sortByDate?: boolean
 }
 
 interface DataSourcePropertyRef {
@@ -100,12 +107,30 @@ const getSearchPropertyRefsCached = unstable_cache(
   { revalidate: DATA_SOURCE_SCHEMA_CACHE_SECONDS, tags: ['notion-search-schema'] }
 )
 
-async function getSearchPropertyRefs(dataSourceId: string, signal?: AbortSignal): Promise<SearchPropertyRefs> {
+async function buildSearchPropertyRefs(
+  properties: Record<string, NotionDataSourceProperty | undefined>
+): Promise<SearchPropertyRefs> {
+  return {
+    title: findDataSourceProperty(properties, ['title', 'name'], 'title', true),
+    summary: findDataSourceProperty(properties, ['summary', 'description'], 'rich_text'),
+    tags: findDataSourceProperty(properties, ['tags', 'tag'], 'multi_select')
+  }
+}
+
+async function getSearchPropertyRefs(
+  dataSourceId: string,
+  signal?: AbortSignal,
+  apiClient: Pick<typeof api, 'retrieveDataSource'> = api
+): Promise<SearchPropertyRefs> {
   if (signal?.aborted) {
     throw new DOMException('Aborted', 'AbortError')
   }
 
-  const refs = await getSearchPropertyRefsCached(dataSourceId)
+  const refs = apiClient === api
+    ? await getSearchPropertyRefsCached(dataSourceId)
+    : await buildSearchPropertyRefs(
+        (await apiClient.retrieveDataSource(dataSourceId)).properties as Record<string, NotionDataSourceProperty | undefined> || {}
+      )
   if (signal?.aborted) {
     throw new DOMException('Aborted', 'AbortError')
   }
@@ -204,7 +229,8 @@ export async function searchPosts({
   tag = '',
   includePages = false,
   limit = 20,
-  signal
+  signal,
+  dependencies
 }: SearchPostsOptions): Promise<PostData[]> {
   const queryValue = query.trim()
   if (Array.from(queryValue).length < MIN_SEARCH_QUERY_LENGTH) return []
@@ -215,12 +241,13 @@ export async function searchPosts({
   const normalizedTag = normalizeForMatch(tagValue)
   if (!keywordTokensRaw.length && !tagValue) return []
 
-  const dataSourceId = normalizeNotionUuid(process.env.NOTION_DATA_SOURCE_ID)
+  const apiClient = dependencies?.apiClient || api
+  const dataSourceId = normalizeNotionUuid(dependencies?.dataSourceId || process.env.NOTION_DATA_SOURCE_ID)
   if (!dataSourceId) {
     throw new Error('Missing required environment variable: NOTION_DATA_SOURCE_ID')
   }
 
-  const refs = await getSearchPropertyRefs(dataSourceId, signal)
+  const refs = await getSearchPropertyRefs(dataSourceId, signal, apiClient)
   const filter = buildSearchFilter(keywordTokensRaw, tagValue, refs)
   const safeLimit = Math.max(1, Math.min(limit, MAX_LIMIT))
   const results: PostData[] = []
@@ -229,7 +256,7 @@ export async function searchPosts({
   let pageCount = 0
 
   do {
-    const response = await api.queryDataSource(dataSourceId, {
+    const response = await apiClient.queryDataSource(dataSourceId, {
       ...(filter ? { filter } : {}),
       page_size: 100,
       sorts: [
@@ -242,7 +269,7 @@ export async function searchPosts({
     }, signal)
 
     const pageResults = Array.isArray(response?.results) ? response.results : []
-    const mapped = pageResults.map(mapPageToPost).filter(post => post?.id)
+    const mapped = pageResults.map(page => mapPageToPost(page)).filter(post => post?.id)
     const filtered = filterPublishedPosts({ posts: mapped, includePages })
 
     for (const post of filtered) {
@@ -258,7 +285,7 @@ export async function searchPosts({
     pageCount += 1
   } while (nextCursor && pageCount < MAX_PAGE_FETCHES)
 
-  if (BLOG.sortByDate) {
+  if (dependencies?.sortByDate ?? BLOG.sortByDate) {
     results.sort((a, b) => b.date - a.date)
   }
 
