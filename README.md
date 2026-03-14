@@ -99,7 +99,7 @@ POST /api/notion/webhook
 3. 把它保存到 `NOTION_WEBHOOK_VERIFICATION_TOKEN`
 4. 回到 Notion 集成后台完成 Verify
 
-之后，当 Notion 页面内容、页面属性、Data Source 内容或结构发生变化时，站点会自动刷新相关缓存，包括首页、文章页、分页页、标签页、RSS 和 Tags API。
+之后，当 Notion 页面内容、页面属性、Data Source 内容或结构发生变化时，站点会自动刷新相关缓存，包括首页、文章页、分页页、标签页、RSS、Sitemap 和 Tags API。
 
 ## 常用脚本
 
@@ -117,7 +117,7 @@ layouts/             页面布局
 lib/                 数据获取与工具函数
 public/              静态资源
 styles/              全局样式
-config/              项目配置（如 blog.config.ts、next-sitemap）
+config/              项目配置（如 blog.config.ts）
 next.config.js       Next.js 配置
 ```
 

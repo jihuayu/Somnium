@@ -44,7 +44,6 @@
     "autoprefixer": "^10.4.27",
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.1.6",
-    "next-sitemap": "^4.2.3",
     "postcss": "^8.5.8",
     "storybook": "^8.6.18",
     "tailwindcss": "^4.2.1",
