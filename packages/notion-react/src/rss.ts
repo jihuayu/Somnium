@@ -108,41 +108,45 @@ function toDate(value: string | number | Date | undefined): Date {
   return Number.isNaN(parsed.getTime()) ? new Date() : parsed
 }
 
-function isLinkPreviewMention(item: NotionRichText): boolean {
-  const value = item as { type?: string, mention?: { type?: string } }
-  return value?.type === 'mention' && value?.mention?.type === 'link_preview'
+function getMentionPayload(item: NotionRichText): Record<string, unknown> | null {
+  const mention = (item as { mention?: unknown }).mention
+  return mention && typeof mention === 'object' ? mention as Record<string, unknown> : null
 }
 
-function isLinkMention(item: NotionRichText): boolean {
-  const value = item as { type?: string, mention?: { type?: string } }
-  return value?.type === 'mention' && value?.mention?.type === 'link_mention'
+function getTextLinkUrl(item: NotionRichText): string | null {
+  if (item.type !== 'text') return null
+  return (item as { text?: { link?: { url?: string } | null } }).text?.link?.url || null
+}
+
+function getEquationExpression(item: NotionRichText): string {
+  if (item.type !== 'equation') return ''
+  return (item as { equation?: { expression?: string } }).equation?.expression || ''
+}
+
+function isLinkPreviewMention(item: NotionRichText): item is Extract<NotionRichText, { type: 'mention' }> {
+  const mention = getMentionPayload(item)
+  return item.type === 'mention' && mention?.type === 'link_preview'
+}
+
+function isLinkMention(item: NotionRichText): item is Extract<NotionRichText, { type: 'mention' }> {
+  const mention = getMentionPayload(item)
+  return item.type === 'mention' && mention?.type === 'link_mention'
 }
 
 function getRichTextHref(item: NotionRichText): string | null {
-  if (!item || typeof item !== 'object') return null
-  const value = item as {
-    type?: string
-    href?: string | null
-    text?: { link?: { url?: string } | null }
-    mention?: {
-      link_preview?: { url?: string }
-      link_mention?: { href?: string }
-    }
-  }
-
-  if (value.type === 'text') {
-    return value.text?.link?.url || value.href || null
+  if (item.type === 'text') {
+    return getTextLinkUrl(item) || item.href || null
   }
 
   if (isLinkPreviewMention(item)) {
-    return value.mention?.link_preview?.url || value.href || null
+    return (item.mention as { link_preview?: { url?: string } | undefined } | undefined)?.link_preview?.url || item.href || null
   }
 
   if (isLinkMention(item)) {
-    return value.mention?.link_mention?.href || value.href || null
+    return (item.mention as { link_mention?: { href?: string } | undefined } | undefined)?.link_mention?.href || item.href || null
   }
 
-  return value.href || null
+  return item.href || null
 }
 
 function renderHrefHtml(href: string): string {
@@ -153,18 +157,12 @@ function renderHrefHtml(href: string): string {
 function renderRichTextHtml(richText: NotionRichText[] = [], options: RenderNotionHtmlOptions = {}): string {
   return richText
     .map((item) => {
-      const value = item as {
-        type?: string
-        plain_text?: string
-        equation?: { expression?: string }
-        annotations?: Record<string, boolean>
-      }
-      const raw = value?.type === 'equation'
-        ? value?.equation?.expression || ''
-        : value?.plain_text || ''
+      const raw = item.type === 'equation'
+        ? getEquationExpression(item)
+        : item.plain_text || ''
       if (!raw) return ''
 
-      const annotations = value?.annotations || {}
+      const annotations = item.annotations || {}
       let output = escapeHtml(raw).replace(/\r?\n/g, '<br/>')
 
       if (annotations.code) output = `<code>${output}</code>`

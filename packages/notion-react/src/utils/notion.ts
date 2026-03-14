@@ -208,20 +208,27 @@ export function getHeadingAnchorId(blockId: string): string {
 
 export function getCalloutIconUrl(icon: unknown): string {
   if (!icon || typeof icon !== 'object') return ''
-  const value = icon as {
-    type?: string
-    external?: { url?: string }
-    file?: { url?: string }
-  }
+  const value = icon as Partial<{
+    type: 'emoji' | 'external' | 'file'
+    external: { url?: string }
+    file: { url?: string }
+  }>
   if (value.type === 'external') return value.external?.url || ''
   if (value.type === 'file') return value.file?.url || ''
   return ''
 }
 
 function getBlockRichText(block: NotionBlock): NotionRichText[] {
-  if (!block || !block.type) return []
-  const payload = block[block.type] as { rich_text?: NotionRichText[] } | undefined
-  return payload?.rich_text || []
+  switch (block.type) {
+    case 'heading_1':
+      return block.heading_1?.rich_text || []
+    case 'heading_2':
+      return block.heading_2?.rich_text || []
+    case 'heading_3':
+      return block.heading_3?.rich_text || []
+    default:
+      return []
+  }
 }
 
 export function buildTableOfContents(document: NotionDocument): TocItem[] {

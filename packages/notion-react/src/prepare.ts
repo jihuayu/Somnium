@@ -144,26 +144,21 @@ function addPreviewCandidateUrl(candidateUrls: Set<string>, rawUrl: string | nul
   if (normalized) candidateUrls.add(normalized)
 }
 
+function isMentionRichText(item: NotionRichText): item is Extract<NotionRichText, { type: 'mention' }> {
+  return item.type === 'mention'
+}
+
 function collectPreviewUrlsFromRichText(richText: unknown, candidateUrls: Set<string>) {
   if (!Array.isArray(richText)) return
   for (const item of richText) {
     if (!item || typeof item !== 'object') continue
-    const value = item as {
-      type?: string
-      mention?: {
-        type?: string
-        link_preview?: { url?: string }
-        link_mention?: { href?: string }
-      }
-      href?: string
-    }
-    if (value.type !== 'mention') continue
-    if (value.mention?.type === 'link_preview') {
-      addPreviewCandidateUrl(candidateUrls, value.mention.link_preview?.url || value.href)
+    if (!isMentionRichText(item)) continue
+    if (item.mention?.type === 'link_preview') {
+      addPreviewCandidateUrl(candidateUrls, item.mention.link_preview?.url || item.href)
       continue
     }
-    if (value.mention?.type === 'link_mention') {
-      addPreviewCandidateUrl(candidateUrls, value.mention.link_mention?.href || value.href)
+    if (item.mention?.type === 'link_mention') {
+      addPreviewCandidateUrl(candidateUrls, item.mention.link_mention?.href || item.href)
     }
   }
 }
@@ -171,21 +166,10 @@ function collectPreviewUrlsFromRichText(richText: unknown, candidateUrls: Set<st
 function collectPageHrefCandidateIdsFromRichText(richText: unknown, candidateIds: Set<string>) {
   if (!Array.isArray(richText)) return
   for (const item of richText) {
-    if (!item || typeof item !== 'object') continue
-    const value = item as {
-      type?: string
-      href?: string
-      text?: { link?: { url?: string } | null }
-      mention?: {
-        type?: string
-        link_mention?: { href?: string }
-      }
-    }
-
     const rawCandidates = [
-      value.href,
-      value.type === 'text' ? value.text?.link?.url : '',
-      value.mention?.type === 'link_mention' ? value.mention.link_mention?.href : ''
+      item?.href,
+      item?.type === 'text' ? item.text?.link?.url : '',
+      item?.type === 'mention' && item.mention?.type === 'link_mention' ? item.mention.link_mention?.href : ''
     ]
 
     for (const rawCandidate of rawCandidates) {

@@ -54,18 +54,30 @@ function getUrlMentionLabel(href: string, textContent: string): string {
   return parsed.hostname || 'link'
 }
 
+function getMentionPayload(item: NotionRichText): Record<string, unknown> | null {
+  const mention = (item as { mention?: unknown }).mention
+  return mention && typeof mention === 'object' ? mention as Record<string, unknown> : null
+}
+
+function getTextLinkUrl(item: NotionRichText): string | null {
+  if (item.type !== 'text') return null
+  const text = (item as { text?: { link?: { url?: string } | null } }).text
+  const link = text?.link
+  return link?.url || null
+}
+
 function isLinkPreviewMention(item: NotionRichText): item is NotionRichTextLinkPreviewMention {
-  const mention = (item as NotionRichTextLinkPreviewMention).mention
+  const mention = getMentionPayload(item)
   return item.type === 'mention' && mention?.type === 'link_preview'
 }
 
 function isLinkMention(item: NotionRichText): item is NotionRichTextLinkMention {
-  const mention = (item as NotionRichTextLinkMention).mention
+  const mention = getMentionPayload(item)
   return item.type === 'mention' && mention?.type === 'link_mention'
 }
 
 function isDateMention(item: NotionRichText): item is NotionRichTextDateMention {
-  const mention = (item as NotionRichTextDateMention).mention
+  const mention = getMentionPayload(item)
   return item.type === 'mention' && mention?.type === 'date'
 }
 
@@ -74,7 +86,7 @@ function isEquationRichText(item: NotionRichText): item is NotionRichTextEquatio
 }
 
 function getRichTextLink(item: NotionRichText): string | null {
-  if (item.type === 'text') return (item as { text?: { link?: { url?: string } | null } }).text?.link?.url || null
+  if (item.type === 'text') return getTextLinkUrl(item)
   if (isLinkPreviewMention(item)) return item.mention?.link_preview?.url || item.href || null
   if (isLinkMention(item)) return item.mention?.link_mention?.href || item.href || null
   return item.href || null
