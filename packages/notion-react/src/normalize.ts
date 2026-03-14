@@ -46,13 +46,17 @@ function getNestedChildren(block: RawNotionBlock, nestedChildrenKey: string): Ra
   return Array.isArray(nestedChildren) ? nestedChildren as RawNotionBlock[] : []
 }
 
+function isKnownBlockType(value: string): value is NotionBlockType {
+  return KNOWN_BLOCK_TYPES.has(value as NotionBlockType)
+}
+
 function toNormalizedBlock(block: RawNotionBlock, nestedChildrenKey: string): NotionBlock | null {
   const id = `${block?.id || ''}`.trim()
   if (!id) return null
 
   const rawType = `${block?.type || 'unsupported'}`.trim() || 'unsupported'
-  const normalizedType = KNOWN_BLOCK_TYPES.has(rawType as NotionBlockType)
-    ? rawType as NotionBlockType
+  const normalizedType = isKnownBlockType(rawType)
+    ? rawType
     : 'unsupported'
   const normalizedBlock = {
     ...block,

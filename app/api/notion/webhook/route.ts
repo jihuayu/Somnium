@@ -4,7 +4,7 @@ import api from '@/lib/server/notion-api'
 import { buildInternalSlugHref } from '@/lib/notion/pageLinkMap'
 import { getPageParentDataSourceId, mapPageToPost, normalizeNotionUuid } from '@/lib/notion/postMapper'
 import { config } from '@/lib/server/config'
-import { warnServerError } from '@/lib/server/logging'
+import { infoServerEvent, warnServerError } from '@/lib/server/logging'
 import {
   isNotionVerificationRequest,
   isValidNotionWebhookSignature,
@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (!configuredVerificationToken && requestVerificationToken) {
-      console.info('[notion-webhook] Received verification token. Save it to NOTION_WEBHOOK_VERIFICATION_TOKEN before enabling production refreshes.')
+      infoServerEvent('notion-webhook', 'Received verification token. Save it to NOTION_WEBHOOK_VERIFICATION_TOKEN before enabling production refreshes.')
     }
 
     return jsonNoStore({
