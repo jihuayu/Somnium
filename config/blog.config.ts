@@ -1,3 +1,5 @@
+import type { BlogConfig } from '@/lib/config'
+
 const BLOG = {
   title: '浮生纪梦',
   author: '纪华裕',
@@ -15,6 +17,7 @@ const BLOG = {
   postsPerPage: 7,
   sortByDate: true,
   showAbout: true,
+  showArchive: true,
   autoCollapsedNavBar: false,
   ogImageGenerateURL: 'https://og-image-craigary.vercel.app',
   socialLink: 'https://twitter.com/jihuayu123',
@@ -38,7 +41,8 @@ const BLOG = {
     utterancesConfig: {
       repo: 'jihuayu/blog-gitalk'
     }
-  }
-}
+  },
+  isProd: process.env.NODE_ENV === 'production'
+} satisfies BlogConfig
 
-module.exports = BLOG
+export default BLOG

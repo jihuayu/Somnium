@@ -42,7 +42,7 @@ NOTION_WEBHOOK_VERIFICATION_TOKEN=your_notion_webhook_verification_token
 
 ### 3. 配置站点信息
 
-编辑 `config/blog.config.js`，重点修改：
+编辑 `config/blog.config.ts`，重点修改：
 
 - `title` / `author` / `link`
 - `description`
@@ -117,7 +117,7 @@ layouts/             页面布局
 lib/                 数据获取与工具函数
 public/              静态资源
 styles/              全局样式
-config/              项目配置（如 blog.config.js、next-sitemap）
+config/              项目配置（如 blog.config.ts、next-sitemap）
 next.config.js       Next.js 配置
 ```
 

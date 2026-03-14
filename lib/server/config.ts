@@ -1,8 +1,5 @@
-import { createRequire } from 'module'
 import type { BlogConfig } from '@/lib/config'
-
-const require = createRequire(import.meta.url)
-const config = require('../../config/blog.config.js') as BlogConfig
+import config from '@/config/blog.config'
 
 // If we need to strip out some private fields
 const clientConfig: BlogConfig = { ...config }
