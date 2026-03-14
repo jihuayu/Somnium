@@ -19,11 +19,11 @@ export async function GET() {
         }
       }
     )
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
       {
         tags: {},
-        error: error?.message || 'Failed to load tags'
+        error: error instanceof Error ? error.message : 'Failed to load tags'
       },
       { status: 500 }
     )

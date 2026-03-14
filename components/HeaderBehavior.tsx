@@ -12,11 +12,11 @@ export default function HeaderBehavior({ useSticky }: HeaderBehaviorProps) {
     const sentinelEl = document.getElementById('header-sentinel')
     const titleEl = document.getElementById('header-title')
 
-    if (!navEl || !sentinelEl) return
+    if (!navEl || !sentinelEl) return undefined
 
     if (!useSticky) {
       navEl.classList.add('remove-sticky')
-      return
+      return undefined
     }
 
     let collapseRaf: number | null = null

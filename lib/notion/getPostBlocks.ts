@@ -13,6 +13,11 @@ interface BuildNotionDocumentOptions {
   includeToc?: boolean
 }
 
+interface NotionChildBlock {
+  id?: string
+  has_children?: boolean
+}
+
 async function collectDocumentBlocks(pageId: string): Promise<Record<string, RawNotionBlockCollection>> {
   const childrenByParentId: Record<string, RawNotionBlockCollection> = {}
   const pendingParentIds: string[] = [pageId]
@@ -42,7 +47,7 @@ async function collectDocumentBlocks(pageId: string): Promise<Record<string, Raw
           .then((children) => {
             childrenByParentId[parentId] = children
 
-            for (const block of children as any[]) {
+            for (const block of children as NotionChildBlock[]) {
               const blockId = `${block?.id || ''}`.trim()
               if (!blockId) continue
 

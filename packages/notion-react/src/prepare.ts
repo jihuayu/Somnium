@@ -1,8 +1,32 @@
 import type {
   HighlightedCode,
   LinkPreviewMap,
+  NotionAudioBlock,
+  NotionBookmarkBlock,
+  NotionBlock,
+  NotionBulletedListItemBlock,
+  NotionCalloutBlock,
+  NotionCodeBlock,
+  NotionEmbedBlock,
+  NotionFileBlock,
+  NotionHeading1Block,
+  NotionHeading2Block,
+  NotionHeading3Block,
+  NotionImageBlock,
+  NotionLinkPreviewBlock,
+  NotionLinkToPageBlock,
+  NotionNumberedListItemBlock,
+  NotionParagraphBlock,
+  NotionPdfBlock,
+  NotionQuoteBlock,
+  NotionRichText,
   NotionDocument,
   NotionRenderModel,
+  NotionTableRowBlock,
+  NotionTemplateBlock,
+  NotionToDoBlock,
+  NotionToggleBlock,
+  NotionVideoBlock,
   PageHrefMap,
   PagePreviewMap,
   PrepareNotionRenderModelOptions
@@ -30,14 +54,86 @@ interface CodeBlockPayload {
   normalizedLanguage: string
 }
 
+function getBlockRichTextCollections(block: NotionBlock): NotionRichText[][] {
+  switch (block.type) {
+    case 'paragraph':
+      return [(block as NotionParagraphBlock).paragraph?.rich_text || []]
+    case 'heading_1':
+      return [(block as NotionHeading1Block).heading_1?.rich_text || []]
+    case 'heading_2':
+      return [(block as NotionHeading2Block).heading_2?.rich_text || []]
+    case 'heading_3':
+      return [(block as NotionHeading3Block).heading_3?.rich_text || []]
+    case 'quote':
+      return [(block as NotionQuoteBlock).quote?.rich_text || []]
+    case 'callout':
+      return [(block as NotionCalloutBlock).callout?.rich_text || []]
+    case 'bulleted_list_item':
+      return [(block as NotionBulletedListItemBlock).bulleted_list_item?.rich_text || []]
+    case 'numbered_list_item':
+      return [(block as NotionNumberedListItemBlock).numbered_list_item?.rich_text || []]
+    case 'to_do':
+      return [(block as NotionToDoBlock).to_do?.rich_text || []]
+    case 'toggle':
+      return [(block as NotionToggleBlock).toggle?.rich_text || []]
+    case 'template':
+      return [(block as NotionTemplateBlock).template?.rich_text || []]
+    case 'embed':
+      return [(block as NotionEmbedBlock).embed?.caption || []]
+    case 'bookmark':
+      return [(block as NotionBookmarkBlock).bookmark?.caption || []]
+    case 'image':
+      return [(block as NotionImageBlock).image?.caption || []]
+    case 'video':
+      return [(block as NotionVideoBlock).video?.caption || []]
+    case 'audio':
+      return [(block as NotionAudioBlock).audio?.caption || []]
+    case 'pdf':
+      return [(block as NotionPdfBlock).pdf?.caption || []]
+    case 'file':
+      return [(block as NotionFileBlock).file?.caption || []]
+    case 'code':
+      return [(block as NotionCodeBlock).code?.caption || []]
+    case 'table_row':
+      return (block as NotionTableRowBlock).table_row?.cells || []
+    default:
+      return []
+  }
+}
+
+function getPreviewTargetUrl(block: NotionBlock): string {
+  switch (block.type) {
+    case 'embed':
+      return `${(block as NotionEmbedBlock).embed?.url || ''}`.trim()
+    case 'bookmark':
+      return `${(block as NotionBookmarkBlock).bookmark?.url || ''}`.trim()
+    case 'link_preview':
+      return `${(block as NotionLinkPreviewBlock).link_preview?.url || ''}`.trim()
+    default:
+      return ''
+  }
+}
+
+function getLinkToPageTargetIds(block: NotionBlock): string[] {
+  if (block.type !== 'link_to_page') return []
+  const linkToPageBlock = block as NotionLinkToPageBlock
+  return [
+    linkToPageBlock.link_to_page?.page_id,
+    linkToPageBlock.link_to_page?.database_id,
+    linkToPageBlock.link_to_page?.block_id,
+    linkToPageBlock.link_to_page?.comment_id
+  ].filter((value): value is string => Boolean(value))
+}
+
 function collectCodeBlockPayloads(document: NotionDocument): CodeBlockPayload[] {
   const payloads: CodeBlockPayload[] = []
   for (const block of Object.values(document.blocksById || {})) {
     if (!block || block.type !== 'code') continue
-    const language = `${(block as any).code?.language || ''}`.trim()
+    const codeBlock = block as NotionCodeBlock
+    const language = `${codeBlock.code?.language || ''}`.trim()
     payloads.push({
       blockId: block.id,
-      source: getPlainTextFromRichText((block as any).code?.rich_text || []),
+      source: getPlainTextFromRichText(codeBlock.code?.rich_text || []),
       language,
       normalizedLanguage: normalizeCodeLanguage(language)
     })
@@ -106,44 +202,14 @@ function collectPreviewCandidateUrls(document: NotionDocument): string[] {
   for (const block of Object.values(document.blocksById || {})) {
     if (!block || typeof block !== 'object') continue
 
-    switch (block.type) {
-      case 'embed':
-        addPreviewCandidateUrl(candidateUrls, (block as any).embed?.url)
-        break
-      case 'bookmark':
-        addPreviewCandidateUrl(candidateUrls, (block as any).bookmark?.url)
-        break
-      case 'link_preview':
-        addPreviewCandidateUrl(candidateUrls, (block as any).link_preview?.url)
-        break
-      case 'table_row':
-        for (const cell of (block as any).table_row?.cells || []) {
-          collectPreviewUrlsFromRichText(cell, candidateUrls)
-        }
-        break
-      default:
-        break
+    const previewUrl = getPreviewTargetUrl(block)
+    if (previewUrl) {
+      addPreviewCandidateUrl(candidateUrls, previewUrl)
     }
 
-    collectPreviewUrlsFromRichText((block as Record<string, any>).paragraph?.rich_text, candidateUrls)
-    collectPreviewUrlsFromRichText((block as Record<string, any>).heading_1?.rich_text, candidateUrls)
-    collectPreviewUrlsFromRichText((block as Record<string, any>).heading_2?.rich_text, candidateUrls)
-    collectPreviewUrlsFromRichText((block as Record<string, any>).heading_3?.rich_text, candidateUrls)
-    collectPreviewUrlsFromRichText((block as Record<string, any>).quote?.rich_text, candidateUrls)
-    collectPreviewUrlsFromRichText((block as Record<string, any>).callout?.rich_text, candidateUrls)
-    collectPreviewUrlsFromRichText((block as Record<string, any>).bulleted_list_item?.rich_text, candidateUrls)
-    collectPreviewUrlsFromRichText((block as Record<string, any>).numbered_list_item?.rich_text, candidateUrls)
-    collectPreviewUrlsFromRichText((block as Record<string, any>).to_do?.rich_text, candidateUrls)
-    collectPreviewUrlsFromRichText((block as Record<string, any>).toggle?.rich_text, candidateUrls)
-    collectPreviewUrlsFromRichText((block as Record<string, any>).template?.rich_text, candidateUrls)
-    collectPreviewUrlsFromRichText((block as Record<string, any>).embed?.caption, candidateUrls)
-    collectPreviewUrlsFromRichText((block as Record<string, any>).bookmark?.caption, candidateUrls)
-    collectPreviewUrlsFromRichText((block as Record<string, any>).image?.caption, candidateUrls)
-    collectPreviewUrlsFromRichText((block as Record<string, any>).video?.caption, candidateUrls)
-    collectPreviewUrlsFromRichText((block as Record<string, any>).audio?.caption, candidateUrls)
-    collectPreviewUrlsFromRichText((block as Record<string, any>).pdf?.caption, candidateUrls)
-    collectPreviewUrlsFromRichText((block as Record<string, any>).file?.caption, candidateUrls)
-    collectPreviewUrlsFromRichText((block as Record<string, any>).code?.caption, candidateUrls)
+    for (const richText of getBlockRichTextCollections(block)) {
+      collectPreviewUrlsFromRichText(richText, candidateUrls)
+    }
   }
   return Array.from(candidateUrls)
 }
@@ -152,45 +218,17 @@ function collectPageHrefCandidateIds(document: NotionDocument): string[] {
   const ids = new Set<string>()
   for (const block of Object.values(document.blocksById || {})) {
     if (!block) continue
-    if (block.type === 'link_to_page') {
-      for (const raw of [
-        (block as any).link_to_page?.page_id,
-        (block as any).link_to_page?.database_id,
-        (block as any).link_to_page?.block_id,
-        (block as any).link_to_page?.comment_id
-      ]) {
-        const normalized = normalizeNotionEntityId(raw)
-        if (normalized) ids.add(normalized)
-      }
+    for (const raw of getLinkToPageTargetIds(block)) {
+      const normalized = normalizeNotionEntityId(raw)
+      if (normalized) ids.add(normalized)
     }
     if (block.type === 'child_page' || block.type === 'child_database') {
       const normalized = normalizeNotionEntityId(block.id)
       if (normalized) ids.add(normalized)
     }
 
-    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).paragraph?.rich_text, ids)
-    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).heading_1?.rich_text, ids)
-    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).heading_2?.rich_text, ids)
-    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).heading_3?.rich_text, ids)
-    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).quote?.rich_text, ids)
-    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).callout?.rich_text, ids)
-    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).bulleted_list_item?.rich_text, ids)
-    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).numbered_list_item?.rich_text, ids)
-    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).to_do?.rich_text, ids)
-    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).toggle?.rich_text, ids)
-    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).template?.rich_text, ids)
-    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).embed?.caption, ids)
-    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).bookmark?.caption, ids)
-    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).image?.caption, ids)
-    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).video?.caption, ids)
-    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).audio?.caption, ids)
-    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).pdf?.caption, ids)
-    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).file?.caption, ids)
-    collectPageHrefCandidateIdsFromRichText((block as Record<string, any>).code?.caption, ids)
-    if (block.type === 'table_row') {
-      for (const cell of (block as any).table_row?.cells || []) {
-        collectPageHrefCandidateIdsFromRichText(cell, ids)
-      }
+    for (const richText of getBlockRichTextCollections(block)) {
+      collectPageHrefCandidateIdsFromRichText(richText, ids)
     }
   }
   return Array.from(ids)

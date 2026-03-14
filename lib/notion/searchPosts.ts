@@ -8,7 +8,7 @@ import {
   MIN_SEARCH_QUERY_LENGTH
 } from '@/lib/search/constants'
 import filterPublishedPosts, { PostData } from './filterPublishedPosts'
-import { mapPageToPost, normalizeNotionUuid } from './postMapper'
+import { mapPageToPost, normalizeNotionUuid, type NotionPageLike } from './postMapper'
 
 const MAX_PAGE_FETCHES = 10
 const MAX_LIMIT = 50
@@ -25,6 +25,11 @@ interface SearchPostsOptions {
 interface DataSourcePropertyRef {
   id: string
   type: string
+}
+
+interface NotionDataSourceProperty {
+  id?: string
+  type?: string
 }
 
 interface SearchPropertyRefs {
@@ -55,7 +60,7 @@ function tokenizeKeyword(value: string): string[] {
 }
 
 function findDataSourceProperty(
-  properties: Record<string, any>,
+  properties: Record<string, NotionDataSourceProperty | undefined>,
   candidateNames: string[],
   expectedType: string,
   allowFallbackByType = false
@@ -84,8 +89,7 @@ function findDataSourceProperty(
 
 const getSearchPropertyRefsCached = unstable_cache(
   async (dataSourceId: string): Promise<SearchPropertyRefs> => {
-    const dataSource = await api.retrieveDataSource(dataSourceId)
-    const properties = dataSource?.properties || {}
+    const properties = (await api.retrieveDataSource(dataSourceId)).properties as Record<string, NotionDataSourceProperty | undefined> || {}
     return {
       title: findDataSourceProperty(properties, ['title', 'name'], 'title', true),
       summary: findDataSourceProperty(properties, ['summary', 'description'], 'rich_text'),
@@ -237,7 +241,7 @@ export async function searchPosts({
       ...(nextCursor ? { start_cursor: nextCursor } : {})
     }, signal)
 
-    const pageResults = (response?.results || []) as any[]
+    const pageResults = Array.isArray(response?.results) ? response.results : []
     const mapped = pageResults.map(mapPageToPost).filter(post => post?.id)
     const filtered = filterPublishedPosts({ posts: mapped, includePages })
 

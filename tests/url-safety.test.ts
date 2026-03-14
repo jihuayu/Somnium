@@ -38,16 +38,22 @@ test('fetchCoverDataUrl rejects private source urls before fetch', async () => {
 test('fetchCoverDataUrl rejects redirects that end on private hosts', async () => {
   const originalFetch = globalThis.fetch
 
-  globalThis.fetch = (async () => ({
-    ok: true,
-    url: 'http://127.0.0.1/final.png',
+  globalThis.fetch = (async () => new Response(Uint8Array.from([1, 2, 3, 4]).buffer, {
     headers: new Headers({
       'content-type': 'image/png',
       'content-length': '4'
-    }),
-    body: null,
-    arrayBuffer: async () => Uint8Array.from([1, 2, 3, 4]).buffer
+    })
   })) as typeof fetch
+
+  const fetchWithRedirectUrl = globalThis.fetch
+  globalThis.fetch = (async (...args: Parameters<typeof fetch>) => {
+    const response = await fetchWithRedirectUrl(...args)
+    Object.defineProperty(response, 'url', {
+      value: 'http://127.0.0.1/final.png',
+      configurable: true
+    })
+    return response
+  }) as typeof fetch
 
   try {
     const result = await fetchCoverDataUrl('https://example.com/cover.png')

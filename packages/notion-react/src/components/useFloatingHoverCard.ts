@@ -100,7 +100,7 @@ export function useFloatingHoverCard<TriggerEl extends HTMLElement, CardEl exten
   }, [clearUpdateRaf, updatePosition])
 
   useEffect(() => {
-    if (!open || !config.enabled) return
+    if (!open || !config.enabled) return undefined
 
     scheduleUpdatePosition()
     const handleViewportChange = () => scheduleUpdatePosition()

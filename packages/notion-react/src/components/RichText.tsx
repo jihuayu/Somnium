@@ -3,6 +3,10 @@ import cn from 'classnames'
 import type {
   DateMentionProps,
   LinkPreviewMap,
+  NotionRichTextDateMention,
+  NotionRichTextEquation,
+  NotionRichTextLinkMention,
+  NotionRichTextLinkPreviewMention,
   NotionRendererComponents,
   NotionRichText,
   PageHrefMap,
@@ -50,22 +54,41 @@ function getUrlMentionLabel(href: string, textContent: string): string {
   return parsed.hostname || 'link'
 }
 
+function isLinkPreviewMention(item: NotionRichText): item is NotionRichTextLinkPreviewMention {
+  const mention = (item as NotionRichTextLinkPreviewMention).mention
+  return item.type === 'mention' && mention?.type === 'link_preview'
+}
+
+function isLinkMention(item: NotionRichText): item is NotionRichTextLinkMention {
+  const mention = (item as NotionRichTextLinkMention).mention
+  return item.type === 'mention' && mention?.type === 'link_mention'
+}
+
+function isDateMention(item: NotionRichText): item is NotionRichTextDateMention {
+  const mention = (item as NotionRichTextDateMention).mention
+  return item.type === 'mention' && mention?.type === 'date'
+}
+
+function isEquationRichText(item: NotionRichText): item is NotionRichTextEquation {
+  return item.type === 'equation'
+}
+
 function getRichTextLink(item: NotionRichText): string | null {
-  if (item.type === 'text') return (item as any).text?.link?.url || null
-  if (item.type === 'mention' && (item as any).mention?.type === 'link_preview') return (item as any).mention.link_preview?.url || item.href || null
-  if (item.type === 'mention' && (item as any).mention?.type === 'link_mention') return (item as any).mention.link_mention?.href || item.href || null
+  if (item.type === 'text') return (item as { text?: { link?: { url?: string } | null } }).text?.link?.url || null
+  if (isLinkPreviewMention(item)) return item.mention?.link_preview?.url || item.href || null
+  if (isLinkMention(item)) return item.mention?.link_mention?.href || item.href || null
   return item.href || null
 }
 
 function getUrlMentionTitle(item: NotionRichText): string {
-  return item.type === 'mention' && (item as any).mention?.type === 'link_mention'
-    ? `${(item as any).mention.link_mention?.title || ''}`.trim()
+  return isLinkMention(item)
+    ? `${item.mention?.link_mention?.title || ''}`.trim()
     : ''
 }
 
 function getUrlMentionIconUrl(item: NotionRichText): string {
-  return item.type === 'mention' && (item as any).mention?.type === 'link_mention'
-    ? `${(item as any).mention.link_mention?.icon_url || ''}`.trim()
+  return isLinkMention(item)
+    ? `${item.mention?.link_mention?.icon_url || ''}`.trim()
     : ''
 }
 
@@ -84,8 +107,8 @@ function getUrlMentionPreviewData(
 ): UrlMentionPreviewData | null {
   if (!href) return null
 
-  if (item.type === 'mention' && (item as any).mention?.type === 'link_mention') {
-    const payload = (item as any).mention.link_mention || {}
+  if (isLinkMention(item)) {
+    const payload = item.mention?.link_mention || {}
     return {
       href: `${payload.href || href}`.trim() || href,
       title: `${payload.title || ''}`.trim() || label,
@@ -152,8 +175,8 @@ export function RichText({ richText = [], linkPreviewMap = {}, pageHrefMap = {},
   return (
     <>
       {richText.map((item, index) => {
-        const textContent = item.type === 'equation'
-          ? (item as any).equation?.expression || ''
+        const textContent = isEquationRichText(item)
+          ? item.equation?.expression || ''
           : item.plain_text || ''
         const rawHref = getRichTextLink(item)
         const href = rewriteNotionPageHref(rawHref, pageHrefMap)
@@ -176,8 +199,8 @@ export function RichText({ richText = [], linkPreviewMap = {}, pageHrefMap = {},
           </span>
         )
 
-        if (item.type === 'mention' && (item as any).mention?.type === 'date') {
-          const date = (item as any).mention.date || {}
+        if (isDateMention(item)) {
+          const date = item.mention?.date || {}
           const props: DateMentionProps = {
             start: `${date.start || ''}`.trim(),
             end: `${date.end || ''}`.trim(),
@@ -195,7 +218,7 @@ export function RichText({ richText = [], linkPreviewMap = {}, pageHrefMap = {},
 
         if (!href) return <Fragment key={`${index}-${textContent}`}>{content}</Fragment>
 
-        if (item.type === 'mention' && ((item as any).mention?.type === 'link_preview' || (item as any).mention?.type === 'link_mention')) {
+        if (isLinkPreviewMention(item) || isLinkMention(item)) {
           const mentionTitle = getUrlMentionTitle(item)
           const iconUrl = getUrlMentionIconUrl(item)
           const label = mentionTitle || getUrlMentionLabel(href, textContent)

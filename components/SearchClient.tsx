@@ -58,8 +58,8 @@ export default function SearchClient({
   }, [tags])
 
   useEffect(() => {
-    if (!loadTagsRemotely) return
-    if (Object.keys(tags || {}).length > 0) return
+    if (!loadTagsRemotely) return undefined
+    if (Object.keys(tags || {}).length > 0) return undefined
 
     const controller = new AbortController()
     fetch('/api/tags', {
@@ -84,14 +84,14 @@ export default function SearchClient({
   }, [loadTagsRemotely, tags])
 
   useEffect(() => {
-    if (!shouldUseNotionSearch) return
+    if (!shouldUseNotionSearch) return undefined
 
     const keyword = searchValue.trim()
     if (!keyword || !hasMinQueryLength(keyword)) {
       setRemotePosts([])
       setIsSearching(false)
       setSearchError('')
-      return
+      return undefined
     }
 
     const controller = new AbortController()

@@ -1,3 +1,6 @@
+import type { NotionPageLike } from '@/lib/notion/postMapper'
+import type { RawNotionBlock } from '@jihuayu/notion-react/normalize'
+
 const API_BASE_URL = 'https://api.notion.com/v1'
 const DEFAULT_API_VERSION = '2025-09-03'
 const MAX_RETRIES = 3
@@ -14,10 +17,11 @@ function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-function normalizeErrorMessage(payload: any, status: number): string {
-  if (!payload) return `Notion request failed with status ${status}`
-  if (typeof payload.message === 'string' && payload.message.length) {
-    return payload.message
+function normalizeErrorMessage(payload: unknown, status: number): string {
+  if (!payload || typeof payload !== 'object') return `Notion request failed with status ${status}`
+  const message = (payload as NotionErrorPayload).message
+  if (typeof message === 'string' && message.length) {
+    return message
   }
   return `Notion request failed with status ${status}`
 }
@@ -28,7 +32,43 @@ interface RequestOptions {
   signal?: AbortSignal
 }
 
-async function notionRequest(path: string, { method = 'GET', body, signal }: RequestOptions = {}): Promise<any> {
+interface NotionErrorPayload {
+  message?: string | null
+}
+
+interface NotionApiError extends Error {
+  status?: number
+  payload?: unknown
+}
+
+interface NotionPaginatedResponse<T> {
+  object?: 'list' | string
+  results?: T[] | null
+  has_more?: boolean
+  next_cursor?: string | null
+}
+
+interface NotionDataSourcePropertySchema {
+  id?: string
+  type?: string
+  [key: string]: unknown
+}
+
+export interface NotionDataSourceResponse {
+  id?: string
+  properties?: Record<string, NotionDataSourcePropertySchema | undefined>
+  [key: string]: unknown
+}
+
+export type NotionPageResponse = NotionPageLike
+export type NotionDataSourceQueryResponse = NotionPaginatedResponse<NotionPageResponse>
+export type NotionSearchResponse = NotionPaginatedResponse<Record<string, unknown>>
+export type NotionBlockChildrenResponse = NotionPaginatedResponse<RawNotionBlock>
+
+async function notionRequest<T = unknown>(
+  path: string,
+  { method = 'GET', body, signal }: RequestOptions = {}
+): Promise<T> {
   const token = getRequiredEnv('NOTION_INTEGRATION_TOKEN')
   const notionVersion = process.env.NOTION_API_VERSION || DEFAULT_API_VERSION
   const url = `${API_BASE_URL}${path}`
@@ -46,9 +86,9 @@ async function notionRequest(path: string, { method = 'GET', body, signal }: Req
       body: body ? JSON.stringify(body) : undefined
     })
 
-    let payload: any = null
+    let payload: T | null = null
     try {
-      payload = await response.json()
+      payload = await response.json() as T
     } catch {
       payload = null
     }
@@ -70,27 +110,27 @@ async function notionRequest(path: string, { method = 'GET', body, signal }: Req
       continue
     }
 
-    const error: any = new Error(normalizeErrorMessage(payload, response.status))
+    const error: NotionApiError = new Error(normalizeErrorMessage(payload, response.status))
     error.status = response.status
     error.payload = payload
     throw error
   }
 }
 
-async function retrieveDataSource(dataSourceId: string, signal?: AbortSignal): Promise<any> {
-  return notionRequest(`/data_sources/${dataSourceId}`, { signal })
+async function retrieveDataSource(dataSourceId: string, signal?: AbortSignal): Promise<NotionDataSourceResponse> {
+  return notionRequest<NotionDataSourceResponse>(`/data_sources/${dataSourceId}`, { signal })
 }
 
-async function retrievePage(pageId: string, signal?: AbortSignal): Promise<any> {
-  return notionRequest(`/pages/${pageId}`, { signal })
+async function retrievePage(pageId: string, signal?: AbortSignal): Promise<NotionPageResponse> {
+  return notionRequest<NotionPageResponse>(`/pages/${pageId}`, { signal })
 }
 
 async function queryDataSource(
   dataSourceId: string,
   body: Record<string, unknown> = {},
   signal?: AbortSignal
-): Promise<any> {
-  return notionRequest(`/data_sources/${dataSourceId}/query`, {
+): Promise<NotionDataSourceQueryResponse> {
+  return notionRequest<NotionDataSourceQueryResponse>(`/data_sources/${dataSourceId}/query`, {
     method: 'POST',
     body,
     signal
@@ -101,8 +141,8 @@ async function queryAllDataSourcePages(
   dataSourceId: string,
   body: Record<string, unknown> = {},
   signal?: AbortSignal
-): Promise<any[]> {
-  const results: any[] = []
+): Promise<NotionPageResponse[]> {
+  const results: NotionPageResponse[] = []
   let nextCursor: string | null = null
 
   do {
@@ -112,15 +152,15 @@ async function queryAllDataSourcePages(
       ...(nextCursor ? { start_cursor: nextCursor } : {})
     }, signal)
 
-    results.push(...(response?.results || []))
+    results.push(...(response.results || []))
     nextCursor = response?.has_more ? response?.next_cursor : null
   } while (nextCursor)
 
   return results
 }
 
-async function search(body: Record<string, unknown> = {}, signal?: AbortSignal): Promise<any> {
-  return notionRequest('/search', {
+async function search(body: Record<string, unknown> = {}, signal?: AbortSignal): Promise<NotionSearchResponse> {
+  return notionRequest<NotionSearchResponse>('/search', {
     method: 'POST',
     body,
     signal
@@ -131,23 +171,23 @@ async function listBlockChildren(
   blockId: string,
   startCursor: string | null = null,
   signal?: AbortSignal
-): Promise<any> {
+): Promise<NotionBlockChildrenResponse> {
   const searchParams = new URLSearchParams({
     page_size: '100'
   })
   if (startCursor) {
     searchParams.set('start_cursor', startCursor)
   }
-  return notionRequest(`/blocks/${blockId}/children?${searchParams.toString()}`, { signal })
+  return notionRequest<NotionBlockChildrenResponse>(`/blocks/${blockId}/children?${searchParams.toString()}`, { signal })
 }
 
-async function listAllBlockChildren(blockId: string, signal?: AbortSignal): Promise<any[]> {
-  const results: any[] = []
+async function listAllBlockChildren(blockId: string, signal?: AbortSignal): Promise<RawNotionBlock[]> {
+  const results: RawNotionBlock[] = []
   let nextCursor: string | null = null
 
   do {
     const response = await listBlockChildren(blockId, nextCursor, signal)
-    results.push(...(response?.results || []))
+    results.push(...(response.results || []))
     nextCursor = response?.has_more ? response?.next_cursor : null
   } while (nextCursor)
 

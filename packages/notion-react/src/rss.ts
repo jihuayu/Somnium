@@ -1,5 +1,35 @@
 import { Feed } from 'feed'
-import type { NotionBlock, NotionDocument, NotionRichText } from './types'
+import type {
+  NotionAudioBlock,
+  NotionBlock,
+  NotionBookmarkBlock,
+  NotionBulletedListItemBlock,
+  NotionCalloutBlock,
+  NotionChildDatabaseBlock,
+  NotionChildPageBlock,
+  NotionCodeBlock,
+  NotionDocument,
+  NotionEmbedBlock,
+  NotionEquationBlock,
+  NotionFileBlock,
+  NotionHeading1Block,
+  NotionHeading2Block,
+  NotionHeading3Block,
+  NotionImageBlock,
+  NotionLinkPreviewBlock,
+  NotionLinkToPageBlock,
+  NotionNumberedListItemBlock,
+  NotionParagraphBlock,
+  NotionPdfBlock,
+  NotionQuoteBlock,
+  NotionRichText,
+  NotionTableBlock,
+  NotionTableRowBlock,
+  NotionTemplateBlock,
+  NotionToDoBlock
+  ,NotionToggleBlock
+  ,NotionVideoBlock
+} from './types'
 import {
   escapeHtml,
   getFileBlockName,
@@ -153,18 +183,36 @@ function renderRichTextHtml(richText: NotionRichText[] = [], options: RenderNoti
     .join('')
 }
 
+function isTableRowBlock(block: NotionBlock | undefined): block is NotionTableRowBlock {
+  return block?.type === 'table_row'
+}
+
+function isListItemBlock(block: NotionBlock | undefined): block is NotionBulletedListItemBlock | NotionNumberedListItemBlock | NotionToDoBlock {
+  return block?.type === 'bulleted_list_item' || block?.type === 'numbered_list_item' || block?.type === 'to_do'
+}
+
+function getListItemRichText(block: NotionBulletedListItemBlock | NotionNumberedListItemBlock | NotionToDoBlock): NotionRichText[] {
+  switch (block.type) {
+    case 'bulleted_list_item':
+      return block.bulleted_list_item?.rich_text || []
+    case 'numbered_list_item':
+      return block.numbered_list_item?.rich_text || []
+    case 'to_do':
+      return block.to_do?.rich_text || []
+  }
+}
+
 function renderListItemHtml(
-  block: NotionBlock,
+  block: NotionBulletedListItemBlock | NotionNumberedListItemBlock | NotionToDoBlock,
   blocksById: Record<string, NotionBlock>,
   childrenById: Record<string, string[]>,
   options: RenderNotionHtmlOptions
 ): string {
-  const payload = (block as any)[block.type] || {}
-  const text = renderRichTextHtml(payload.rich_text || [], options)
+  const text = renderRichTextHtml(getListItemRichText(block), options)
   const childHtml = renderBlockListHtml(childrenById[block.id] || [], blocksById, childrenById, options)
 
   if (block.type === 'to_do') {
-    const marker = payload.checked ? '&#x2611;' : '&#x2610;'
+    const marker = block.to_do?.checked ? '&#x2611;' : '&#x2610;'
     return `<li>${marker} ${text}${childHtml}</li>`
   }
 
@@ -172,19 +220,19 @@ function renderListItemHtml(
 }
 
 function renderTableHtml(
-  block: NotionBlock,
+  block: NotionTableBlock,
   blocksById: Record<string, NotionBlock>,
   childrenById: Record<string, string[]>,
   options: RenderNotionHtmlOptions
 ): string {
-  const table = (block as any).table || {}
+  const table = block.table || {}
   const rows = (childrenById[block.id] || [])
     .map(id => blocksById[id])
-    .filter(row => row?.type === 'table_row')
+    .filter(isTableRowBlock)
 
   const widthFromSchema = Number(table.table_width) || 0
   const widthFromRows = rows.reduce((max, row) => {
-    const cells = (row as any)?.table_row?.cells
+    const cells = row.table_row?.cells
     return Math.max(max, Array.isArray(cells) ? cells.length : 0)
   }, 0)
   const columnCount = Math.max(widthFromSchema, widthFromRows)
@@ -192,7 +240,7 @@ function renderTableHtml(
   if (!rows.length || !columnCount) return ''
 
   const body = rows.map((row, rowIndex) => {
-    const cells = Array.isArray((row as any)?.table_row?.cells) ? (row as any).table_row.cells : []
+    const cells = Array.isArray(row.table_row?.cells) ? row.table_row.cells : []
     const rowHtml = Array.from({ length: columnCount }).map((_, colIndex) => {
       const cellRichText = cells[colIndex] || []
       const content = renderRichTextHtml(cellRichText, options) || '&nbsp;'
@@ -206,13 +254,16 @@ function renderTableHtml(
   return `<table><tbody>${body}</tbody></table>`
 }
 
-function renderPageReferenceHtml(block: NotionBlock, pageHrefMap: Record<string, string>): string {
-  const data = block as any
-  const rawTargetId = `${data.link_to_page?.page_id || data.link_to_page?.database_id || data.link_to_page?.block_id || data.link_to_page?.comment_id || block.id || ''}`.trim()
+function renderPageReferenceHtml(block: NotionLinkToPageBlock | Extract<NotionBlock, { type: 'child_page' | 'child_database' }>, pageHrefMap: Record<string, string>): string {
+  const rawTargetId = block.type === 'link_to_page'
+    ? `${block.link_to_page?.page_id || block.link_to_page?.database_id || block.link_to_page?.block_id || block.link_to_page?.comment_id || block.id || ''}`.trim()
+    : `${block.id || ''}`.trim()
   const href = resolvePageHref(rawTargetId, pageHrefMap)
   const label = block.type === 'link_to_page'
-    ? getLinkToPageLabel(data.link_to_page)
-    : `${data[block.type]?.title || ''}`.trim() || 'Untitled'
+    ? getLinkToPageLabel(block.link_to_page)
+    : block.type === 'child_page'
+      ? `${block.child_page?.title || ''}`.trim() || 'Untitled'
+      : `${block.child_database?.title || ''}`.trim() || 'Untitled'
 
   return href
     ? `<p><a${renderHrefHtml(href)}>${escapeHtml(label)}</a></p>`
@@ -228,98 +279,105 @@ function renderBlockHtml(
   const block = blocksById[blockId]
   if (!block) return ''
 
-  const data = block as any
   const childHtml = renderBlockListHtml(childrenById[blockId] || [], blocksById, childrenById, options)
   const pageHrefMap = options.pageHrefMap || {}
 
   switch (block.type) {
     case 'paragraph': {
-      const text = renderRichTextHtml(data.paragraph?.rich_text || [], options)
+      const text = renderRichTextHtml((block as NotionParagraphBlock).paragraph?.rich_text || [], options)
       return `${text ? `<p>${text}</p>` : ''}${childHtml}`
     }
     case 'heading_1': {
-      const text = renderRichTextHtml(data.heading_1?.rich_text || [], options)
+      const text = renderRichTextHtml((block as NotionHeading1Block).heading_1?.rich_text || [], options)
       return `${text ? `<h1>${text}</h1>` : ''}${childHtml}`
     }
     case 'heading_2': {
-      const text = renderRichTextHtml(data.heading_2?.rich_text || [], options)
+      const text = renderRichTextHtml((block as NotionHeading2Block).heading_2?.rich_text || [], options)
       return `${text ? `<h2>${text}</h2>` : ''}${childHtml}`
     }
     case 'heading_3': {
-      const text = renderRichTextHtml(data.heading_3?.rich_text || [], options)
+      const text = renderRichTextHtml((block as NotionHeading3Block).heading_3?.rich_text || [], options)
       return `${text ? `<h3>${text}</h3>` : ''}${childHtml}`
     }
     case 'quote': {
-      const text = renderRichTextHtml(data.quote?.rich_text || [], options)
+      const text = renderRichTextHtml((block as NotionQuoteBlock).quote?.rich_text || [], options)
       return `${text ? `<blockquote>${text}</blockquote>` : ''}${childHtml}`
     }
     case 'callout': {
-      const text = renderRichTextHtml(data.callout?.rich_text || [], options)
-      const emoji = data.callout?.icon?.type === 'emoji' ? data.callout.icon.emoji || '' : ''
+      const calloutBlock = block as NotionCalloutBlock
+      const text = renderRichTextHtml(calloutBlock.callout?.rich_text || [], options)
+      const emoji = calloutBlock.callout?.icon?.type === 'emoji' ? calloutBlock.callout.icon.emoji || '' : ''
       const prefix = emoji ? `${escapeHtml(emoji)} ` : ''
       return `${text ? `<blockquote>${prefix}${text}</blockquote>` : ''}${childHtml}`
     }
     case 'equation': {
-      const expression = `${data.equation?.expression || ''}`.trim()
+      const expression = `${(block as NotionEquationBlock).equation?.expression || ''}`.trim()
       return `${expression ? `<p><code>${escapeHtml(expression)}</code></p>` : ''}${childHtml}`
     }
     case 'code': {
-      const code = data.code || {}
+      const code = (block as NotionCodeBlock).code || {}
       const source = escapeHtml(getPlainTextFromRichText(code.rich_text || [], false))
       const language = code.language ? ` class="language-${escapeHtml(code.language)}"` : ''
       return `<pre><code${language}>${source}</code></pre>${childHtml}`
     }
     case 'toggle': {
-      const text = renderRichTextHtml(data.toggle?.rich_text || [], options)
+      const text = renderRichTextHtml((block as NotionToggleBlock).toggle?.rich_text || [], options)
       return `<details><summary>${text || 'Toggle'}</summary>${childHtml}</details>`
     }
     case 'template': {
-      const text = renderRichTextHtml(data.template?.rich_text || [], options)
+      const text = renderRichTextHtml((block as NotionTemplateBlock).template?.rich_text || [], options)
       return `${text ? `<p>${text}</p>` : ''}${childHtml}`
     }
     case 'image': {
-      const source = data.image?.type === 'external' ? data.image.external?.url : data.image?.file?.url
-      const caption = renderRichTextHtml(data.image?.caption || [], options)
-      const alt = escapeHtml(getPlainTextFromRichText(data.image?.caption || [], true) || 'Notion image')
+      const imageBlock = block as NotionImageBlock
+      const source = imageBlock.image?.type === 'external' ? imageBlock.image.external?.url : imageBlock.image?.file?.url
+      const caption = renderRichTextHtml(imageBlock.image?.caption || [], options)
+      const alt = escapeHtml(getPlainTextFromRichText(imageBlock.image?.caption || [], true) || 'Notion image')
       return source
         ? `<figure><img src="${escapeHtml(source)}" alt="${alt}" />${caption ? `<figcaption>${caption}</figcaption>` : ''}</figure>${childHtml}`
         : childHtml
     }
     case 'video': {
-      const source = getFileBlockUrl(data.video)
-      const caption = renderRichTextHtml(data.video?.caption || [], options)
-      const name = escapeHtml(getFileBlockName(data.video, source))
+      const videoBlock = block as NotionVideoBlock
+      const source = getFileBlockUrl(videoBlock.video)
+      const caption = renderRichTextHtml(videoBlock.video?.caption || [], options)
+      const name = escapeHtml(getFileBlockName(videoBlock.video, source))
       return `${source ? `<p><a${renderHrefHtml(source)}>${name}</a></p>` : ''}${caption ? `<p>${caption}</p>` : ''}${childHtml}`
     }
     case 'audio': {
-      const source = getFileBlockUrl(data.audio)
-      const caption = renderRichTextHtml(data.audio?.caption || [], options)
-      const name = escapeHtml(getFileBlockName(data.audio, source))
+      const audioBlock = block as NotionAudioBlock
+      const source = getFileBlockUrl(audioBlock.audio)
+      const caption = renderRichTextHtml(audioBlock.audio?.caption || [], options)
+      const name = escapeHtml(getFileBlockName(audioBlock.audio, source))
       return `${source ? `<p><a${renderHrefHtml(source)}>${name}</a></p>` : ''}${caption ? `<p>${caption}</p>` : ''}${childHtml}`
     }
     case 'pdf': {
-      const source = getFileBlockUrl(data.pdf)
-      const caption = renderRichTextHtml(data.pdf?.caption || [], options)
+      const pdfBlock = block as NotionPdfBlock
+      const source = getFileBlockUrl(pdfBlock.pdf)
+      const caption = renderRichTextHtml(pdfBlock.pdf?.caption || [], options)
       return `${source ? `<p><a${renderHrefHtml(source)}>Open PDF</a></p>` : ''}${caption ? `<p>${caption}</p>` : ''}${childHtml}`
     }
     case 'file': {
-      const source = getFileBlockUrl(data.file)
-      const caption = renderRichTextHtml(data.file?.caption || [], options)
-      const name = escapeHtml(getFileBlockName(data.file, source))
+      const fileBlock = block as NotionFileBlock
+      const source = getFileBlockUrl(fileBlock.file)
+      const caption = renderRichTextHtml(fileBlock.file?.caption || [], options)
+      const name = escapeHtml(getFileBlockName(fileBlock.file, source))
       return `${source ? `<p><a${renderHrefHtml(source)}>${name}</a></p>` : ''}${caption ? `<p>${caption}</p>` : ''}${childHtml}`
     }
     case 'embed': {
-      const url = `${data.embed?.url || ''}`.trim()
-      const caption = renderRichTextHtml(data.embed?.caption || [], options)
+      const embedBlock = block as NotionEmbedBlock
+      const url = `${embedBlock.embed?.url || ''}`.trim()
+      const caption = renderRichTextHtml(embedBlock.embed?.caption || [], options)
       return `${url ? `<p><a${renderHrefHtml(url)}>${escapeHtml(url)}</a></p>` : ''}${caption ? `<p>${caption}</p>` : ''}${childHtml}`
     }
     case 'bookmark': {
-      const url = `${data.bookmark?.url || ''}`.trim()
-      const caption = renderRichTextHtml(data.bookmark?.caption || [], options)
+      const bookmarkBlock = block as NotionBookmarkBlock
+      const url = `${bookmarkBlock.bookmark?.url || ''}`.trim()
+      const caption = renderRichTextHtml(bookmarkBlock.bookmark?.caption || [], options)
       return `${url ? `<p><a${renderHrefHtml(url)}>${escapeHtml(url)}</a></p>` : ''}${caption ? `<p>${caption}</p>` : ''}${childHtml}`
     }
     case 'link_preview': {
-      const url = `${data.link_preview?.url || ''}`.trim()
+      const url = `${(block as NotionLinkPreviewBlock).link_preview?.url || ''}`.trim()
       return `${url ? `<p><a${renderHrefHtml(url)}>${escapeHtml(url)}</a></p>` : ''}${childHtml}`
     }
     case 'divider':
@@ -330,7 +388,7 @@ function renderBlockHtml(
     case 'breadcrumb':
       return childHtml
     case 'table':
-      return `${renderTableHtml(block, blocksById, childrenById, options)}${childHtml}`
+      return `${renderTableHtml(block as NotionTableBlock, blocksById, childrenById, options)}${childHtml}`
     case 'table_row':
       return ''
     case 'table_of_contents':
@@ -338,11 +396,11 @@ function renderBlockHtml(
     case 'link_to_page':
     case 'child_page':
     case 'child_database':
-      return `${renderPageReferenceHtml(block, pageHrefMap)}${childHtml}`
+      return `${renderPageReferenceHtml(block as NotionLinkToPageBlock | NotionChildPageBlock | NotionChildDatabaseBlock, pageHrefMap)}${childHtml}`
     case 'bulleted_list_item':
     case 'numbered_list_item':
     case 'to_do':
-      return renderListItemHtml(block, blocksById, childrenById, options)
+      return renderListItemHtml(block as NotionBulletedListItemBlock | NotionNumberedListItemBlock | NotionToDoBlock, blocksById, childrenById, options)
     default:
       return childHtml
   }
@@ -360,12 +418,12 @@ function renderBlockListHtml(
     const block = blocksById[blockIds[index]]
     if (!block) continue
 
-    if (block.type === 'bulleted_list_item' || block.type === 'numbered_list_item' || block.type === 'to_do') {
+    if (isListItemBlock(block)) {
       const listTag = block.type === 'numbered_list_item' ? 'ol' : 'ul'
       const items = [renderListItemHtml(block, blocksById, childrenById, options)]
 
-      while (index + 1 < blockIds.length && blocksById[blockIds[index + 1]]?.type === block.type) {
-        items.push(renderListItemHtml(blocksById[blockIds[index + 1]], blocksById, childrenById, options))
+      while (index + 1 < blockIds.length && isListItemBlock(blocksById[blockIds[index + 1]]) && blocksById[blockIds[index + 1]]?.type === block.type) {
+        items.push(renderListItemHtml(blocksById[blockIds[index + 1]] as NotionBulletedListItemBlock | NotionNumberedListItemBlock | NotionToDoBlock, blocksById, childrenById, options))
         index += 1
       }
 

@@ -18,16 +18,16 @@ export default function DeferredComments({ issueTerm, repo, appearance }: Deferr
   const [enabled, setEnabled] = useState(false)
 
   useEffect(() => {
-    if (enabled) return
-    if (!containerRef.current) return
+    if (enabled) return undefined
+    if (!containerRef.current) return undefined
 
     let idleTimer: ReturnType<typeof setTimeout> | null = null
     let idleId: number | null = null
     const activate = () => setEnabled(true)
 
     const scheduleActivate = () => {
-      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-        idleId = (window as any).requestIdleCallback(activate, { timeout: 1200 })
+      if (typeof window !== 'undefined' && window.requestIdleCallback) {
+        idleId = window.requestIdleCallback(activate, { timeout: 1200 })
       } else {
         idleTimer = globalThis.setTimeout(activate, 160)
       }
@@ -47,8 +47,8 @@ export default function DeferredComments({ issueTerm, repo, appearance }: Deferr
 
     return () => {
       observer.disconnect()
-      if (idleId !== null && typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
-        (window as any).cancelIdleCallback(idleId)
+      if (idleId !== null && typeof window !== 'undefined' && window.cancelIdleCallback) {
+        window.cancelIdleCallback(idleId)
       }
       if (idleTimer !== null) {
         globalThis.clearTimeout(idleTimer)

@@ -55,14 +55,14 @@ export async function GET(req: NextRequest) {
         }
       }
     )
-  } catch (error: any) {
-    if (error?.name === 'AbortError') {
+  } catch (error: unknown) {
+    if (error instanceof Error && error.name === 'AbortError') {
       return new NextResponse(null, { status: 204 })
     }
     return NextResponse.json(
       {
         posts: [],
-        error: error?.message || 'Notion search failed'
+        error: error instanceof Error ? error.message : 'Notion search failed'
       },
       { status: 500 }
     )

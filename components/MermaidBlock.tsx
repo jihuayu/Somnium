@@ -34,16 +34,16 @@ export default function MermaidBlock({ code, className }: MermaidBlockProps) {
   const localId = useId().replaceAll(':', '_')
 
   useEffect(() => {
-    if (shouldRender) return
-    if (!hostRef.current) return
+    if (shouldRender) return undefined
+    if (!hostRef.current) return undefined
 
     let idleTimer: ReturnType<typeof setTimeout> | null = null
     let idleId: number | null = null
     const activate = () => setShouldRender(true)
 
     const scheduleActivate = () => {
-      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-        idleId = (window as any).requestIdleCallback(activate, { timeout: 1200 })
+      if (typeof window !== 'undefined' && window.requestIdleCallback) {
+        idleId = window.requestIdleCallback(activate, { timeout: 1200 })
       } else {
         idleTimer = globalThis.setTimeout(activate, 160)
       }
@@ -62,8 +62,8 @@ export default function MermaidBlock({ code, className }: MermaidBlockProps) {
 
     return () => {
       observer.disconnect()
-      if (idleId !== null && typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
-        (window as any).cancelIdleCallback(idleId)
+      if (idleId !== null && typeof window !== 'undefined' && window.cancelIdleCallback) {
+        window.cancelIdleCallback(idleId)
       }
       if (idleTimer !== null) {
         globalThis.clearTimeout(idleTimer)
@@ -72,8 +72,8 @@ export default function MermaidBlock({ code, className }: MermaidBlockProps) {
   }, [shouldRender])
 
   useEffect(() => {
-    if (!shouldRender) return
-    if (typeof document === 'undefined') return
+    if (!shouldRender) return undefined
+    if (typeof document === 'undefined') return undefined
 
     const observer = new MutationObserver((records) => {
       for (const record of records) {
@@ -93,7 +93,7 @@ export default function MermaidBlock({ code, className }: MermaidBlockProps) {
   }, [shouldRender])
 
   useEffect(() => {
-    if (!shouldRender) return
+    if (!shouldRender) return undefined
     let cancelled = false
     const renderToken = renderTokenRef.current + 1
     renderTokenRef.current = renderToken
