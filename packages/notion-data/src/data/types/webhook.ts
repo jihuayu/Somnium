@@ -1,3 +1,7 @@
+/**
+ * EN: Generic webhook payload/options/resolution contracts.
+ * ZH: 通用 webhook 载荷、选项与解析结果契约。
+ */
 export interface ResolveNotionWebhookOptions {
   configuredDataSourceId?: string
   basePath?: string

@@ -1,0 +1,36 @@
+# notion-data API (EN | 中文)
+
+This page is generated from TSDoc summaries.
+本页由 TSDoc 摘要自动生成。
+
+| Symbol | Kind | File | EN | 中文 |
+| --- | --- | --- | --- | --- |
+| [ResolvableString](../notion-data.md#resolvablestring-typealiasdeclaration) | TypeAliasDeclaration | packages/notion-data/src/data/types/core.ts | Core data structures shared by notion-data modules. | notion-data 各模块共享的核心数据结构。 |
+| [BuildNotionDocumentOptions](../notion-data.md#buildnotiondocumentoptions-interfacedeclaration) | InterfaceDeclaration | packages/notion-data/src/data/types/document.ts | Options for building normalized Notion documents. | 构建标准化 Notion 文档时的选项。 |
+| [ResolveNotionWebhookOptions](../notion-data.md#resolvenotionwebhookoptions-interfacedeclaration) | InterfaceDeclaration | packages/notion-data/src/data/types/webhook.ts | Generic webhook payload/options/resolution contracts. | 通用 webhook 载荷、选项与解析结果契约。 |
+| [createNotionClient](../notion-data.md#createnotionclient-functiondeclaration) | FunctionDeclaration | packages/notion-data/src/data/client.ts | Creates a Notion API client with retry/backoff and response validation. | 创建带重试/退避与响应校验能力的 Notion API 客户端。 |
+| [createNotionClientFromEnv](../notion-data.md#createnotionclientfromenv-functiondeclaration) | FunctionDeclaration | packages/notion-data/src/data/client.ts | Creates a Notion client from environment variables. | 从环境变量构建 Notion 客户端。 |
+| [queryAllDataSourceEntries](../notion-data.md#queryalldatasourceentries-functiondeclaration) | FunctionDeclaration | packages/notion-data/src/data/client.ts | Queries and maps all entries from a Notion data source. | 查询并映射指定数据源的全部条目。 |
+| [buildTextSearchFilter](../notion-data.md#buildtextsearchfilter-functiondeclaration) | FunctionDeclaration | packages/notion-data/src/data/client.ts | Builds a Notion text-search filter object from tokens and clauses. | 基于分词结果与字段子句构造 Notion 文本检索过滤器。 |
+| [buildNotionDocument](../notion-data.md#buildnotiondocument-functiondeclaration) | FunctionDeclaration | packages/notion-data/src/data/document.ts | Builds a normalized Notion document by recursively collecting child blocks. | 递归拉取子块并构建标准化 Notion 文档。 |
+| [normalizeNotionUuid](../notion-data.md#normalizenotionuuid-functiondeclaration) | FunctionDeclaration | packages/notion-data/src/data/properties.ts | Normalizes a Notion entity id into canonical UUID format. | 将 Notion 实体 ID 标准化为规范 UUID 形式。 |
+| [getPropertyByName](../notion-data.md#getpropertybyname-functiondeclaration) | FunctionDeclaration | packages/notion-data/src/data/properties.ts | Finds a property by exact/case-insensitive name. | 按精确名或大小写不敏感方式查找属性。 |
+| [getPropertyByNames](../notion-data.md#getpropertybynames-functiondeclaration) | FunctionDeclaration | packages/notion-data/src/data/properties.ts | Finds the first matched property from multiple candidate names. | 从多个候选字段名中返回首个匹配属性。 |
+| [readNotionTextProperty](../notion-data.md#readnotiontextproperty-functiondeclaration) | FunctionDeclaration | packages/notion-data/src/data/properties.ts | Reads title/rich_text/url property value as plain text. | 读取 title/rich_text/url 类型属性的文本值。 |
+| [readNotionSelectProperty](../notion-data.md#readnotionselectproperty-functiondeclaration) | FunctionDeclaration | packages/notion-data/src/data/properties.ts | Reads select/status property value. | 读取 select/status 类型属性值。 |
+| [readNotionMultiSelectProperty](../notion-data.md#readnotionmultiselectproperty-functiondeclaration) | FunctionDeclaration | packages/notion-data/src/data/properties.ts | Reads multi-select property values. | 读取 multi_select 类型属性值列表。 |
+| [readNotionDateStartProperty](../notion-data.md#readnotiondatestartproperty-functiondeclaration) | FunctionDeclaration | packages/notion-data/src/data/properties.ts | Reads date.start from a date property. | 读取 date 类型属性中的 start 字段。 |
+| [getPageParentDataSourceId](../notion-data.md#getpageparentdatasourceid-functiondeclaration) | FunctionDeclaration | packages/notion-data/src/data/properties.ts | Resolves parent data source id from a page parent reference. | 从页面 parent 引用中提取所属数据源 ID。 |
+| [buildPagePathFromPage](../notion-data.md#buildpagepathfrompage-functiondeclaration) | FunctionDeclaration | packages/notion-data/src/data/properties.ts | Builds an internal page path from the page slug property. | 基于页面 slug 属性生成内部路径。 |
+| [findDataSourceProperty](../notion-data.md#finddatasourceproperty-functiondeclaration) | FunctionDeclaration | packages/notion-data/src/data/properties.ts | Finds a data source property by candidate names and expected type. | 按候选字段名与期望类型匹配数据源属性。 |
+| [resolveDataSourcePropertyRefs](../notion-data.md#resolvedatasourcepropertyrefs-functiondeclaration) | FunctionDeclaration | packages/notion-data/src/data/properties.ts | Resolves multiple data source property references by rule map. | 根据规则映射批量解析数据源属性引用。 |
+| [tokenizeSearchQuery](../notion-data.md#tokenizesearchquery-functiondeclaration) | FunctionDeclaration | packages/notion-data/src/data/properties.ts | Tokenizes search text for building Notion query filters. | 对搜索文本分词，用于构建 Notion 查询过滤器。 |
+| [buildPagePreviewMap](../notion-data.md#buildpagepreviewmap-functiondeclaration) | FunctionDeclaration | packages/notion-data/src/data/preview.ts | Builds page preview map keyed by page id. | 构建以页面 ID 为键的预览映射。 |
+| [mapPageToOgData](../notion-data.md#mappagetoogdata-functiondeclaration) | FunctionDeclaration | packages/notion-data/src/data/preview.ts | Maps a Notion page to OG-related data. | 将 Notion 页面映射为 OG 所需数据。 |
+| [parseNotionWebhookPayload](../notion-data.md#parsenotionwebhookpayload-functiondeclaration) | FunctionDeclaration | packages/notion-data/src/data/webhook/signature.ts | Parses raw webhook body into a structured payload. | 将 webhook 原始请求体解析为结构化载荷。 |
+| [isNotionVerificationRequest](../notion-data.md#isnotionverificationrequest-functiondeclaration) | FunctionDeclaration | packages/notion-data/src/data/webhook/signature.ts | Detects Notion verification requests. | 判断是否为 Notion 验证请求。 |
+| [computeNotionWebhookSignature](../notion-data.md#computenotionwebhooksignature-functiondeclaration) | FunctionDeclaration | packages/notion-data/src/data/webhook/signature.ts | Computes HMAC SHA256 signature for Notion webhook body. | 计算 Notion webhook 请求体的 HMAC SHA256 签名。 |
+| [isValidNotionWebhookSignature](../notion-data.md#isvalidnotionwebhooksignature-functiondeclaration) | FunctionDeclaration | packages/notion-data/src/data/webhook/signature.ts | Validates webhook signature using timing-safe compare. | 使用时序安全比较校验 webhook 签名。 |
+| [resolveNotionWebhookEvent](../notion-data.md#resolvenotionwebhookevent-functiondeclaration) | FunctionDeclaration | packages/notion-data/src/data/webhook/resolver.ts | Resolves webhook payload into generic refresh actions. | 将 webhook 事件解析为通用刷新动作。 |
+| [createNotionPluginManager](../notion-data.md#createnotionpluginmanager-functiondeclaration) | FunctionDeclaration | packages/notion-data/src/data/plugins.ts | Creates plugin manager for metadata and webhook extension points. | 创建用于元数据与 webhook 扩展点的插件管理器。 |
+| [createNotionDataLayer](../notion-data.md#createnotiondatalayer-functiondeclaration) | FunctionDeclaration | packages/notion-data/src/data/plugins.ts | Creates a high-level notion-data facade. | 创建 notion-data 的高层能力门面。 |

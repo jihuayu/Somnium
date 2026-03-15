@@ -1,3 +1,7 @@
+/**
+ * EN: Core data structures shared by notion-data modules.
+ * ZH: notion-data 各模块共享的核心数据结构。
+ */
 export type ResolvableString = string | (() => string)
 
 export interface NotionRichTextItem {

@@ -66,6 +66,10 @@ async function collectDocumentBlocks(
   return childBlocksByParentId
 }
 
+/**
+ * EN: Builds a normalized Notion document by recursively collecting child blocks.
+ * ZH: 递归拉取子块并构建标准化 Notion 文档。
+ */
 export async function buildNotionDocument(
   client: NotionClient,
   pageId: string,

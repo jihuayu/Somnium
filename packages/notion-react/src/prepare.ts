@@ -341,6 +341,10 @@ function buildResolvedPagePreviewMap(
   return resolved
 }
 
+/**
+ * EN: Prepares a render model by enriching TOC, page links, previews and code highlights.
+ * ZH: 通过补全目录、页面链接、链接预览与代码高亮来构建渲染模型。
+ */
 export async function prepareNotionRenderModel(
   document: NotionDocument | null,
   options: PrepareNotionRenderModelOptions = {}

@@ -1,3 +1,7 @@
+/**
+ * EN: Runtime export entry for Vue renderer components.
+ * ZH: Vue 渲染组件运行时导出入口。
+ */
 export { default as NotionRenderer } from './components/NotionRenderer'
 export { default as DateMention } from './components/DateMention'
 export { default as UrlMention } from './components/UrlMention'

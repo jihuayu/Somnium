@@ -1,0 +1,35 @@
+{
+  "generatedAt": "2026-03-15T02:27:29.255Z",
+  "packages": [
+    {
+      "name": "notion-type",
+      "totalSymbols": 19,
+      "json": "json/notion-type.json",
+      "page": "pages/notion-type.md",
+      "markdown": "notion-type.md"
+    },
+    {
+      "name": "notion-data",
+      "totalSymbols": 29,
+      "json": "json/notion-data.json",
+      "page": "pages/notion-data.md",
+      "markdown": "notion-data.md"
+    },
+    {
+      "name": "notion-react",
+      "totalSymbols": 4,
+      "json": "json/notion-react.json",
+      "page": "pages/notion-react.md",
+      "markdown": "notion-react.md"
+    },
+    {
+      "name": "notion-vue",
+      "totalSymbols": 4,
+      "json": "json/notion-vue.json",
+      "page": "pages/notion-vue.md",
+      "markdown": "notion-vue.md"
+    }
+  ],
+  "aggregateJson": "api-docs.json",
+  "issues": []
+}

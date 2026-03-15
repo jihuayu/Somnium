@@ -68,10 +68,22 @@ export interface GenerateRssFeedOptions {
   }
 }
 
+/**
+ * EN: Adapter contract for rendering normalized Notion documents to HTML.
+ * ZH: 将标准化 Notion 文档渲染为 HTML 的适配器契约。
+ */
 export interface NotionDocumentHtmlAdapter extends RenderAdapter<NotionDocument | null, RenderNotionHtmlOptions, string> {}
 
+/**
+ * EN: Adapter contract for generating RSS XML.
+ * ZH: 生成 RSS XML 的适配器契约。
+ */
 export interface NotionRssFeedAdapter extends ValueAdapter<GenerateRssFeedOptions, string> {}
 
+/**
+ * EN: RSS output adapter group.
+ * ZH: RSS 输出适配器组合。
+ */
 export interface NotionRssAdapter {
   documentHtml: NotionDocumentHtmlAdapter
   feed: NotionRssFeedAdapter
@@ -476,6 +488,10 @@ function generateRssFeedWithDefaultAdapter({
   return feed.rss2()
 }
 
+/**
+ * EN: Default RSS adapter implementation.
+ * ZH: 默认 RSS 适配器实现。
+ */
 export const rssAdapter: NotionRssAdapter = {
   documentHtml: {
     render: renderNotionDocumentToHtmlWithDefaultAdapter
@@ -485,6 +501,10 @@ export const rssAdapter: NotionRssAdapter = {
   }
 }
 
+/**
+ * EN: Compatibility wrapper for `rssAdapter.documentHtml.render`.
+ * ZH: `rssAdapter.documentHtml.render` 的兼容包装函数。
+ */
 export function renderNotionDocumentToHtml(
   document: NotionDocument | null,
   options: RenderNotionHtmlOptions = {}
@@ -492,6 +512,10 @@ export function renderNotionDocumentToHtml(
   return rssAdapter.documentHtml.render(document, options)
 }
 
+/**
+ * EN: Compatibility wrapper for `rssAdapter.feed.adapt`.
+ * ZH: `rssAdapter.feed.adapt` 的兼容包装函数。
+ */
 export function generateRssFeed(options: GenerateRssFeedOptions): string {
   return rssAdapter.feed.adapt(options)
 }

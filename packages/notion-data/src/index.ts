@@ -1,3 +1,7 @@
+/**
+ * EN: Public entry for @jihuayu/notion-data.
+ * ZH: @jihuayu/notion-data 的公共入口。
+ */
 export {
   buildNotionDirectoryTree,
   buildNotionDirectoryTreeSnapshot,

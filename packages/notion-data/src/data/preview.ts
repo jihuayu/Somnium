@@ -21,6 +21,10 @@ function getSiteHostname(siteUrl: string): string {
   }
 }
 
+/**
+ * EN: Builds page preview map keyed by page id.
+ * ZH: 构建以页面 ID 为键的预览映射。
+ */
 export function buildPagePreviewMap(
   items: NotionPagePreviewSource[],
   pageHrefMap: PageHrefMap,
@@ -99,6 +103,10 @@ export function deriveDefaultPageMetadata(page: NotionPageLike) {
   }
 }
 
+/**
+ * EN: Maps a Notion page to OG-related data.
+ * ZH: 将 Notion 页面映射为 OG 所需数据。
+ */
 export function mapPageToOgData(page: NotionPageLike): PageOgData {
   const cover = page.cover
   let coverUrl = ''

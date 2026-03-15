@@ -69,6 +69,10 @@ function assertPaginatedResponse<T>(value: unknown, label: string): asserts valu
   }
 }
 
+/**
+ * EN: Creates a Notion API client with retry/backoff and response validation.
+ * ZH: 创建带重试/退避与响应校验能力的 Notion API 客户端。
+ */
 export function createNotionClient(options: NotionClientOptions): NotionClient {
   const notionRequest = async <T = unknown>(
     path: string,
@@ -210,6 +214,10 @@ export function createNotionClient(options: NotionClientOptions): NotionClient {
   }
 }
 
+/**
+ * EN: Creates a Notion client from environment variables.
+ * ZH: 从环境变量构建 Notion 客户端。
+ */
 export function createNotionClientFromEnv(env: Record<string, string | undefined> = process.env): NotionClient {
   return createNotionClient({
     integrationToken: () => `${env.NOTION_INTEGRATION_TOKEN || ''}`.trim(),
@@ -217,6 +225,10 @@ export function createNotionClientFromEnv(env: Record<string, string | undefined
   })
 }
 
+/**
+ * EN: Queries and maps all entries from a Notion data source.
+ * ZH: 查询并映射指定数据源的全部条目。
+ */
 export async function queryAllDataSourceEntries<T = NotionPageResponse>(
   client: NotionClient,
   {
@@ -254,6 +266,10 @@ function buildTokenSearchFilter(token: string, clauses: NotionTextSearchClause[]
   return { or: filters }
 }
 
+/**
+ * EN: Builds a Notion text-search filter object from tokens and clauses.
+ * ZH: 基于分词结果与字段子句构造 Notion 文本检索过滤器。
+ */
 export function buildTextSearchFilter(
   tokens: string[],
   clauses: NotionTextSearchClause[],

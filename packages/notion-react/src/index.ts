@@ -1,3 +1,7 @@
+/**
+ * EN: Public entry for @jihuayu/notion-react.
+ * ZH: @jihuayu/notion-react 的公共入口。
+ */
 export { prepareNotionRenderModel } from './prepare'
 export { default as NotionRenderer } from './components/NotionRenderer'
 export { default as DateMention } from './components/DateMention'

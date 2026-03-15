@@ -1,5 +1,9 @@
 import type { ValueAdapter } from './adapters'
 
+/**
+ * EN: Open Graph image descriptor.
+ * ZH: Open Graph 图片描述对象。
+ */
 export interface OgImageDescriptor {
   url: string
   alt?: string
@@ -53,10 +57,22 @@ export interface OpenGraphPayload {
   }
 }
 
+/**
+ * EN: Adapter contract for building OG image URLs.
+ * ZH: 生成 OG 图片 URL 的适配器契约。
+ */
 export interface NotionOgImageUrlAdapter extends ValueAdapter<BuildOgImageUrlOptions, string> {}
 
+/**
+ * EN: Adapter contract for building Open Graph payloads.
+ * ZH: 生成 Open Graph 元数据载荷的适配器契约。
+ */
 export interface NotionOpenGraphPayloadAdapter extends ValueAdapter<BuildOpenGraphPayloadOptions, OpenGraphPayload> {}
 
+/**
+ * EN: OG output adapter group.
+ * ZH: OG 输出适配器组合。
+ */
 export interface NotionOgAdapter {
   imageUrl: NotionOgImageUrlAdapter
   payload: NotionOpenGraphPayloadAdapter
@@ -149,6 +165,10 @@ function buildOpenGraphPayloadWithDefaultAdapter({
   }
 }
 
+/**
+ * EN: Default OG adapter implementation.
+ * ZH: 默认 OG 适配器实现。
+ */
 export const ogAdapter: NotionOgAdapter = {
   imageUrl: {
     adapt: buildOgImageUrlWithDefaultAdapter
@@ -158,10 +178,18 @@ export const ogAdapter: NotionOgAdapter = {
   }
 }
 
+/**
+ * EN: Compatibility wrapper for `ogAdapter.imageUrl.adapt`.
+ * ZH: `ogAdapter.imageUrl.adapt` 的兼容包装函数。
+ */
 export function buildOgImageUrl(options: BuildOgImageUrlOptions): string {
   return ogAdapter.imageUrl.adapt(options)
 }
 
+/**
+ * EN: Compatibility wrapper for `ogAdapter.payload.adapt`.
+ * ZH: `ogAdapter.payload.adapt` 的兼容包装函数。
+ */
 export function buildOpenGraphPayload(options: BuildOpenGraphPayloadOptions): OpenGraphPayload {
   return ogAdapter.payload.adapt(options)
 }

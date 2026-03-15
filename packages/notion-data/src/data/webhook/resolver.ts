@@ -136,6 +136,10 @@ async function matchesConfiguredDataSource(payload: NotionWebhookPayload, option
   return resolvedParentId === configuredId
 }
 
+/**
+ * EN: Resolves webhook payload into generic refresh actions.
+ * ZH: 将 webhook 事件解析为通用刷新动作。
+ */
 export async function resolveNotionWebhookEvent(
   payload: NotionWebhookPayload,
   options: ResolveNotionWebhookOptions = {}

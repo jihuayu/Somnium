@@ -1,3 +1,7 @@
+/**
+ * EN: Client/query-related public types for notion-data.
+ * ZH: notion-data 的客户端与查询相关公共类型。
+ */
 import type { RawNotionBlock } from '@jihuayu/notion-type/normalize'
 import type { ResolvableString } from './core'
 import type { NotionPageLike } from './core'

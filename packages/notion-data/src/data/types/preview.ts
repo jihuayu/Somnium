@@ -1,3 +1,7 @@
+/**
+ * EN: Preview and render-facing data-layer types.
+ * ZH: 预览与渲染消费侧相关的数据层类型。
+ */
 import type { PageHrefMap, PagePreviewMap, NotionDocument } from '@jihuayu/notion-type'
 import type { NotionPageLike } from './core'
 import type { BuildNotionDocumentOptions } from './document'

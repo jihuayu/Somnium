@@ -1,5 +1,10 @@
 'use client'
 
+/**
+ * EN: Client-only export entry for React runtime components.
+ * ZH: React 运行时客户端组件导出入口。
+ */
+
 export { default as NotionRenderer } from './components/NotionRenderer'
 export { default as DateMention } from './components/DateMention'
 export { default as UrlMention } from './components/UrlMention'

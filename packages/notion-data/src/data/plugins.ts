@@ -4,6 +4,10 @@ import { buildPagePreviewMap, deriveDefaultPageMetadata, mapPageToOgData } from 
 import { resolveNotionWebhookEvent } from './webhook'
 import { unique } from './shared'
 
+/**
+ * EN: Creates plugin manager for metadata and webhook extension points.
+ * ZH: 创建用于元数据与 webhook 扩展点的插件管理器。
+ */
 export function createNotionPluginManager(
   plugins: import('./types').NotionDataPlugin[] = [],
   context: import('./types').NotionDataPluginContext = {}
@@ -48,6 +52,10 @@ export function createNotionPluginManager(
   }
 }
 
+/**
+ * EN: Creates a high-level notion-data facade.
+ * ZH: 创建 notion-data 的高层能力门面。
+ */
 export function createNotionDataLayer({ client, plugins = [] }: NotionDataLayerOptions = {}): NotionDataLayer {
   const pluginManager = createNotionPluginManager(plugins, { client })
   return {

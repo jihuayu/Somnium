@@ -1,0 +1,67 @@
+{
+  "package": "notion-vue",
+  "generatedAt": "2026-03-15T02:27:29.255Z",
+  "totalSymbols": 4,
+  "symbols": [
+    {
+      "packageName": "notion-vue",
+      "file": "packages/notion-vue/src/types.ts",
+      "kind": "InterfaceDeclaration",
+      "symbol": "HighlightedCode",
+      "anchor": "highlightedcode-interfacedeclaration",
+      "summary": "EN: Highlight output for a single code block.ZH: 单个代码块的高亮输出结构。",
+      "summaryEn": "Highlight output for a single code block.",
+      "summaryZh": "单个代码块的高亮输出结构。",
+      "params": [],
+      "returns": null,
+      "remarks": null,
+      "tags": [],
+      "tsdoc": "/**\r\n * EN: Highlight output for a single code block.\r\n * ZH: 单个代码块的高亮输出结构。\r\n */"
+    },
+    {
+      "packageName": "notion-vue",
+      "file": "packages/notion-vue/src/types.ts",
+      "kind": "InterfaceDeclaration",
+      "symbol": "NotionRenderModel",
+      "anchor": "notionrendermodel-interfacedeclaration",
+      "summary": "EN: Fully prepared model consumed by Vue renderer components.ZH: Vue 渲染组件消费的完整预处理模型。",
+      "summaryEn": "Fully prepared model consumed by Vue renderer components.",
+      "summaryZh": "Vue 渲染组件消费的完整预处理模型。",
+      "params": [],
+      "returns": null,
+      "remarks": null,
+      "tags": [],
+      "tsdoc": "/**\r\n * EN: Fully prepared model consumed by Vue renderer components.\r\n * ZH: Vue 渲染组件消费的完整预处理模型。\r\n */"
+    },
+    {
+      "packageName": "notion-vue",
+      "file": "packages/notion-vue/src/types.ts",
+      "kind": "InterfaceDeclaration",
+      "symbol": "PrepareNotionRenderModelOptions",
+      "anchor": "preparenotionrendermodeloptions-interfacedeclaration",
+      "summary": "EN: Options for preparing render model data.ZH: 渲染模型预处理选项。",
+      "summaryEn": "Options for preparing render model data.",
+      "summaryZh": "渲染模型预处理选项。",
+      "params": [],
+      "returns": null,
+      "remarks": null,
+      "tags": [],
+      "tsdoc": "/**\r\n * EN: Options for preparing render model data.\r\n * ZH: 渲染模型预处理选项。\r\n */"
+    },
+    {
+      "packageName": "notion-vue",
+      "file": "packages/notion-vue/src/prepare.ts",
+      "kind": "FunctionDeclaration",
+      "symbol": "prepareNotionRenderModel",
+      "anchor": "preparenotionrendermodel-functiondeclaration",
+      "summary": "EN: Prepares a render model by enriching TOC, page links, previews and code highlights.ZH: 通过补全目录、页面链接、链接预览与代码高亮来构建渲染模型。",
+      "summaryEn": "Prepares a render model by enriching TOC, page links, previews and code highlights.",
+      "summaryZh": "通过补全目录、页面链接、链接预览与代码高亮来构建渲染模型。",
+      "params": [],
+      "returns": null,
+      "remarks": null,
+      "tags": [],
+      "tsdoc": "/**\r\n * EN: Prepares a render model by enriching TOC, page links, previews and code highlights.\r\n * ZH: 通过补全目录、页面链接、链接预览与代码高亮来构建渲染模型。\r\n */"
+    }
+  ]
+}

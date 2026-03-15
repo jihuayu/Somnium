@@ -1,3 +1,7 @@
+/**
+ * EN: Data-layer public barrel for modularized implementation files.
+ * ZH: 数据层模块化实现的统一导出入口。
+ */
 export type * from './types'
 export {
   buildTextSearchFilter,

@@ -1,3 +1,7 @@
+/**
+ * EN: Plugin extension contracts for notion-data.
+ * ZH: notion-data 的插件扩展契约。
+ */
 import type { NotionClient } from './client'
 import type { NotionPageLike } from './core'
 import type { NotionDerivedPageMetadata } from './preview'

@@ -1,3 +1,7 @@
+/**
+ * EN: Public entry for @jihuayu/notion-type.
+ * ZH: @jihuayu/notion-type 的公共入口。
+ */
 export { normalizeNotionDocument } from './normalize'
 export type {
   RenderAdapter,
