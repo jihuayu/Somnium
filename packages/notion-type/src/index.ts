@@ -1,6 +1,9 @@
 export { normalizeNotionDocument } from './normalize'
+export type {
+  RenderAdapter,
+  ValueAdapter
+} from './adapters'
 export {
-  buildFallbackLinkPreview,
   buildInternalSlugHref,
   buildNotionPublicUrl,
   buildPageHrefMap,
@@ -8,12 +11,8 @@ export {
   decodePathSegment,
   escapeHtml,
   extractNotionPageIdFromUrl,
-  getAnnotationColorClasses,
-  getBlockClassName,
-  getCalloutIconUrl,
   getFileBlockName,
   getFileBlockUrl,
-  getHeadingAnchorId,
   getLinkToPageLabel,
   getPlainTextFromRichText,
   isInternalHref,

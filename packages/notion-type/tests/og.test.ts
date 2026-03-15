@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { buildOgImageUrl, buildOpenGraphPayload } from '../src/og'
+import { buildOgImageUrl, buildOpenGraphPayload, ogAdapter } from '../src/og'
 
 test('buildOgImageUrl appends encoded title and query params', () => {
   const url = buildOgImageUrl({
@@ -32,4 +32,19 @@ test('buildOpenGraphPayload returns canonical, og and twitter payloads', () => {
   assert.equal(payload.openGraph.type, 'article')
   assert.deepEqual(payload.twitter.images, ['https://cdn.example.com/og.png'])
   assert.equal(payload.openGraph.publishedTime, '2026-03-13T00:00:00.000Z')
+})
+
+test('ogAdapter exposes the default adapter contract', () => {
+  const url = ogAdapter.imageUrl.adapt({
+    baseUrl: 'https://og.example.com/generate',
+    title: 'Adapter Demo'
+  })
+  const payload = ogAdapter.payload.adapt({
+    title: 'Adapter Demo',
+    description: 'Adapter Description',
+    siteUrl: 'https://blog.jihuayu.com'
+  })
+
+  assert.equal(url, 'https://og.example.com/generate/Adapter%20Demo.png')
+  assert.equal(payload.canonicalUrl, 'https://blog.jihuayu.com')
 })

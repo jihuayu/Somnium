@@ -1,3 +1,5 @@
+import type { ValueAdapter } from './adapters'
+
 export interface OgImageDescriptor {
   url: string
   alt?: string
@@ -51,6 +53,15 @@ export interface OpenGraphPayload {
   }
 }
 
+export interface NotionOgImageUrlAdapter extends ValueAdapter<BuildOgImageUrlOptions, string> {}
+
+export interface NotionOpenGraphPayloadAdapter extends ValueAdapter<BuildOpenGraphPayloadOptions, OpenGraphPayload> {}
+
+export interface NotionOgAdapter {
+  imageUrl: NotionOgImageUrlAdapter
+  payload: NotionOpenGraphPayloadAdapter
+}
+
 function trimSlashes(value: string): string {
   return `${value || ''}`.replace(/^\/+|\/+$/g, '')
 }
@@ -75,7 +86,7 @@ function toIsoDate(value: string | number | Date | null | undefined): string | u
   return parsed.toISOString()
 }
 
-export function buildOgImageUrl({
+function buildOgImageUrlWithDefaultAdapter({
   baseUrl,
   title,
   extension = 'png',
@@ -96,7 +107,7 @@ export function buildOgImageUrl({
   return search ? `${url}?${search}` : url
 }
 
-export function buildOpenGraphPayload({
+function buildOpenGraphPayloadWithDefaultAdapter({
   title,
   description,
   siteUrl,
@@ -136,4 +147,21 @@ export function buildOpenGraphPayload({
       site: twitterSite
     }
   }
+}
+
+export const ogAdapter: NotionOgAdapter = {
+  imageUrl: {
+    adapt: buildOgImageUrlWithDefaultAdapter
+  },
+  payload: {
+    adapt: buildOpenGraphPayloadWithDefaultAdapter
+  }
+}
+
+export function buildOgImageUrl(options: BuildOgImageUrlOptions): string {
+  return ogAdapter.imageUrl.adapt(options)
+}
+
+export function buildOpenGraphPayload(options: BuildOpenGraphPayloadOptions): OpenGraphPayload {
+  return ogAdapter.payload.adapt(options)
 }

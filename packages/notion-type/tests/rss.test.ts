@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { generateRssFeed, renderNotionDocumentToHtml } from '../src/rss'
+import { generateRssFeed, renderNotionDocumentToHtml, rssAdapter } from '../src/rss'
 import type { NotionDocument } from '../src/types'
 
 const document: NotionDocument = {
@@ -84,4 +84,22 @@ test('generateRssFeed renders rss xml from notion documents', () => {
   assert.match(xml, /<title>Demo Feed<\/title>/)
   assert.match(xml, /<title><!\[CDATA\[Hello\]\]><\/title>/)
   assert.match(xml, /RSS Body/)
+})
+
+test('rssAdapter exposes document and feed adapter contracts', () => {
+  const html = rssAdapter.documentHtml.render(document)
+  const xml = rssAdapter.feed.adapt({
+    title: 'Adapter Feed',
+    description: 'Feed Description',
+    siteUrl: 'https://blog.jihuayu.com',
+    items: [{
+      title: 'Hello',
+      link: '/hello',
+      date: '2026-03-13T00:00:00.000Z',
+      document
+    }]
+  })
+
+  assert.match(html, /<h1>RSS Title<\/h1>/)
+  assert.match(xml, /<title>Adapter Feed<\/title>/)
 })

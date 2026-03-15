@@ -21,6 +21,11 @@
       "import": "./dist/normalize.js",
       "default": "./dist/normalize.js"
     },
+    "./adapters": {
+      "types": "./dist/adapters.d.ts",
+      "import": "./dist/adapters.js",
+      "default": "./dist/adapters.js"
+    },
     "./rss": {
       "types": "./dist/rss.d.ts",
       "import": "./dist/rss.js",

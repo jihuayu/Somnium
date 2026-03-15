@@ -1,4 +1,5 @@
 import { Feed } from 'feed'
+import type { RenderAdapter, ValueAdapter } from './adapters'
 import type {
   NotionBlock,
   NotionBulletedListItemBlock,
@@ -65,6 +66,15 @@ export interface GenerateRssFeedOptions {
     atom?: string
     json?: string
   }
+}
+
+export interface NotionDocumentHtmlAdapter extends RenderAdapter<NotionDocument | null, RenderNotionHtmlOptions, string> {}
+
+export interface NotionRssFeedAdapter extends ValueAdapter<GenerateRssFeedOptions, string> {}
+
+export interface NotionRssAdapter {
+  documentHtml: NotionDocumentHtmlAdapter
+  feed: NotionRssFeedAdapter
 }
 
 function trimSlashes(value: string): string {
@@ -408,7 +418,7 @@ function renderBlockListHtml(
   return output.filter(Boolean).join('')
 }
 
-export function renderNotionDocumentToHtml(
+function renderNotionDocumentToHtmlWithDefaultAdapter(
   document: NotionDocument | null,
   options: RenderNotionHtmlOptions = {}
 ): string {
@@ -421,7 +431,7 @@ export function renderNotionDocumentToHtml(
   ).trim()
 }
 
-export function generateRssFeed({
+function generateRssFeedWithDefaultAdapter({
   title,
   description,
   siteUrl,
@@ -464,4 +474,24 @@ export function generateRssFeed({
   }
 
   return feed.rss2()
+}
+
+export const rssAdapter: NotionRssAdapter = {
+  documentHtml: {
+    render: renderNotionDocumentToHtmlWithDefaultAdapter
+  },
+  feed: {
+    adapt: generateRssFeedWithDefaultAdapter
+  }
+}
+
+export function renderNotionDocumentToHtml(
+  document: NotionDocument | null,
+  options: RenderNotionHtmlOptions = {}
+): string {
+  return rssAdapter.documentHtml.render(document, options)
+}
+
+export function generateRssFeed(options: GenerateRssFeedOptions): string {
+  return rssAdapter.feed.adapt(options)
 }
