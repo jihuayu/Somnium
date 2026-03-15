@@ -14,11 +14,11 @@ function loadTsConfig(filePath) {
     fileName: filePath
   })
 
-  const module = { exports: {} }
+  const compiledModule = { exports: {} }
   const localRequire = createRequire(filePath)
   const execute = new Function('require', 'module', 'exports', '__dirname', '__filename', compiled.outputText)
-  execute(localRequire, module, module.exports, path.dirname(filePath), filePath)
-  return module.exports.default || module.exports
+  execute(localRequire, compiledModule, compiledModule.exports, path.dirname(filePath), filePath)
+  return compiledModule.exports.default || compiledModule.exports
 }
 
 const config = loadTsConfig(path.resolve(__dirname, 'config/blog.config.ts'))

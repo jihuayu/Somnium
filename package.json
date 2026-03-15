@@ -29,8 +29,8 @@
     "katex": "^0.16.38",
     "mermaid": "^11.13.0",
     "next": "^16.1.6",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
     "shiki": "^4.0.2"
   },
   "devDependencies": {
@@ -47,10 +47,10 @@
     "postcss": "^8.5.8",
     "storybook": "^8.6.18",
     "tailwindcss": "^4.2.1",
-    "tsup": "^8.5.0",
+    "tsup": "^8.5.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "vite": "^6.3.6"
+    "vite": "^6.4.1"
   },
   "browserslist": {
     "production": [
