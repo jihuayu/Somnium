@@ -4,7 +4,7 @@ import {
   buildPageHrefMap,
   extractNotionPageIdFromUrl,
   rewriteNotionPageHref
-} from '../src'
+} from '../../notion-type/src'
 
 test('buildPageHrefMap builds internal hrefs from generic entries', () => {
   const pageHrefMap = buildPageHrefMap([

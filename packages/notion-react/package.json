@@ -26,26 +26,6 @@
       "import": "./dist/prepare.js",
       "default": "./dist/prepare.js"
     },
-    "./data": {
-      "types": "./dist/data.d.ts",
-      "import": "./dist/data.js",
-      "default": "./dist/data.js"
-    },
-    "./normalize": {
-      "types": "./dist/normalize.d.ts",
-      "import": "./dist/normalize.js",
-      "default": "./dist/normalize.js"
-    },
-    "./rss": {
-      "types": "./dist/rss.d.ts",
-      "import": "./dist/rss.js",
-      "default": "./dist/rss.js"
-    },
-    "./og": {
-      "types": "./dist/og.d.ts",
-      "import": "./dist/og.js",
-      "default": "./dist/og.js"
-    },
     "./styles.css": "./dist/styles.css"
   },
   "sideEffects": [
@@ -62,9 +42,9 @@
     "react-dom": "^18.2.0 || ^19.0.0"
   },
   "dependencies": {
+    "@jihuayu/notion-type": "workspace:*",
     "classnames": "^2.5.1",
     "dayjs": "^1.11.20",
-    "feed": "^5.2.0",
     "katex": "^0.16.38",
     "mermaid": "^11.13.0"
   },

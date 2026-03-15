@@ -5,10 +5,10 @@ import {
   type NotionPageLike,
   type NotionProperties,
   type NotionProperty
-} from '@jihuayu/notion-react/data'
+} from '@jihuayu/notion-data'
 export { mapNotionPageToPost as mapPageToPost } from './postAdapter'
 
-export type { NotionPageLike, NotionProperties, NotionProperty } from '@jihuayu/notion-react/data'
+export type { NotionPageLike, NotionProperties, NotionProperty } from '@jihuayu/notion-data'
 
 export const normalizeNotionUuid = normalizeNotionUuidBase
 

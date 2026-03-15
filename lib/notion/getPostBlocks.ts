@@ -1,8 +1,8 @@
 import { notionClient } from '@/lib/server/notionData'
 import { ONE_DAY_SECONDS } from '@/lib/server/cache'
 import { unstable_cache } from 'next/cache'
-import type { NotionDocument, TocItem } from '@jihuayu/notion-react'
-import { buildNotionDocument as buildNotionDocumentBase, type BuildNotionDocumentOptions, type NotionClient } from '@jihuayu/notion-react/data'
+import type { NotionDocument, TocItem } from '@jihuayu/notion-type'
+import { buildNotionDocument as buildNotionDocumentBase, type BuildNotionDocumentOptions, type NotionClient } from '@jihuayu/notion-data'
 
 const POST_BLOCKS_CACHE_REVALIDATE_SECONDS = ONE_DAY_SECONDS
 

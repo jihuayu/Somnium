@@ -1,10 +1,8 @@
 import {
   type LinkPreviewMap,
-  type NotionDocument,
   type NotionRenderOptions,
-  type PageHrefMap,
-  type PagePreviewMap
 } from '@jihuayu/notion-react'
+import type { NotionDocument, PageHrefMap, PagePreviewMap } from '@jihuayu/notion-type'
 import { prepareNotionRenderModel } from '@jihuayu/notion-react/prepare'
 import NotionRendererClient from '@/components/NotionRendererClient'
 import { config } from '@/lib/server/config'

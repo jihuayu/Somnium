@@ -1,7 +1,7 @@
 import cjk from '@/lib/cjk'
 import { getAllPosts } from '@/lib/notion/getAllPosts'
 import { collectNormalizedPostIds } from '@/lib/notion/postAdapter'
-import { mapPageToOgData, normalizeNotionUuid, type PageOgData } from '@jihuayu/notion-react/data'
+import { mapPageToOgData, normalizeNotionUuid, type PageOgData } from '@jihuayu/notion-data'
 import { unstable_cache } from 'next/cache'
 import { parsePublicHttpUrl } from './url'
 import { config } from './config'

@@ -1,11 +1,11 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
-import type { NotionDocument, PageHrefMap, PagePreviewMap } from './types'
-import type { RawNotionBlock, RawNotionBlockCollection } from './normalize'
-import { normalizeNotionDocument } from './normalize'
+import type { NotionDocument, PageHrefMap, PagePreviewMap } from '@jihuayu/notion-type'
+import type { RawNotionBlock, RawNotionBlockCollection } from '@jihuayu/notion-type/normalize'
+import { normalizeNotionDocument } from '@jihuayu/notion-type/normalize'
 import {
   buildInternalSlugHref,
   buildNotionPublicUrl
-} from './utils/notion'
+} from '@jihuayu/notion-type'
 import {
   buildNotionDirectoryTree,
   buildNotionDirectoryTreeSnapshot,
@@ -954,10 +954,6 @@ function isRelevantPageEvent(eventType: string): boolean {
 
 function isRelevantContainerEvent(eventType: string): boolean {
   return (eventType.startsWith(DATA_SOURCE_EVENT_PREFIX) || eventType.startsWith(DATABASE_EVENT_PREFIX)) && eventType in EVENT_ACTIONS
-}
-
-function getHomePath(basePath = ''): string {
-  return buildInternalSlugHref(basePath, '')
 }
 
 function getPagePathFromPayload(payload: NotionWebhookPayload, basePath = ''): string {

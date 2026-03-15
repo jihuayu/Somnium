@@ -9,12 +9,12 @@ import {
   type BuildPagePreviewMapOptions,
   type NotionPageLike,
   type NotionPagePreviewSource
-} from '@jihuayu/notion-react/data'
-import type { PageHrefMap, PagePreviewMap } from '@jihuayu/notion-react'
-import { buildPagePreviewMap } from '@jihuayu/notion-react/data'
+} from '@jihuayu/notion-data'
+import type { PageHrefMap, PagePreviewMap } from '@jihuayu/notion-type'
+import { buildPagePreviewMap } from '@jihuayu/notion-data'
 import type { PostData } from './filterPublishedPosts'
 
-export { normalizeNotionUuid } from '@jihuayu/notion-react/data'
+export { normalizeNotionUuid } from '@jihuayu/notion-data'
 
 export interface PostFieldNames {
   title: string | string[]

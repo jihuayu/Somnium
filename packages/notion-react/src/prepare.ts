@@ -126,7 +126,7 @@ function getLinkToPageTargetIds(block: NotionBlock): string[] {
 
 function collectCodeBlockPayloads(document: NotionDocument): CodeBlockPayload[] {
   const payloads: CodeBlockPayload[] = []
-  for (const block of Object.values(document.blocksById || {})) {
+  for (const block of Object.values(document.blocksById)) {
     if (!block || block.type !== 'code') continue
     const language = `${block.code.language || ''}`.trim()
     payloads.push({
@@ -181,7 +181,7 @@ function collectPageHrefCandidateIdsFromRichText(richText: unknown, candidateIds
 
 function collectPreviewCandidateUrls(document: NotionDocument): string[] {
   const candidateUrls = new Set<string>()
-  for (const block of Object.values(document.blocksById || {})) {
+  for (const block of Object.values(document.blocksById)) {
     if (!block || typeof block !== 'object') continue
 
     const previewUrl = getPreviewTargetUrl(block)
@@ -198,7 +198,7 @@ function collectPreviewCandidateUrls(document: NotionDocument): string[] {
 
 function collectPageHrefCandidateIds(document: NotionDocument): string[] {
   const ids = new Set<string>()
-  for (const block of Object.values(document.blocksById || {})) {
+  for (const block of Object.values(document.blocksById)) {
     if (!block) continue
     for (const raw of getLinkToPageTargetIds(block)) {
       const normalized = normalizeNotionEntityId(raw)
@@ -370,9 +370,3 @@ export async function prepareNotionRenderModel(
     pagePreviewMap
   }
 }
-
-export {
-  buildNotionDirectoryTree,
-  buildNotionDirectoryTreeSnapshot,
-  refreshNotionDirectoryTreeSnapshot
-} from './directoryTree'

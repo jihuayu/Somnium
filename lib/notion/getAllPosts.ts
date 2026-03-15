@@ -2,7 +2,7 @@ import { config as BLOG } from '@/lib/server/config'
 import { notionClient } from '@/lib/server/notionData'
 import { ONE_DAY_SECONDS } from '@/lib/server/cache'
 import { unstable_cache } from 'next/cache'
-import { queryAllDataSourceEntries, type NotionClient } from '@jihuayu/notion-react/data'
+import { queryAllDataSourceEntries, type NotionClient } from '@jihuayu/notion-data'
 import filterPublishedPosts, { PostData } from './filterPublishedPosts'
 import { mapNotionPageToPost, normalizeNotionUuid } from './postAdapter'
 

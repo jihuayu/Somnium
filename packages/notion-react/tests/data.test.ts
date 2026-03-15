@@ -7,7 +7,7 @@ import {
   queryAllDataSourceEntries,
   resolveNotionWebhookEvent,
   type NotionPageLike
-} from '../src/data'
+} from '../../notion-data/src'
 
 function createPage(): NotionPageLike {
   return {

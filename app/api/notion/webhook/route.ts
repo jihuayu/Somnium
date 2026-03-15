@@ -9,7 +9,7 @@ import {
   parseNotionWebhookPayload,
   resolveNotionWebhookEvent,
   type NotionWebhookResolution
-} from '@jihuayu/notion-react/data'
+} from '@jihuayu/notion-data'
 import { config } from '@/lib/server/config'
 import { infoServerEvent, warnServerError } from '@/lib/server/logging'
 import { notionClient } from '@/lib/server/notionData'

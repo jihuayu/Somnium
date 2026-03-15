@@ -4,7 +4,7 @@ import { ONE_DAY_SECONDS } from '@/lib/server/cache'
 import { getAllPosts } from '@/lib/notion/getAllPosts'
 import { buildNotionDocument } from '@/lib/notion/getPostBlocks'
 import { buildPageLinkMap, type PageLinkMap } from '@/lib/notion/pageLinkMap'
-import { generateRssFeed, renderNotionDocumentToHtml } from '@jihuayu/notion-react/rss'
+import { generateRssFeed, renderNotionDocumentToHtml } from '@jihuayu/notion-type/rss'
 import { mapWithConcurrency } from '@/lib/utils/promisePool'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
 

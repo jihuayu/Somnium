@@ -8,17 +8,20 @@
     "url": "https://github.com/jihuayu/somnium.git"
   },
   "scripts": {
-    "dev": "pnpm run notion-react:build && next dev",
-    "build": "pnpm run notion-react:build && next build",
+    "dev": "pnpm run notion:build && next dev",
+    "build": "pnpm run notion:build && next build",
     "start": "next start",
     "test": "node --import tsx --test tests/**/*.test.ts packages/*/tests/**/*.test.ts",
     "lint": "eslint .",
+    "notion:build": "pnpm --filter @jihuayu/notion-type build && pnpm --filter @jihuayu/notion-data build && pnpm --filter @jihuayu/notion-react build",
     "notion-react:build": "pnpm --filter @jihuayu/notion-react build",
     "notion-react:storybook": "storybook dev -p 6006 -c packages/notion-react/.storybook --disable-telemetry",
     "notion-react:storybook:build": "storybook build -c packages/notion-react/.storybook -o packages/notion-react/storybook-static --disable-telemetry"
   },
   "dependencies": {
+    "@jihuayu/notion-data": "workspace:*",
     "@jihuayu/notion-react": "workspace:*",
+    "@jihuayu/notion-type": "workspace:*",
     "@vercel/analytics": "^2.0.1",
     "@vercel/og": "^0.11.1",
     "@vercel/speed-insights": "^2.0.0",

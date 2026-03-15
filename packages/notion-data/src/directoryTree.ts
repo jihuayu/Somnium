@@ -9,14 +9,14 @@ import type {
   NotionDirectoryTreeRefreshResult,
   NotionDirectoryTreeSnapshot,
   NotionDirectoryTreeWebhookPayload
-} from './types'
+} from '@jihuayu/notion-type'
 import {
   buildNotionPublicUrl,
   extractNotionPageIdFromUrl,
   getFileBlockUrl,
   normalizeNotionEntityId,
   normalizeRichTextUrl
-} from './utils/notion'
+} from '@jihuayu/notion-type'
 
 const DEFAULT_FIELD_NAMES = {
   title: ['title', 'name'],

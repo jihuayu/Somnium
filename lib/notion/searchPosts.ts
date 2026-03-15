@@ -9,7 +9,7 @@ import {
   type NotionClient,
   type NotionDataSourcePropertyMatchMap,
   type NotionDataSourcePropertyRef
-} from '@jihuayu/notion-react/data'
+} from '@jihuayu/notion-data'
 import {
   MAX_SEARCH_KEYWORD_TOKENS,
   MAX_SEARCH_TOKEN_LENGTH,

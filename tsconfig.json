@@ -26,6 +26,30 @@
       "@/*": [
         "./*"
       ],
+      "@jihuayu/notion-type": [
+        "./packages/notion-type/src/index.ts"
+      ],
+      "@jihuayu/notion-type/normalize": [
+        "./packages/notion-type/src/normalize.ts"
+      ],
+      "@jihuayu/notion-type/og": [
+        "./packages/notion-type/src/og.ts"
+      ],
+      "@jihuayu/notion-type/rss": [
+        "./packages/notion-type/src/rss.ts"
+      ],
+      "@jihuayu/notion-data": [
+        "./packages/notion-data/src/index.ts"
+      ],
+      "@jihuayu/notion-react": [
+        "./packages/notion-react/src/index.ts"
+      ],
+      "@jihuayu/notion-react/client": [
+        "./packages/notion-react/src/client.ts"
+      ],
+      "@jihuayu/notion-react/prepare": [
+        "./packages/notion-react/src/prepare.ts"
+      ],
       "server-only": [
         "./node_modules/next/dist/compiled/server-only/empty.js"
       ]

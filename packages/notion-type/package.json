@@ -1,0 +1,45 @@
+{
+  "name": "@jihuayu/notion-type",
+  "version": "0.1.0",
+  "description": "Stable neutral Notion document types and renderless helpers",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./normalize": {
+      "types": "./dist/normalize.d.ts",
+      "import": "./dist/normalize.js",
+      "default": "./dist/normalize.js"
+    },
+    "./rss": {
+      "types": "./dist/rss.d.ts",
+      "import": "./dist/rss.js",
+      "default": "./dist/rss.js"
+    },
+    "./og": {
+      "types": "./dist/og.d.ts",
+      "import": "./dist/og.js",
+      "default": "./dist/og.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "clean": "if exist dist rmdir /s /q dist"
+  },
+  "dependencies": {
+    "feed": "^5.2.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1"
+  }
+}

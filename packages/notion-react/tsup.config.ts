@@ -4,12 +4,8 @@ export default defineConfig([
   {
     entry: {
       client: 'src/client.ts',
-      data: 'src/data.ts',
       index: 'src/index.ts',
-      prepare: 'src/prepare.ts',
-      normalize: 'src/normalize.ts',
-      rss: 'src/rss.ts',
-      og: 'src/og.ts'
+      prepare: 'src/prepare.ts'
     },
     format: ['esm'],
     dts: true,

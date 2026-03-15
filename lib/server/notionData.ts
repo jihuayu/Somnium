@@ -1,4 +1,4 @@
-import { createNotionClientFromEnv, createNotionDataLayer } from '@jihuayu/notion-react/data'
+import { createNotionClientFromEnv, createNotionDataLayer } from '@jihuayu/notion-data'
 
 export const notionClient = createNotionClientFromEnv(process.env)
 

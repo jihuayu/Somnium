@@ -5,7 +5,7 @@ import {
   isNotionVerificationRequest,
   isValidNotionWebhookSignature,
   resolveNotionWebhookEvent
-} from '@jihuayu/notion-react/data'
+} from '@jihuayu/notion-data'
 
 test('isNotionVerificationRequest detects verification payloads', () => {
   assert.equal(

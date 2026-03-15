@@ -6,11 +6,10 @@
     "rootDir": "./src",
     "outDir": "./dist",
     "noEmit": true,
-    "tsBuildInfoFile": "../../.cache/tsconfig.notion-react.tsbuildinfo"
+    "tsBuildInfoFile": "../../.cache/tsconfig.notion-data.tsbuildinfo"
   },
   "include": [
     "../../types/**/*.d.ts",
-    "src/**/*.ts",
-    "src/**/*.tsx"
+    "src/**/*.ts"
   ]
 }

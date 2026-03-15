@@ -7,7 +7,7 @@ import {
   resolvePageHref as resolvePageHrefBase,
   type PageHrefEntry,
   type PageHrefMap
-} from '@jihuayu/notion-react'
+} from '@jihuayu/notion-type'
 
 export type PageLinkMap = PageHrefMap
 

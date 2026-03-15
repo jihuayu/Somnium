@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { config } from '@/lib/server/config'
-import { buildOgImageUrl, buildOpenGraphPayload } from '@jihuayu/notion-react/og'
+import { buildOgImageUrl, buildOpenGraphPayload } from '@jihuayu/notion-type/og'
 
 interface PageMetadataOptions {
   title?: string
