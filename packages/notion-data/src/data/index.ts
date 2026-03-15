@@ -34,4 +34,4 @@ export {
   isValidNotionWebhookSignature,
   parseNotionWebhookPayload,
   resolveNotionWebhookEvent
-} from './webhook'
+} from './webhook/index'
