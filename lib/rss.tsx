@@ -4,7 +4,7 @@ import { ONE_DAY_SECONDS } from '@/lib/server/cache'
 import { getAllPosts } from '@/lib/notion/getAllPosts'
 import { buildNotionDocument } from '@/lib/notion/getPostBlocks'
 import { buildPageLinkMap, type PageLinkMap } from '@/lib/notion/pageLinkMap'
-import { generateRssFeed, renderNotionDocumentToHtml } from '@jihuayu/notion-type/rss'
+import { rssAdapter } from '@jihuayu/notion-type/rss'
 import { mapWithConcurrency } from '@/lib/utils/promisePool'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
 
@@ -66,7 +66,7 @@ const createFeedContent = async (post: PostData, pageLinkMap: PageLinkMap): Prom
   const document = await getCachedFeedDocument(post.id)
   if (!document) return fallbackFeedContent(post)
 
-  const html = renderNotionDocumentToHtml(document, { pageHrefMap: pageLinkMap })
+  const html = rssAdapter.documentHtml.render(document, { pageHrefMap: pageLinkMap })
   const fallback = fallbackFeedContent(post)
 
   return {
@@ -104,7 +104,7 @@ export async function generateRss(posts: PostData[], siteOrigin?: string): Promi
     }
   })
 
-  return generateRssFeed({
+  return rssAdapter.feed.adapt({
     title: config.title,
     description: config.description,
     siteUrl,

@@ -32,6 +32,9 @@
       "@jihuayu/notion-type/normalize": [
         "./packages/notion-type/src/normalize.ts"
       ],
+      "@jihuayu/notion-type/output-adapters": [
+        "./packages/notion-type/src/output-adapters.ts"
+      ],
       "@jihuayu/notion-type/og": [
         "./packages/notion-type/src/og.ts"
       ],

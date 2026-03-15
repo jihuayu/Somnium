@@ -1,0 +1,52 @@
+{
+  "name": "@jihuayu/notion-vue",
+  "version": "0.1.0",
+  "description": "Vue 3 renderer for normalized Notion documents",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.js",
+      "default": "./dist/client.js"
+    },
+    "./prepare": {
+      "types": "./dist/prepare.d.ts",
+      "import": "./dist/prepare.js",
+      "default": "./dist/prepare.js"
+    },
+    "./styles.css": "./dist/styles.css"
+  },
+  "sideEffects": [
+    "./dist/styles.css"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "clean": "if exist dist rmdir /s /q dist"
+  },
+  "peerDependencies": {
+    "vue": "^3.3.0"
+  },
+  "dependencies": {
+    "@jihuayu/notion-type": "workspace:*",
+    "classnames": "^2.5.1",
+    "dayjs": "^1.11.20",
+    "katex": "^0.16.38",
+    "mermaid": "^11.13.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1",
+    "vue": "^3.5.0"
+  }
+}

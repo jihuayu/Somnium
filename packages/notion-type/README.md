@@ -34,6 +34,7 @@ Main entry:
 
 Subpath exports:
 - ./adapters
+- ./output-adapters
 - ./normalize
 - ./rss
 - ./og
@@ -47,6 +48,7 @@ Output modules should expose two layers:
 Examples:
 - ./og exports `NotionOgAdapter` and `ogAdapter`
 - ./rss exports `NotionRssAdapter` and `rssAdapter`
+- ./output-adapters exports `defaultNotionOutputAdapters` and `createNotionOutputAdapters`
 
 This keeps the core model stable while allowing apps to swap or wrap the default output behavior without coupling to React, Next.js, or Notion fetching.
 

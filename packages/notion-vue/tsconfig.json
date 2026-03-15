@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {},
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "noEmit": true,
+    "jsx": "preserve",
+    "tsBuildInfoFile": "../../.cache/tsconfig.notion-vue.tsbuildinfo"
+  },
+  "include": [
+    "../../types/**/*.d.ts",
+    "src/**/*.ts"
+  ]
+}

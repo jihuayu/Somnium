@@ -3,6 +3,7 @@ import { defineConfig } from 'tsup'
 export default defineConfig({
   entry: {
     adapters: 'src/adapters.ts',
+    'output-adapters': 'src/output-adapters.ts',
     index: 'src/index.ts',
     normalize: 'src/normalize.ts',
     rss: 'src/rss.ts',

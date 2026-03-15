@@ -21,6 +21,11 @@
       "import": "./dist/normalize.js",
       "default": "./dist/normalize.js"
     },
+    "./output-adapters": {
+      "types": "./dist/output-adapters.d.ts",
+      "import": "./dist/output-adapters.js",
+      "default": "./dist/output-adapters.js"
+    },
     "./adapters": {
       "types": "./dist/adapters.d.ts",
       "import": "./dist/adapters.js",

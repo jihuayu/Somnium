@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { config } from '@/lib/server/config'
-import { buildOgImageUrl, buildOpenGraphPayload } from '@jihuayu/notion-type/og'
+import { ogAdapter } from '@jihuayu/notion-type/og'
 
 interface PageMetadataOptions {
   title?: string
@@ -87,7 +87,7 @@ export function buildPageMetadata({
   const pageDescription = description || config.description
   const siteUrl = buildSiteUrl()
   const pageUrl = buildPageUrl(siteUrl, slug)
-  const resolvedOgImageUrl = ogImageUrl || buildOgImageUrl({
+  const resolvedOgImageUrl = ogImageUrl || ogAdapter.imageUrl.adapt({
     baseUrl: config.ogImageGenerateURL,
     title: pageTitle,
     query: {
@@ -99,7 +99,7 @@ export function buildPageMetadata({
   })
   const publishedTime = toIsoDate(date)
   const twitterHandle = buildTwitterHandle(config.socialLink || '')
-  const ogPayload = buildOpenGraphPayload({
+  const ogPayload = ogAdapter.payload.adapt({
     title: pageTitle,
     description: pageDescription,
     siteUrl,
