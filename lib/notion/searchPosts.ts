@@ -1,14 +1,22 @@
 import { config as BLOG } from '@/lib/server/config'
-import api from '@/lib/server/notion-api'
+import { notionClient } from '@/lib/server/notionData'
 import { ONE_DAY_SECONDS } from '@/lib/server/cache'
 import { unstable_cache } from 'next/cache'
+import {
+  buildTextSearchFilter,
+  resolveDataSourcePropertyRefs,
+  tokenizeSearchQuery,
+  type NotionClient,
+  type NotionDataSourcePropertyMatchMap,
+  type NotionDataSourcePropertyRef
+} from '@jihuayu/notion-react/data'
 import {
   MAX_SEARCH_KEYWORD_TOKENS,
   MAX_SEARCH_TOKEN_LENGTH,
   MIN_SEARCH_QUERY_LENGTH
 } from '@/lib/search/constants'
 import filterPublishedPosts, { PostData } from './filterPublishedPosts'
-import { mapPageToPost, normalizeNotionUuid, type NotionPageLike } from './postMapper'
+import { mapNotionPageToPost, normalizeNotionUuid } from './postAdapter'
 
 const MAX_PAGE_FETCHES = 10
 const MAX_LIMIT = 50
@@ -24,25 +32,21 @@ interface SearchPostsOptions {
 }
 
 interface SearchPostsDependencies {
-  apiClient?: Pick<typeof api, 'retrieveDataSource' | 'queryDataSource'>
+  apiClient?: Pick<NotionClient, 'retrieveDataSource' | 'queryDataSource'>
   dataSourceId?: string
   sortByDate?: boolean
-}
-
-interface DataSourcePropertyRef {
-  id: string
-  type: string
 }
 
 interface NotionDataSourceProperty {
   id?: string
   type?: string
+  [key: string]: unknown
 }
 
 interface SearchPropertyRefs {
-  title: DataSourcePropertyRef | null
-  summary: DataSourcePropertyRef | null
-  tags: DataSourcePropertyRef | null
+  title: NotionDataSourcePropertyRef | null
+  summary: NotionDataSourcePropertyRef | null
+  tags: NotionDataSourcePropertyRef | null
 }
 
 function normalizeForMatch(value: string): string {
@@ -50,58 +54,22 @@ function normalizeForMatch(value: string): string {
 }
 
 function tokenizeKeyword(value: string): string[] {
-  if (!value) return []
-
-  const seen = new Set<string>()
-  const tokens: string[] = []
-
-  for (const item of value.split(/\s+/)) {
-    const token = item.trim().slice(0, MAX_SEARCH_TOKEN_LENGTH)
-    if (!token || seen.has(token)) continue
-    seen.add(token)
-    tokens.push(token)
-    if (tokens.length >= MAX_SEARCH_KEYWORD_TOKENS) break
-  }
-
-  return tokens
+  return tokenizeSearchQuery(value, {
+    maxTokens: MAX_SEARCH_KEYWORD_TOKENS,
+    maxTokenLength: MAX_SEARCH_TOKEN_LENGTH
+  })
 }
 
-function findDataSourceProperty(
-  properties: Record<string, NotionDataSourceProperty | undefined>,
-  candidateNames: string[],
-  expectedType: string,
-  allowFallbackByType = false
-): DataSourcePropertyRef | null {
-  const normalizedCandidates = candidateNames.map(name => name.toLowerCase())
-  const entries = Object.entries(properties || {})
-
-  for (const [name, property] of entries) {
-    if (!property || property.type !== expectedType) continue
-    if (!normalizedCandidates.includes(name.toLowerCase())) continue
-    return {
-      id: property.id || name,
-      type: property.type
-    }
-  }
-
-  if (!allowFallbackByType) return null
-  const fallback = entries.find(([, property]) => property?.type === expectedType)
-  if (!fallback) return null
-
-  return {
-    id: fallback[1].id || fallback[0],
-    type: fallback[1].type
-  }
-}
+const SEARCH_PROPERTY_RULES = {
+  title: { names: ['title', 'name'], type: 'title', allowFallbackByType: true },
+  summary: { names: ['summary', 'description'], type: 'rich_text' },
+  tags: { names: ['tags', 'tag'], type: 'multi_select' }
+} satisfies NotionDataSourcePropertyMatchMap
 
 const getSearchPropertyRefsCached = unstable_cache(
   async (dataSourceId: string): Promise<SearchPropertyRefs> => {
-    const properties = (await api.retrieveDataSource(dataSourceId)).properties as Record<string, NotionDataSourceProperty | undefined> || {}
-    return {
-      title: findDataSourceProperty(properties, ['title', 'name'], 'title', true),
-      summary: findDataSourceProperty(properties, ['summary', 'description'], 'rich_text'),
-      tags: findDataSourceProperty(properties, ['tags', 'tag'], 'multi_select')
-    }
+    const properties = (await notionClient.retrieveDataSource(dataSourceId)).properties as Record<string, NotionDataSourceProperty | undefined> || {}
+    return resolveDataSourcePropertyRefs(properties, SEARCH_PROPERTY_RULES) as SearchPropertyRefs
   },
   ['notion-search-property-refs'],
   { revalidate: DATA_SOURCE_SCHEMA_CACHE_SECONDS, tags: ['notion-search-schema'] }
@@ -110,23 +78,19 @@ const getSearchPropertyRefsCached = unstable_cache(
 async function buildSearchPropertyRefs(
   properties: Record<string, NotionDataSourceProperty | undefined>
 ): Promise<SearchPropertyRefs> {
-  return {
-    title: findDataSourceProperty(properties, ['title', 'name'], 'title', true),
-    summary: findDataSourceProperty(properties, ['summary', 'description'], 'rich_text'),
-    tags: findDataSourceProperty(properties, ['tags', 'tag'], 'multi_select')
-  }
+  return resolveDataSourcePropertyRefs(properties, SEARCH_PROPERTY_RULES) as SearchPropertyRefs
 }
 
 async function getSearchPropertyRefs(
   dataSourceId: string,
   signal?: AbortSignal,
-  apiClient: Pick<typeof api, 'retrieveDataSource'> = api
+  apiClient: Pick<NotionClient, 'retrieveDataSource'> = notionClient
 ): Promise<SearchPropertyRefs> {
   if (signal?.aborted) {
     throw new DOMException('Aborted', 'AbortError')
   }
 
-  const refs = apiClient === api
+  const refs = apiClient === notionClient
     ? await getSearchPropertyRefsCached(dataSourceId)
     : await buildSearchPropertyRefs(
         (await apiClient.retrieveDataSource(dataSourceId)).properties as Record<string, NotionDataSourceProperty | undefined> || {}
@@ -143,69 +107,22 @@ function buildSearchFilter(
   tag: string,
   refs: SearchPropertyRefs
 ): Record<string, unknown> | null {
-  const andFilters: Record<string, unknown>[] = []
+  const clauses = [
+    refs.title ? { propertyId: refs.title.id, type: 'title' as const } : null,
+    refs.summary ? { propertyId: refs.summary.id, type: 'rich_text' as const } : null,
+    refs.tags ? { propertyId: refs.tags.id, type: 'multi_select' as const } : null
+  ].filter((item): item is { propertyId: string, type: 'title' | 'rich_text' | 'multi_select' } => !!item)
 
-  if (tag && refs.tags) {
-    andFilters.push({
-      property: refs.tags.id,
-      multi_select: {
-        contains: tag
-      }
-    })
-  }
+  const extraFilters = tag && refs.tags
+    ? [{
+        property: refs.tags.id,
+        multi_select: {
+          contains: tag
+        }
+      }]
+    : []
 
-  if (keywordTokens.length) {
-    const tokenFilters: Record<string, unknown>[] = []
-
-    for (const token of keywordTokens) {
-      const fieldFilters: Record<string, unknown>[] = []
-
-      if (refs.title) {
-        fieldFilters.push({
-          property: refs.title.id,
-          title: {
-            contains: token
-          }
-        })
-      }
-      if (refs.summary) {
-        fieldFilters.push({
-          property: refs.summary.id,
-          rich_text: {
-            contains: token
-          }
-        })
-      }
-      if (refs.tags) {
-        fieldFilters.push({
-          property: refs.tags.id,
-          multi_select: {
-            contains: token
-          }
-        })
-      }
-
-      if (fieldFilters.length === 1) {
-        tokenFilters.push(fieldFilters[0])
-      } else if (fieldFilters.length > 1) {
-        tokenFilters.push({
-          or: fieldFilters
-        })
-      }
-    }
-
-    if (tokenFilters.length === 1) {
-      andFilters.push(tokenFilters[0])
-    } else if (tokenFilters.length > 1) {
-      andFilters.push({
-        and: tokenFilters
-      })
-    }
-  }
-
-  if (andFilters.length === 0) return null
-  if (andFilters.length === 1) return andFilters[0]
-  return { and: andFilters }
+  return buildTextSearchFilter(keywordTokens, clauses, extraFilters)
 }
 
 function matchesKeywordAndTag(post: PostData, keywordTokens: string[], normalizedTag: string): boolean {
@@ -241,7 +158,7 @@ export async function searchPosts({
   const normalizedTag = normalizeForMatch(tagValue)
   if (!keywordTokensRaw.length && !tagValue) return []
 
-  const apiClient = dependencies?.apiClient || api
+  const apiClient = dependencies?.apiClient || notionClient
   const dataSourceId = normalizeNotionUuid(dependencies?.dataSourceId || process.env.NOTION_DATA_SOURCE_ID)
   if (!dataSourceId) {
     throw new Error('Missing required environment variable: NOTION_DATA_SOURCE_ID')
@@ -269,7 +186,7 @@ export async function searchPosts({
     }, signal)
 
     const pageResults = Array.isArray(response?.results) ? response.results : []
-    const mapped = pageResults.map(page => mapPageToPost(page)).filter(post => post?.id)
+    const mapped = pageResults.map(page => mapNotionPageToPost(page)).filter(post => post?.id)
     const filtered = filterPublishedPosts({ posts: mapped, includePages })
 
     for (const post of filtered) {

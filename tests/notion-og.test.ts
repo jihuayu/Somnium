@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { mapPageToOgData } from '../lib/notion/pageOgData'
+import { mapPageToOgData } from '@jihuayu/notion-react/data'
 import { buildNotionOgImageUrl, buildPageMetadata } from '../lib/server/metadata'
 
 test('mapPageToOgData reads title summary and external cover', () => {

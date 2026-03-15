@@ -1,11 +1,11 @@
 import cjk from '@/lib/cjk'
 import { getAllPosts } from '@/lib/notion/getAllPosts'
-import { mapPageToOgData, type PageOgData } from '@/lib/notion/pageOgData'
-import { normalizeNotionUuid } from '@/lib/notion/postMapper'
+import { collectNormalizedPostIds } from '@/lib/notion/postAdapter'
+import { mapPageToOgData, normalizeNotionUuid, type PageOgData } from '@jihuayu/notion-react/data'
 import { unstable_cache } from 'next/cache'
 import { parsePublicHttpUrl } from './url'
 import { config } from './config'
-import api from './notion-api'
+import { notionClient } from './notionData'
 
 const NOTION_OG_PAGE_CACHE_REVALIDATE_SECONDS = 300
 const FONT_CACHE_REVALIDATE_SECONDS = 60 * 60 * 24 * 30
@@ -23,7 +23,7 @@ interface OgFontDescriptor {
 
 const getCachedOgPage = unstable_cache(
   async (pageId: string) => {
-    const page = await api.retrievePage(pageId)
+    const page = await notionClient.retrievePage(pageId)
     return mapPageToOgData(page)
   },
   ['notion-og-page'],
@@ -33,9 +33,7 @@ const getCachedOgPage = unstable_cache(
 const getCachedPublishedOgPageIds = unstable_cache(
   async () => {
     const posts = await getAllPosts({ includePages: true })
-    return posts
-      .map(post => normalizeNotionUuid(post.id))
-      .filter(Boolean)
+    return collectNormalizedPostIds(posts)
   },
   ['notion-og-page-allowlist'],
   { revalidate: NOTION_OG_PAGE_CACHE_REVALIDATE_SECONDS, tags: ['notion-posts', 'notion-og-page'] }

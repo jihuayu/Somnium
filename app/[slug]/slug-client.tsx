@@ -4,11 +4,10 @@ import { ARTICLE_CONTENT_MAX_WIDTH_CLASS } from '@/consts'
 import Post from '@/components/Post'
 import Comments from '@/components/Comments'
 import { config } from '@/lib/server/config'
+import type { NotionDocument, PagePreviewMap } from '@jihuayu/notion-react'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
-import type { NotionDocument } from '@/lib/notion/getPostBlocks'
 import type { LinkPreviewMap } from '@/lib/link-preview/types'
 import type { PageLinkMap } from '@/lib/notion/pageLinkMap'
-import type { PagePreviewMap } from '@/lib/notion/pagePreviewMap'
 
 interface SlugPostClientProps {
   post: PostData

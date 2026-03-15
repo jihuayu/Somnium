@@ -4,8 +4,8 @@ import {
   computeNotionWebhookSignature,
   isNotionVerificationRequest,
   isValidNotionWebhookSignature,
-  resolveNotionWebhookRevalidation
-} from '../lib/server/notionWebhook'
+  resolveNotionWebhookEvent
+} from '@jihuayu/notion-react/data'
 
 test('isNotionVerificationRequest detects verification payloads', () => {
   assert.equal(
@@ -30,18 +30,19 @@ test('isValidNotionWebhookSignature validates sha256 signatures', () => {
   assert.equal(isValidNotionWebhookSignature(body, 'secret_123', 'sha256=bad'), false)
 })
 
-test('resolveNotionWebhookRevalidation accepts verification payloads without revalidation', async () => {
-  const result = await resolveNotionWebhookRevalidation({
+test('resolveNotionWebhookEvent accepts verification payloads without refresh', async () => {
+  const result = await resolveNotionWebhookEvent({
     verification_token: 'secret_123'
   })
 
   assert.equal(result.accepted, true)
   assert.equal(result.isVerificationRequest, true)
-  assert.equal(result.shouldRevalidate, false)
+  assert.equal(result.shouldRefresh, false)
+  assert.equal(result.action, 'verification')
 })
 
-test('resolveNotionWebhookRevalidation refreshes for matching data source events', async () => {
-  const result = await resolveNotionWebhookRevalidation(
+test('resolveNotionWebhookEvent resolves schema action for matching data source events', async () => {
+  const result = await resolveNotionWebhookEvent(
     {
       type: 'data_source.schema_updated',
       entity: {
@@ -54,15 +55,12 @@ test('resolveNotionWebhookRevalidation refreshes for matching data source events
     }
   )
 
-  assert.equal(result.shouldRevalidate, true)
-  assert.ok(result.tags.includes('notion-posts'))
-  assert.ok(result.tags.includes('notion-og-page'))
-  assert.ok(result.paths.includes('/feed'))
-  assert.ok(result.paths.includes('/[slug]'))
+  assert.equal(result.shouldRefresh, true)
+  assert.equal(result.action, 'schema')
 })
 
-test('resolveNotionWebhookRevalidation refreshes only the page path for page updates', async () => {
-  const result = await resolveNotionWebhookRevalidation(
+test('resolveNotionWebhookEvent resolves page action for page updates', async () => {
+  const result = await resolveNotionWebhookEvent(
     {
       type: 'page.content_updated',
       entity: {
@@ -77,13 +75,13 @@ test('resolveNotionWebhookRevalidation refreshes only the page path for page upd
     }
   )
 
-  assert.equal(result.shouldRevalidate, true)
-  assert.deepEqual(result.tags, [])
-  assert.deepEqual(result.paths, ['/gpt-might-be-an-information-virus'])
+  assert.equal(result.shouldRefresh, true)
+  assert.equal(result.action, 'page')
+  assert.equal(result.resolvedPagePath, '/gpt-might-be-an-information-virus')
 })
 
-test('resolveNotionWebhookRevalidation refreshes only home for page creation', async () => {
-  const result = await resolveNotionWebhookRevalidation(
+test('resolveNotionWebhookEvent resolves home action for page creation', async () => {
+  const result = await resolveNotionWebhookEvent(
     {
       type: 'page.created',
       entity: {
@@ -102,13 +100,12 @@ test('resolveNotionWebhookRevalidation refreshes only home for page creation', a
     }
   )
 
-  assert.equal(result.shouldRevalidate, true)
-  assert.deepEqual(result.tags, [])
-  assert.deepEqual(result.paths, ['/'])
+  assert.equal(result.shouldRefresh, true)
+  assert.equal(result.action, 'home')
 })
 
-test('resolveNotionWebhookRevalidation refreshes only home and the page path for page deletion', async () => {
-  const result = await resolveNotionWebhookRevalidation(
+test('resolveNotionWebhookEvent resolves home-and-page action for page deletion', async () => {
+  const result = await resolveNotionWebhookEvent(
     {
       type: 'page.deleted',
       entity: {
@@ -133,13 +130,13 @@ test('resolveNotionWebhookRevalidation refreshes only home and the page path for
     }
   )
 
-  assert.equal(result.shouldRevalidate, true)
-  assert.deepEqual(result.tags, [])
-  assert.deepEqual(result.paths, ['/', '/deleted-post'])
+  assert.equal(result.shouldRefresh, true)
+  assert.equal(result.action, 'home-and-page')
+  assert.equal(result.resolvedPagePath, '/deleted-post')
 })
 
-test('resolveNotionWebhookRevalidation ignores container content events to avoid broad invalidation', async () => {
-  const result = await resolveNotionWebhookRevalidation(
+test('resolveNotionWebhookEvent ignores container content events', async () => {
+  const result = await resolveNotionWebhookEvent(
     {
       type: 'data_source.content_updated',
       entity: {
@@ -152,12 +149,13 @@ test('resolveNotionWebhookRevalidation ignores container content events to avoid
     }
   )
 
-  assert.equal(result.shouldRevalidate, false)
+  assert.equal(result.shouldRefresh, false)
   assert.equal(result.reason, 'ignored-container-content-event')
+  assert.equal(result.action, 'ignore')
 })
 
-test('resolveNotionWebhookRevalidation ignores unrelated data sources', async () => {
-  const result = await resolveNotionWebhookRevalidation(
+test('resolveNotionWebhookEvent ignores unrelated data sources', async () => {
+  const result = await resolveNotionWebhookEvent(
     {
       type: 'data_source.content_updated',
       entity: {
@@ -170,12 +168,13 @@ test('resolveNotionWebhookRevalidation ignores unrelated data sources', async ()
     }
   )
 
-  assert.equal(result.shouldRevalidate, false)
+  assert.equal(result.shouldRefresh, false)
   assert.equal(result.reason, 'ignored-unrelated-entity')
+  assert.equal(result.action, 'ignore')
 })
 
-test('resolveNotionWebhookRevalidation checks page parent data source when parent is not present in payload', async () => {
-  const result = await resolveNotionWebhookRevalidation(
+test('resolveNotionWebhookEvent checks page parent data source when parent is not present in payload', async () => {
+  const result = await resolveNotionWebhookEvent(
     {
       type: 'page.properties_updated',
       entity: {
@@ -196,6 +195,7 @@ test('resolveNotionWebhookRevalidation checks page parent data source when paren
     }
   )
 
-  assert.equal(result.shouldRevalidate, true)
-  assert.deepEqual(result.paths, ['/resolved-from-page-id'])
+  assert.equal(result.shouldRefresh, true)
+  assert.equal(result.action, 'page')
+  assert.equal(result.resolvedPagePath, '/resolved-from-page-id')
 })

@@ -1,20 +1,21 @@
 import { config as BLOG } from '@/lib/server/config'
-import api from '@/lib/server/notion-api'
+import { notionClient } from '@/lib/server/notionData'
 import { ONE_DAY_SECONDS } from '@/lib/server/cache'
 import { unstable_cache } from 'next/cache'
+import { queryAllDataSourceEntries, type NotionClient } from '@jihuayu/notion-react/data'
 import filterPublishedPosts, { PostData } from './filterPublishedPosts'
-import { mapPageToPost, normalizeNotionUuid } from './postMapper'
+import { mapNotionPageToPost, normalizeNotionUuid } from './postAdapter'
 
 const POSTS_CACHE_REVALIDATE_SECONDS = ONE_DAY_SECONDS
 
 interface NotionPostsDependencies {
-  apiClient?: Pick<typeof api, 'queryAllDataSourcePages'>
+  apiClient?: Pick<NotionClient, 'queryAllDataSourcePages'>
   dataSourceId?: string
   sortByDate?: boolean
 }
 
 async function fetchAllPosts(includePages: boolean, {
-  apiClient = api,
+  apiClient = notionClient,
   dataSourceId: rawDataSourceId = process.env.NOTION_DATA_SOURCE_ID,
   sortByDate = BLOG.sortByDate
 }: NotionPostsDependencies = {}): Promise<PostData[]> {
@@ -23,14 +24,14 @@ async function fetchAllPosts(includePages: boolean, {
     throw new Error('Missing required environment variable: NOTION_DATA_SOURCE_ID')
   }
 
-  const pages = await apiClient.queryAllDataSourcePages(dataSourceId)
-  const data = pages.map(page => mapPageToPost(page)).filter(post => post?.id)
+  const data = await queryAllDataSourceEntries(apiClient as NotionClient, {
+    dataSourceId,
+    mapPage: mapNotionPageToPost,
+    filterEntry: (post) => !!post?.id,
+    sortEntries: sortByDate ? (left, right) => right.date - left.date : undefined
+  })
 
   const posts = filterPublishedPosts({ posts: data, includePages })
-
-  if (sortByDate) {
-    posts.sort((a, b) => b.date - a.date)
-  }
 
   return posts
 }

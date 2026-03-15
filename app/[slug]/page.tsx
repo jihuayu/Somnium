@@ -7,7 +7,7 @@ import loadLocale from '@/assets/i18n'
 import ContainerServer from '@/components/ContainerServer'
 import { buildNotionOgImageUrl, buildPageMetadata } from '@/lib/server/metadata'
 import { buildPageLinkMap } from '@/lib/notion/pageLinkMap'
-import { buildPagePreviewMap } from '@/lib/notion/pagePreviewMap'
+import { buildPostPagePreviewMap } from '@/lib/notion/postAdapter'
 import { config } from '@/lib/server/config'
 import { ONE_DAY_SECONDS } from '@/lib/server/cache'
 import SlugPostClient from './slug-client'
@@ -18,7 +18,7 @@ const getCachedPageMaps = unstable_cache(
   async () => {
     const allPosts = await getAllPosts({ includePages: true })
     const pageLinkMap = buildPageLinkMap(allPosts, config.path || '')
-    const pagePreviewMap = buildPagePreviewMap(allPosts, pageLinkMap, {
+    const pagePreviewMap = buildPostPagePreviewMap(allPosts, pageLinkMap, {
       siteUrl: config.link || '',
       buildImageUrl: buildNotionOgImageUrl
     })
@@ -37,7 +37,7 @@ const getSlugPageState = cache(async () => {
     : buildPageLinkMap(posts, config.path || '')
   const pagePreviewMap = Object.keys(cachedPageMaps.pagePreviewMap).length
     ? cachedPageMaps.pagePreviewMap
-    : buildPagePreviewMap(posts, pageLinkMap, {
+    : buildPostPagePreviewMap(posts, pageLinkMap, {
       siteUrl: config.link || '',
       buildImageUrl: buildNotionOgImageUrl
     })

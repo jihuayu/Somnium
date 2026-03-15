@@ -26,6 +26,11 @@
       "import": "./dist/prepare.js",
       "default": "./dist/prepare.js"
     },
+    "./data": {
+      "types": "./dist/data.d.ts",
+      "import": "./dist/data.js",
+      "default": "./dist/data.js"
+    },
     "./normalize": {
       "types": "./dist/normalize.d.ts",
       "import": "./dist/normalize.js",

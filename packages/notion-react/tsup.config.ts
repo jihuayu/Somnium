@@ -4,6 +4,7 @@ export default defineConfig([
   {
     entry: {
       client: 'src/client.ts',
+      data: 'src/data.ts',
       index: 'src/index.ts',
       prepare: 'src/prepare.ts',
       normalize: 'src/normalize.ts',

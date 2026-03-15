@@ -1,4 +1,9 @@
 export { prepareNotionRenderModel } from './prepare'
+export {
+  buildNotionDirectoryTree,
+  buildNotionDirectoryTreeSnapshot,
+  refreshNotionDirectoryTreeSnapshot
+} from './directoryTree'
 export { normalizeNotionDocument } from './normalize'
 export { default as NotionRenderer } from './components/NotionRenderer'
 export { default as DateMention } from './components/DateMention'
@@ -28,6 +33,16 @@ export type {
   LinkPreviewCardProps,
   LinkPreviewData,
   LinkPreviewMap,
+  NotionDirectoryPageLike,
+  NotionDirectoryProperty,
+  NotionDirectoryTreeBuildOptions,
+  NotionDirectoryTreeEntry,
+  NotionDirectoryTreeFieldNames,
+  NotionDirectoryTreeNode,
+  NotionDirectoryTreeRefreshInput,
+  NotionDirectoryTreeRefreshResult,
+  NotionDirectoryTreeSnapshot,
+  NotionDirectoryTreeWebhookPayload,
   NotionBlock,
   NotionBlockBase,
   NotionBlockType,

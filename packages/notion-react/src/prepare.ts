@@ -370,3 +370,9 @@ export async function prepareNotionRenderModel(
     pagePreviewMap
   }
 }
+
+export {
+  buildNotionDirectoryTree,
+  buildNotionDirectoryTreeSnapshot,
+  refreshNotionDirectoryTreeSnapshot
+} from './directoryTree'

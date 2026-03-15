@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { NextRequest } from 'next/server'
+import { computeNotionWebhookSignature } from '@jihuayu/notion-react/data'
 import { POST } from '../app/api/notion/webhook/route'
-import { computeNotionWebhookSignature } from '../lib/server/notionWebhook'
 
 function createWebhookRequest(body: Record<string, unknown>, headers: HeadersInit = {}): NextRequest {
   return new NextRequest('http://localhost/api/notion/webhook', {

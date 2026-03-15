@@ -432,6 +432,124 @@ export interface PrepareNotionRenderModelOptions {
   initialPagePreviewMap?: PagePreviewMap
 }
 
+export interface NotionDirectoryRichTextItem {
+  plain_text?: string | null
+}
+
+export interface NotionDirectorySelectOption {
+  name?: string | null
+}
+
+export interface NotionDirectoryRelationItem {
+  id?: string | null
+}
+
+export interface NotionDirectoryFormulaValue {
+  type?: 'string' | 'number' | 'boolean' | 'date'
+  string?: string | null
+  number?: number | null
+  boolean?: boolean | null
+}
+
+export interface NotionDirectoryProperty {
+  type?: string
+  title?: NotionDirectoryRichTextItem[]
+  rich_text?: NotionDirectoryRichTextItem[]
+  url?: string | null
+  select?: NotionDirectorySelectOption | null
+  status?: NotionDirectorySelectOption | null
+  multi_select?: NotionDirectorySelectOption[]
+  relation?: NotionDirectoryRelationItem[]
+  formula?: NotionDirectoryFormulaValue | null
+  files?: Array<(NotionFileReference & { name?: string | null })>
+}
+
+export interface NotionDirectoryPageIcon {
+  type?: 'emoji' | 'external' | 'file'
+  emoji?: string | null
+  external?: { url?: string | null } | null
+  file?: { url?: string | null } | null
+}
+
+export interface NotionDirectoryPageLike {
+  id: string
+  url?: string | null
+  icon?: NotionDirectoryPageIcon | null
+  properties?: Record<string, NotionDirectoryProperty | undefined>
+}
+
+export interface NotionDirectoryTreeFieldNames {
+  title?: string | string[]
+  desc?: string | string[]
+  tag?: string | string[]
+  url?: string | string[]
+  icon?: string | string[]
+  parent?: string | string[]
+}
+
+export interface NotionDirectoryTreeNode {
+  id: string
+  title: string
+  desc: string
+  tag: string[]
+  url: string
+  icon: string
+  children: NotionDirectoryTreeNode[]
+}
+
+export interface NotionDirectoryTreeEntry extends Omit<NotionDirectoryTreeNode, 'children'> {
+  parentId: string
+}
+
+export interface NotionDirectoryTreeSnapshot {
+  roots: NotionDirectoryTreeNode[]
+  nodesById: Record<string, NotionDirectoryTreeNode>
+  entriesById: Record<string, NotionDirectoryTreeEntry>
+}
+
+export interface NotionDirectoryTreeBuildOptions {
+  fieldNames?: NotionDirectoryTreeFieldNames
+  resolveUrl?: (page: NotionDirectoryPageLike, entry: Omit<NotionDirectoryTreeEntry, 'url' | 'parentId'> & { parentId: string }) => string
+  resolveIcon?: (page: NotionDirectoryPageLike, entry: Omit<NotionDirectoryTreeEntry, 'icon' | 'parentId'> & { parentId: string }) => string
+  resolveParentId?: (page: NotionDirectoryPageLike, entry: Omit<NotionDirectoryTreeEntry, 'parentId'>) => string
+  sortChildren?: (left: NotionDirectoryTreeNode, right: NotionDirectoryTreeNode) => number
+}
+
+export interface NotionDirectoryTreeWebhookPayload {
+  verification_token?: string
+  type?: string
+  entity?: {
+    id?: string
+    type?: string
+  }
+  data?: {
+    [key: string]: unknown
+  }
+}
+
+export interface NotionDirectoryTreeFullRefreshInput {
+  mode: 'full'
+  pages: NotionDirectoryPageLike[]
+}
+
+export interface NotionDirectoryTreeWebhookRefreshInput {
+  mode: 'webhook'
+  payload: NotionDirectoryTreeWebhookPayload
+  page?: NotionDirectoryPageLike | null
+  pages?: NotionDirectoryPageLike[] | null
+}
+
+export type NotionDirectoryTreeRefreshInput =
+  | NotionDirectoryTreeFullRefreshInput
+  | NotionDirectoryTreeWebhookRefreshInput
+
+export interface NotionDirectoryTreeRefreshResult {
+  snapshot: NotionDirectoryTreeSnapshot
+  changed: boolean
+  requiresFullRefresh: boolean
+  reason: string
+}
+
 export type DateMentionDisplayMode = 'notion' | 'relative' | 'absolute'
 export type DateMentionIncludeTimeMode = 'auto' | 'always' | 'never'
 export type DateMentionRelativeStyle = 'long' | 'short' | 'narrow'

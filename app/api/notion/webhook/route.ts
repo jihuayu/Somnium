@@ -1,16 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath, revalidateTag } from 'next/cache'
-import api from '@/lib/server/notion-api'
-import { buildInternalSlugHref } from '@/lib/notion/pageLinkMap'
-import { getPageParentDataSourceId, mapPageToPost, normalizeNotionUuid } from '@/lib/notion/postMapper'
-import { config } from '@/lib/server/config'
-import { infoServerEvent, warnServerError } from '@/lib/server/logging'
 import {
+  buildPagePathFromPage,
+  getPageParentDataSourceId,
   isNotionVerificationRequest,
   isValidNotionWebhookSignature,
+  normalizeNotionUuid,
   parseNotionWebhookPayload,
-  resolveNotionWebhookRevalidation
-} from '@/lib/server/notionWebhook'
+  resolveNotionWebhookEvent,
+  type NotionWebhookResolution
+} from '@jihuayu/notion-react/data'
+import { config } from '@/lib/server/config'
+import { infoServerEvent, warnServerError } from '@/lib/server/logging'
+import { notionClient } from '@/lib/server/notionData'
+import { NOTION_WEBHOOK_REVALIDATE_PATHS, NOTION_WEBHOOK_REVALIDATE_TAGS } from '@/lib/server/cache'
+import { buildInternalSlugHref } from '@/lib/notion/pageLinkMap'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,9 +34,26 @@ function getConfiguredDataSourceId(): string {
   return normalizeNotionUuid(process.env.NOTION_DATA_SOURCE_ID)
 }
 
+function buildRevalidationTargets(result: NotionWebhookResolution): { tags: string[], paths: string[] } {
+  const homePath = buildInternalSlugHref(config.path || '', '')
+
+  switch (result.action) {
+    case 'home':
+      return { tags: [], paths: [homePath] }
+    case 'page':
+      return { tags: [], paths: result.resolvedPagePath ? [result.resolvedPagePath] : [] }
+    case 'home-and-page':
+      return { tags: [], paths: Array.from(new Set([homePath, result.resolvedPagePath].filter(Boolean))) }
+    case 'schema':
+      return { tags: [...NOTION_WEBHOOK_REVALIDATE_TAGS], paths: [...NOTION_WEBHOOK_REVALIDATE_PATHS] }
+    default:
+      return { tags: [], paths: [] }
+  }
+}
+
 async function resolvePageParentDataSourceId(pageId: string): Promise<string> {
   try {
-    const page = await api.retrievePage(pageId)
+    const page = await notionClient.retrievePage(pageId)
     return getPageParentDataSourceId(page)
   } catch (error) {
     warnServerError('notion-webhook:resolve-parent', error, { pageId })
@@ -42,10 +63,8 @@ async function resolvePageParentDataSourceId(pageId: string): Promise<string> {
 
 async function resolvePagePath(pageId: string): Promise<string> {
   try {
-    const page = await api.retrievePage(pageId)
-    const post = mapPageToPost(page)
-    const slug = `${post?.slug || ''}`.trim()
-    return slug ? buildInternalSlugHref(config.path || '', slug) : ''
+    const page = await notionClient.retrievePage(pageId)
+    return buildPagePathFromPage(page, config.path || '')
   } catch (error) {
     warnServerError('notion-webhook:resolve-path', error, { pageId })
     return ''
@@ -146,7 +165,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const result = await resolveNotionWebhookRevalidation(payload, {
+  const result = await resolveNotionWebhookEvent(payload, {
     configuredDataSourceId: getConfiguredDataSourceId(),
     basePath: config.path || '',
     resolvePageParentDataSourceId,
@@ -157,7 +176,7 @@ export async function POST(req: NextRequest) {
     return jsonNoStore({ error: result.reason }, 400)
   }
 
-  if (!result.shouldRevalidate) {
+  if (!result.shouldRefresh) {
     return jsonNoStore({
       ok: true,
       ignored: true,
@@ -167,8 +186,9 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  applyRevalidation(result.tags, result.paths)
-  const scheduledPrewarmPaths = getPrewarmablePaths(result.paths)
+  const targets = buildRevalidationTargets(result)
+  applyRevalidation(targets.tags, targets.paths)
+  const scheduledPrewarmPaths = getPrewarmablePaths(targets.paths)
   void prewarmPaths(req.nextUrl.origin, scheduledPrewarmPaths)
 
   return jsonNoStore({
@@ -177,8 +197,9 @@ export async function POST(req: NextRequest) {
     reason: result.reason,
     eventType: result.eventType,
     entityId: result.entityId,
-    tags: result.tags,
-    paths: result.paths,
+    action: result.action,
+    tags: targets.tags,
+    paths: targets.paths,
     scheduledPrewarmPaths,
     timestamp: new Date().toISOString()
   })

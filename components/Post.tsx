@@ -11,11 +11,10 @@ import { formatDate } from '@/lib/formatDate'
 import TagItem from '@/components/TagItem'
 import NotionRenderer from '@/components/NotionRenderer'
 import TableOfContents from '@/components/TableOfContents'
+import type { NotionDocument, PagePreviewMap } from '@jihuayu/notion-react'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
-import type { NotionDocument } from '@/lib/notion/getPostBlocks'
 import type { LinkPreviewMap } from '@/lib/link-preview/types'
 import type { PageLinkMap } from '@/lib/notion/pageLinkMap'
-import type { PagePreviewMap } from '@/lib/notion/pagePreviewMap'
 
 interface PostProps {
   post: PostData
