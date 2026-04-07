@@ -38,13 +38,25 @@ test('webhook route requires verification token only when configured', async () 
   process.env.NOTION_WEBHOOK_VERIFICATION_TOKEN = 'verify_secret'
 
   try {
-    const rejected = await POST(createWebhookRequest({ type: 'workspace.updated' }))
-    assert.equal(rejected.status, 401)
-    assert.equal((await rejected.json()).error, 'Unauthorized')
+    const verificationRejected = await POST(createWebhookRequest({ verification_token: 'wrong_secret' }))
+    assert.equal(verificationRejected.status, 401)
+    assert.equal((await verificationRejected.json()).error, 'Invalid verification token')
 
-    const accepted = await POST(createWebhookRequest({
-      type: 'workspace.updated',
+    const verificationAccepted = await POST(createWebhookRequest({
       verification_token: 'verify_secret'
+    }))
+    assert.equal(verificationAccepted.status, 200)
+    assert.equal((await verificationAccepted.json()).verification, true)
+
+    const body = { type: 'workspace.updated' }
+    const rawBody = JSON.stringify(body)
+
+    const rejected = await POST(createWebhookRequest(body))
+    assert.equal(rejected.status, 401)
+    assert.equal((await rejected.json()).error, 'Missing signature')
+
+    const accepted = await POST(createWebhookRequest(body, {
+      'x-notion-signature': computeNotionWebhookSignature(rawBody, 'verify_secret')
     }))
     assert.equal(accepted.status, 200)
     assert.equal((await accepted.json()).ignored, true)

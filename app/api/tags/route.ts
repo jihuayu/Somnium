@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
 import { getAllPosts, getAllTagsFromPosts } from '@/lib/notion'
-import { ONE_DAY_SECONDS, ONE_HOUR_SECONDS } from '@/lib/server/cache'
+import { FIVE_MINUTES_SECONDS, ONE_HOUR_SECONDS } from '@/lib/server/cache'
 
 const TAGS_BROWSER_CACHE_SECONDS = ONE_HOUR_SECONDS
-const TAGS_EDGE_CACHE_SECONDS = ONE_DAY_SECONDS
-const TAGS_STALE_SECONDS = ONE_DAY_SECONDS
-export const revalidate = 86400
+const TAGS_EDGE_CACHE_SECONDS = FIVE_MINUTES_SECONDS
+const TAGS_STALE_SECONDS = FIVE_MINUTES_SECONDS
+export const revalidate = 300
 
 export async function GET() {
   try {

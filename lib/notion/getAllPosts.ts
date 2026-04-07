@@ -1,12 +1,12 @@
 import { config as BLOG } from '@/lib/server/config'
 import { notionClient } from '@/lib/server/notionData'
-import { ONE_DAY_SECONDS } from '@/lib/server/cache'
+import { FIVE_MINUTES_SECONDS } from '@/lib/server/cache'
 import { unstable_cache } from 'next/cache'
 import { queryAllDataSourceEntries, type NotionClient } from '@jihuayu/notion-data'
 import filterPublishedPosts, { PostData } from './filterPublishedPosts'
 import { mapNotionPageToPost, normalizeNotionUuid } from './postAdapter'
 
-const POSTS_CACHE_REVALIDATE_SECONDS = ONE_DAY_SECONDS
+const POSTS_CACHE_REVALIDATE_SECONDS = FIVE_MINUTES_SECONDS
 
 interface NotionPostsDependencies {
   apiClient?: Pick<NotionClient, 'queryAllDataSourcePages'>

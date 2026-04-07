@@ -11,7 +11,7 @@ import {
   type NotionWebhookResolution
 } from '@jihuayu/notion-data'
 import { config } from '@/lib/server/config'
-import { infoServerEvent, warnServerError } from '@/lib/server/logging'
+import { infoServerEvent, warnServerError, warnServerEvent } from '@/lib/server/logging'
 import { notionClient } from '@/lib/server/notionData'
 import { NOTION_WEBHOOK_REVALIDATE_PATHS, NOTION_WEBHOOK_REVALIDATE_TAGS } from '@/lib/server/cache'
 import { buildInternalSlugHref } from '@/lib/notion/pageLinkMap'
@@ -26,8 +26,8 @@ function getConfiguredVerificationToken(): string {
   )
 }
 
-function getConfiguredSignatureSecret(): string {
-  return process.env.NOTION_WEBHOOK_SIGNATURE_SECRET?.trim() || ''
+function getConfiguredSignatureSecret(configuredVerificationToken: string): string {
+  return process.env.NOTION_WEBHOOK_SIGNATURE_SECRET?.trim() || configuredVerificationToken
 }
 
 function getConfiguredDataSourceId(): string {
@@ -131,12 +131,17 @@ export async function POST(req: NextRequest) {
   }
 
   const configuredVerificationToken = getConfiguredVerificationToken()
-  const configuredSignatureSecret = getConfiguredSignatureSecret()
+  const configuredSignatureSecret = getConfiguredSignatureSecret(configuredVerificationToken)
   const requestVerificationToken = `${payload.verification_token || ''}`.trim()
   const signatureHeader = req.headers.get('x-notion-signature')
 
   if (isNotionVerificationRequest(payload)) {
     if (configuredVerificationToken && requestVerificationToken && configuredVerificationToken !== requestVerificationToken) {
+      warnServerEvent('notion-webhook', 'Rejected verification request with mismatched verification token', {
+        verification: true,
+        hasConfiguredVerificationToken: true,
+        hasRequestVerificationToken: true
+      })
       return jsonNoStore({ error: 'Invalid verification token' }, 401)
     }
 
@@ -151,16 +156,24 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  if (configuredVerificationToken && (!requestVerificationToken || requestVerificationToken !== configuredVerificationToken)) {
-    return jsonNoStore({ error: 'Unauthorized' }, 401)
-  }
-
   if (configuredSignatureSecret) {
     if (!signatureHeader) {
+      warnServerEvent('notion-webhook', 'Rejected webhook request due to missing signature header', {
+        verification: false,
+        eventType: payload.type || '',
+        hasConfiguredSignatureSecret: true,
+        hasSignatureHeader: false
+      })
       return jsonNoStore({ error: 'Missing signature' }, 401)
     }
 
     if (!isValidNotionWebhookSignature(rawBody, configuredSignatureSecret, signatureHeader)) {
+      warnServerEvent('notion-webhook', 'Rejected webhook request due to invalid signature', {
+        verification: false,
+        eventType: payload.type || '',
+        hasConfiguredSignatureSecret: true,
+        hasSignatureHeader: true
+      })
       return jsonNoStore({ error: 'Invalid signature' }, 401)
     }
   }

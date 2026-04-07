@@ -70,7 +70,7 @@ pnpm start
 1. 将仓库导入 Vercel
 2. 在 Vercel 项目中配置环境变量（与本地一致）
 3. 执行部署
-4. 后续在 Notion 更新内容后，页面会按 ISR 策略增量更新
+4. 后续在 Notion 更新内容后，页面会按 ISR 策略增量更新；未配置 Webhook 时，内容相关页面默认会在 5 分钟内完成下一轮刷新
 
 ## Notion Webhook 刷新缓存
 
@@ -98,6 +98,8 @@ POST /api/notion/webhook
 2. 在服务日志中拿到这次请求里的 `verification_token`
 3. 把它保存到 `NOTION_WEBHOOK_VERIFICATION_TOKEN`
 4. 回到 Notion 集成后台完成 Verify
+
+后续正式事件不会再把 `verification_token` 放进请求体；Notion 会改为在每次请求里附带 `X-Notion-Signature`。当前实现默认使用 `NOTION_WEBHOOK_VERIFICATION_TOKEN` 来校验这个签名；如果你有兼容性需求，也可以显式设置 `NOTION_WEBHOOK_SIGNATURE_SECRET` 进行覆盖。
 
 之后，当 Notion 页面内容、页面属性、Data Source 内容或结构发生变化时，站点会自动刷新相关缓存，包括首页、文章页、分页页、标签页、RSS、Sitemap 和 Tags API。
 

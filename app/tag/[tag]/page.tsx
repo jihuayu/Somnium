@@ -2,7 +2,7 @@ import { getAllPosts, getAllTagsFromPosts } from '@/lib/notion'
 import SearchLayout from '@/layouts/search'
 import { decodePossiblyEncoded } from '@/lib/url/decodePossiblyEncoded'
 
-export const revalidate = 86400
+export const revalidate = 300
 
 export async function generateStaticParams() {
   const posts = await getAllPosts({ includePages: false })

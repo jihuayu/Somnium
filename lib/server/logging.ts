@@ -40,3 +40,7 @@ export function warnServerError(scope: string, error: unknown, context?: Record<
 export function infoServerEvent(scope: string, message: string, context?: Record<string, unknown>) {
   logServerEvent('info', scope, message, context)
 }
+
+export function warnServerEvent(scope: string, message: string, context?: Record<string, unknown>) {
+  logServerEvent('warn', scope, message, context)
+}
