@@ -40,9 +40,23 @@ function shouldPrewarmWebhookPaths(): boolean {
   return isTruthyEnvValue(process.env.NOTION_WEBHOOK_PREWARM)
 }
 
+function getWebhookParentDataSourceId(parent: { id?: string, type?: string, data_source_id?: string, database_id?: string }): string {
+  const parentType = `${parent.type || ''}`.trim()
+  if (parent.data_source_id) return normalizeNotionUuid(parent.data_source_id)
+  if (['data_source', 'data_source_id'].includes(parentType)) return normalizeNotionUuid(parent.id)
+  return ''
+}
+
+function getWebhookParentDatabaseId(parent: { id?: string, type?: string, data_source_id?: string, database_id?: string }): string {
+  const parentType = `${parent.type || ''}`.trim()
+  if (parent.database_id) return normalizeNotionUuid(parent.database_id)
+  if (['database', 'database_id'].includes(parentType)) return normalizeNotionUuid(parent.id)
+  return ''
+}
+
 function summarizeWebhookPayload(payload: ReturnType<typeof parseNotionWebhookPayload>): Record<string, unknown> {
   const parent = payload.data?.parent && typeof payload.data.parent === 'object'
-    ? payload.data.parent as { id?: string, type?: string }
+    ? payload.data.parent as { id?: string, type?: string, data_source_id?: string, database_id?: string }
     : {}
   const updatedProperties = Array.isArray(payload.data?.updated_properties)
     ? payload.data.updated_properties.map(item => `${item || ''}`.trim()).filter(Boolean)
@@ -69,6 +83,8 @@ function summarizeWebhookPayload(payload: ReturnType<typeof parseNotionWebhookPa
     apiVersion: `${payload.api_version || ''}`.trim(),
     parentId: normalizeNotionUuid(parent.id),
     parentType: `${parent.type || ''}`.trim(),
+    parentDataSourceId: getWebhookParentDataSourceId(parent),
+    parentDatabaseId: getWebhookParentDatabaseId(parent),
     updatedProperties,
     updatedPropertyCount: updatedProperties.length,
     updatedBlocks,
@@ -254,6 +270,7 @@ export async function POST(req: NextRequest) {
 
   const configuredVerificationToken = getConfiguredVerificationToken()
   const configuredSignatureSecret = getConfiguredSignatureSecret(configuredVerificationToken)
+  const configuredDataSourceId = getConfiguredDataSourceId()
   const requestVerificationToken = `${payload.verification_token || ''}`.trim()
   const signatureHeader = req.headers.get('x-notion-signature')
   const payloadSummary = summarizeWebhookPayload(payload)
@@ -263,6 +280,7 @@ export async function POST(req: NextRequest) {
     rawBodyBytes: rawBody.length,
     hasConfiguredVerificationToken: !!configuredVerificationToken,
     hasConfiguredSignatureSecret: !!configuredSignatureSecret,
+    configuredDataSourceId,
     hasRequestVerificationToken: !!requestVerificationToken,
     hasSignatureHeader: !!signatureHeader,
     prewarmEnabled: shouldPrewarmWebhookPaths()
@@ -315,7 +333,7 @@ export async function POST(req: NextRequest) {
   }
 
   const result = await resolveNotionWebhookEvent(payload, {
-    configuredDataSourceId: getConfiguredDataSourceId(),
+    configuredDataSourceId,
     basePath: config.path || '',
     resolvePageParentDataSourceId,
     resolvePagePath
@@ -323,6 +341,7 @@ export async function POST(req: NextRequest) {
 
   infoServerEvent('notion-webhook', 'Resolved webhook event', {
     ...payloadSummary,
+    configuredDataSourceId,
     accepted: result.accepted,
     shouldRefresh: result.shouldRefresh,
     reason: result.reason,
@@ -351,6 +370,7 @@ export async function POST(req: NextRequest) {
 
   infoServerEvent('notion-webhook', 'Resolved webhook revalidation targets', {
     ...payloadSummary,
+    configuredDataSourceId,
     action: result.action,
     reason: result.reason,
     resolvedPagePath: result.resolvedPagePath,
@@ -364,6 +384,7 @@ export async function POST(req: NextRequest) {
   if (prewarmEnabled) {
     void prewarmPaths(req.nextUrl.origin, scheduledPrewarmPaths, {
       ...payloadSummary,
+      configuredDataSourceId,
       action: result.action,
       reason: result.reason,
       resolvedPagePath: result.resolvedPagePath
@@ -371,6 +392,7 @@ export async function POST(req: NextRequest) {
   } else {
     infoServerEvent('notion-webhook', 'Skipped automatic prewarm to avoid refilling caches with stale Notion data', {
       ...payloadSummary,
+      configuredDataSourceId,
       action: result.action,
       reason: result.reason,
       resolvedPagePath: result.resolvedPagePath,

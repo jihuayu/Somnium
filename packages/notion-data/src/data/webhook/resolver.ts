@@ -42,9 +42,26 @@ function getEntityId(payload: NotionWebhookPayload): string {
   return normalizeNotionUuid(payload.entity?.id)
 }
 
-function getParentRef(payload: NotionWebhookPayload): { id?: string, type?: string } {
+function getParentRef(payload: NotionWebhookPayload): { id?: string, type?: string, data_source_id?: string, database_id?: string } {
   const parent = payload.data?.parent
-  return isRecord(parent) ? parent as { id?: string, type?: string } : {}
+  return isRecord(parent)
+    ? parent as { id?: string, type?: string, data_source_id?: string, database_id?: string }
+    : {}
+}
+
+function getParentDataSourceId(payload: NotionWebhookPayload): string {
+  const parent = getParentRef(payload)
+  const parentType = `${parent.type || ''}`.trim()
+
+  if (parent.data_source_id) {
+    return normalizeNotionUuid(parent.data_source_id)
+  }
+
+  if (['data_source', 'data_source_id'].includes(parentType) && parent.id) {
+    return normalizeNotionUuid(parent.id)
+  }
+
+  return ''
 }
 
 function isRelevantPageEvent(eventType: string): boolean {
@@ -110,7 +127,8 @@ async function matchesConfiguredDataSource(payload: NotionWebhookPayload, option
   const eventType = getEventType(payload)
   const entityId = getEntityId(payload)
   const parent = getParentRef(payload)
-  const parentId = normalizeNotionUuid(parent.id)
+  const parentType = `${parent.type || ''}`.trim()
+  const parentDataSourceId = getParentDataSourceId(payload)
 
   if (eventType.startsWith(DATA_SOURCE_EVENT_PREFIX) && entityId) {
     return entityId === configuredId
@@ -124,8 +142,13 @@ async function matchesConfiguredDataSource(payload: NotionWebhookPayload, option
     return false
   }
 
-  if (parentId && ['data_source', 'data_source_id', 'database', 'database_id'].includes(`${parent.type || ''}`)) {
-    return parentId === configuredId
+  if (parentDataSourceId) {
+    return parentDataSourceId === configuredId
+  }
+
+  if (['database', 'database_id'].includes(parentType) && parent.database_id) {
+    // Database ids are not equivalent to data source ids on newer Notion API versions.
+    // Fall through to resolvePageParentDataSourceId so callers can map the page back to its data source.
   }
 
   if (!entityId || !options.resolvePageParentDataSourceId) {

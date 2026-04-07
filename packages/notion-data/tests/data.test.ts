@@ -160,3 +160,49 @@ test('resolveNotionWebhookEvent keeps page updates refreshable when path resolut
   assert.equal(resolution.reason, 'refresh-page-without-path')
   assert.equal(resolution.resolvedPagePath, '')
 })
+
+test('resolveNotionWebhookEvent matches configured data source using parent.data_source_id when parent.type is database', async () => {
+  const resolution = await resolveNotionWebhookEvent({
+    type: 'page.content_updated',
+    entity: { id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' },
+    data: {
+      parent: {
+        id: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
+        type: 'database',
+        data_source_id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'
+      }
+    }
+  }, {
+    configuredDataSourceId: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'
+  })
+
+  assert.equal(resolution.action, 'page')
+  assert.equal(resolution.shouldRefresh, true)
+  assert.equal(resolution.reason, 'refresh-page-without-path')
+})
+
+test('resolveNotionWebhookEvent falls back to page parent lookup when parent.type is database without data source id', async () => {
+  let resolveParentCalls = 0
+
+  const resolution = await resolveNotionWebhookEvent({
+    type: 'page.content_updated',
+    entity: { id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' },
+    data: {
+      parent: {
+        id: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
+        type: 'database'
+      }
+    }
+  }, {
+    configuredDataSourceId: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+    resolvePageParentDataSourceId: async () => {
+      resolveParentCalls += 1
+      return 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'
+    }
+  })
+
+  assert.equal(resolveParentCalls, 1)
+  assert.equal(resolution.action, 'page')
+  assert.equal(resolution.shouldRefresh, true)
+  assert.equal(resolution.reason, 'refresh-page-without-path')
+})

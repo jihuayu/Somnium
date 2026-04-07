@@ -17,7 +17,12 @@ export interface NotionWebhookPayload {
     type?: string
   }
   data?: {
-    parent?: { id?: string, type?: string }
+    parent?: {
+      id?: string
+      type?: string
+      data_source_id?: string
+      database_id?: string
+    }
     [key: string]: unknown
   }
   [key: string]: unknown
