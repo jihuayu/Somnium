@@ -1,0 +1,5 @@
+- Notion tabs serialize as block type `tab`.
+- A `tab` block's direct children are paragraph blocks that act as tab panels.
+- Panel paragraph `paragraph.rich_text` is the tab title; `paragraph.icon` may carry the tab icon.
+- The actual panel body lives in the child blocks of that paragraph.
+- Empty tabs in /debug had no child blocks under the panel paragraph and should be filtered out.

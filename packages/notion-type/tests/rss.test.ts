@@ -5,7 +5,7 @@ import type { NotionDocument } from '../src/types'
 
 const document: NotionDocument = {
   pageId: 'page-1',
-  rootIds: ['heading-1', 'paragraph-1', 'bulleted-1', 'bulleted-2'],
+  rootIds: ['heading-1', 'paragraph-1', 'bulleted-1', 'bulleted-2', 'tab-1'],
   blocksById: {
     'heading-1': {
       id: 'heading-1',
@@ -46,10 +46,39 @@ const document: NotionDocument = {
       bulleted_list_item: {
         rich_text: [{ type: 'text', plain_text: 'Second' }]
       }
+    },
+    'tab-1': {
+      id: 'tab-1',
+      type: 'tab',
+      tab: {}
+    },
+    'tab-panel-1': {
+      id: 'tab-panel-1',
+      type: 'paragraph',
+      paragraph: {
+        rich_text: [{ type: 'text', plain_text: 'Overview' }],
+        icon: { type: 'emoji', emoji: '😉' }
+      }
+    },
+    'tab-panel-1-body': {
+      id: 'tab-panel-1-body',
+      type: 'paragraph',
+      paragraph: {
+        rich_text: [{ type: 'text', plain_text: 'Tabbed body' }]
+      }
+    },
+    'tab-panel-empty': {
+      id: 'tab-panel-empty',
+      type: 'paragraph',
+      paragraph: {
+        rich_text: [{ type: 'text', plain_text: 'Empty tab' }]
+      }
     }
   },
   childrenById: {
-    'page-1': ['heading-1', 'paragraph-1', 'bulleted-1', 'bulleted-2']
+    'page-1': ['heading-1', 'paragraph-1', 'bulleted-1', 'bulleted-2', 'tab-1'],
+    'tab-1': ['tab-panel-1', 'tab-panel-empty'],
+    'tab-panel-1': ['tab-panel-1-body']
   },
   toc: []
 }
@@ -64,6 +93,9 @@ test('renderNotionDocumentToHtml renders grouped list blocks', () => {
   assert.match(html, /<p>RSS Body <a href="\/posts\/internal-page">Internal Page<\/a><\/p>/)
   assert.match(html, /href="\/posts\/internal-page"/)
   assert.match(html, /<ul><li>First<\/li><li>Second<\/li><\/ul>/)
+  assert.match(html, /<strong>😉 Overview<\/strong>/)
+  assert.match(html, /Tabbed body/)
+  assert.doesNotMatch(html, /Empty tab/)
 })
 
 test('generateRssFeed renders rss xml from notion documents', () => {

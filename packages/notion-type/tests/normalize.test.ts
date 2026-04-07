@@ -69,6 +69,45 @@ test('normalizeNotionDocument also supports nested children arrays', () => {
   assert.equal(document.blocksById['paragraph-2']?.type, 'paragraph')
 })
 
+test('normalizeNotionDocument preserves tab blocks and nested tab panel content', () => {
+  const document = normalizeNotionDocument({
+    pageId: 'page-tabs',
+    rootBlocks: [
+      {
+        id: 'tab-1',
+        type: 'tab',
+        has_children: true,
+        tab: {},
+        children: [
+          {
+            id: 'tab-panel-1',
+            type: 'paragraph',
+            has_children: true,
+            paragraph: {
+              rich_text: [{ type: 'text', plain_text: 'Overview' }],
+              icon: { type: 'emoji', emoji: '😉' }
+            },
+            children: [
+              {
+                id: 'tab-content-1',
+                type: 'paragraph',
+                paragraph: {
+                  rich_text: [{ type: 'text', plain_text: 'Panel body' }]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  })
+
+  assert.equal(document.blocksById['tab-1']?.type, 'tab')
+  assert.deepEqual(document.childrenById['tab-1'], ['tab-panel-1'])
+  assert.deepEqual(document.childrenById['tab-panel-1'], ['tab-content-1'])
+  assert.equal(document.blocksById['tab-panel-1']?.type, 'paragraph')
+})
+
 test('normalizeNotionDocument coerces unknown block types into unsupported blocks', () => {
   const document = normalizeNotionDocument({
     pageId: 'page-3',

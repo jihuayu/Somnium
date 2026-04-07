@@ -3,7 +3,7 @@ import { buildTableOfContents } from './utils/notion'
 
 const KNOWN_BLOCK_TYPES = new Set<NotionBlockType>([
   'paragraph', 'heading_1', 'heading_2', 'heading_3', 'quote', 'callout', 'equation', 'code', 'image',
-  'column', 'column_list', 'toggle', 'template', 'table_of_contents', 'link_to_page', 'child_page',
+  'column', 'column_list', 'toggle', 'template', 'tab', 'table_of_contents', 'link_to_page', 'child_page',
   'child_database', 'synced_block', 'breadcrumb', 'embed', 'bookmark', 'video', 'audio', 'pdf', 'file',
   'table', 'table_row', 'link_preview', 'divider', 'bulleted_list_item', 'numbered_list_item', 'to_do',
   'unsupported'
@@ -100,6 +100,8 @@ function isValidKnownBlockPayload(type: NotionBlockType, block: RawNotionBlock):
       return hasRichTextArrayPayload(block.toggle)
     case 'template':
       return hasRichTextArrayPayload(block.template)
+    case 'tab':
+      return isRecord(block.tab)
     case 'link_to_page':
       return isRecord(block.link_to_page)
     case 'child_page':
@@ -136,6 +138,7 @@ function isValidKnownBlockPayload(type: NotionBlockType, block: RawNotionBlock):
     case 'to_do':
       return hasRichTextArrayPayload(block.to_do)
     case 'column_list':
+    case 'tab':
     case 'table_of_contents':
     case 'breadcrumb':
     case 'divider':

@@ -12,6 +12,7 @@ export type NotionBlockType =
   | 'column_list'
   | 'toggle'
   | 'template'
+  | 'tab'
   | 'table_of_contents'
   | 'link_to_page'
   | 'child_page'
@@ -132,6 +133,13 @@ export interface NotionCaptionedPayload extends NotionFileReference {
   name?: string
 }
 
+export interface NotionBlockIcon {
+  type?: 'emoji' | 'external' | 'file'
+  emoji?: string
+  external?: { url?: string }
+  file?: { url?: string }
+}
+
 export interface NotionBlockBase<TType extends NotionBlockType = NotionBlockType> {
   id: string
   type: TType
@@ -140,7 +148,10 @@ export interface NotionBlockBase<TType extends NotionBlockType = NotionBlockType
 
 export interface NotionParagraphBlock extends NotionBlockBase<'paragraph'> {
   type: 'paragraph'
-  paragraph: { rich_text: NotionRichText[] }
+  paragraph: {
+    rich_text: NotionRichText[]
+    icon?: NotionBlockIcon | null
+  }
 }
 
 export interface NotionHeading1Block extends NotionBlockBase<'heading_1'> {
@@ -167,12 +178,7 @@ export interface NotionCalloutBlock extends NotionBlockBase<'callout'> {
   type: 'callout'
   callout: {
     rich_text: NotionRichText[]
-    icon?: {
-      type?: 'emoji' | 'external' | 'file'
-      emoji?: string
-      external?: { url?: string }
-      file?: { url?: string }
-    } | null
+    icon?: NotionBlockIcon | null
   }
 }
 
@@ -212,6 +218,11 @@ export interface NotionToggleBlock extends NotionBlockBase<'toggle'> {
 export interface NotionTemplateBlock extends NotionBlockBase<'template'> {
   type: 'template'
   template: { rich_text: NotionRichText[] }
+}
+
+export interface NotionTabBlock extends NotionBlockBase<'tab'> {
+  type: 'tab'
+  tab: Record<string, unknown>
 }
 
 export interface NotionTableOfContentsBlock extends NotionBlockBase<'table_of_contents'> {
@@ -344,6 +355,7 @@ export type NotionBlock =
   | NotionColumnListBlock
   | NotionToggleBlock
   | NotionTemplateBlock
+  | NotionTabBlock
   | NotionTableOfContentsBlock
   | NotionLinkToPageBlock
   | NotionChildPageBlock

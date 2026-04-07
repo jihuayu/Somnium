@@ -7,7 +7,7 @@ import { NotionRenderer, type NotionRenderModel } from '../src/index'
 const model: NotionRenderModel = {
   document: {
     pageId: 'page-1',
-    rootIds: ['heading', 'paragraph', 'code'],
+    rootIds: ['heading', 'paragraph', 'code', 'tabs'],
     blocksById: {
       heading: {
         id: 'heading',
@@ -37,10 +37,54 @@ const model: NotionRenderModel = {
         id: 'code',
         type: 'code',
         code: { language: 'ts', rich_text: [{ type: 'text', plain_text: 'const x = 1' }] }
+      },
+      tabs: {
+        id: 'tabs',
+        type: 'tab',
+        tab: {}
+      },
+      'tab-panel-1': {
+        id: 'tab-panel-1',
+        type: 'paragraph',
+        paragraph: {
+          rich_text: [{ type: 'text', plain_text: 'Overview' }],
+          icon: { type: 'emoji', emoji: '😉' }
+        }
+      },
+      'tab-panel-1-body': {
+        id: 'tab-panel-1-body',
+        type: 'paragraph',
+        paragraph: {
+          rich_text: [{ type: 'text', plain_text: 'Tabbed content' }]
+        }
+      },
+      'tab-panel-2': {
+        id: 'tab-panel-2',
+        type: 'paragraph',
+        paragraph: {
+          rich_text: [{ type: 'text', plain_text: 'Details' }]
+        }
+      },
+      'tab-panel-2-body': {
+        id: 'tab-panel-2-body',
+        type: 'paragraph',
+        paragraph: {
+          rich_text: [{ type: 'text', plain_text: 'Second tab body' }]
+        }
+      },
+      'tab-panel-empty': {
+        id: 'tab-panel-empty',
+        type: 'paragraph',
+        paragraph: {
+          rich_text: [{ type: 'text', plain_text: 'Empty tab' }]
+        }
       }
     },
     childrenById: {
-      'page-1': ['heading', 'paragraph', 'code']
+      'page-1': ['heading', 'paragraph', 'code', 'tabs'],
+      tabs: ['tab-panel-1', 'tab-panel-2', 'tab-panel-empty'],
+      'tab-panel-1': ['tab-panel-1-body'],
+      'tab-panel-2': ['tab-panel-2-body']
     },
     toc: [{ id: 'heading', text: 'Title', indentLevel: 0 }]
   },
@@ -76,4 +120,9 @@ test('NotionRenderer renders normalized model', () => {
   assert.match(html, /href="\/posts\/internal"/)
   assert.doesNotMatch(html, /href="\/posts\/internal"[^>]*target="_blank"/)
   assert.match(html, /notion-url-mention-inline/)
+  assert.match(html, /notion-tabs-block/)
+  assert.match(html, /Overview/)
+  assert.match(html, /Tabbed content/)
+  assert.match(html, /Second tab body/)
+  assert.doesNotMatch(html, /Empty tab/)
 })

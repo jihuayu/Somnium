@@ -112,6 +112,10 @@ function isNumberedListItemBlock(block: NotionBlock | undefined): block is Notio
   return block?.type === 'numbered_list_item'
 }
 
+function isParagraphBlock(block: NotionBlock | undefined): block is NotionParagraphBlock {
+  return block?.type === 'paragraph'
+}
+
 export default defineComponent({
   name: 'NotionRenderer',
   props: {
@@ -413,6 +417,49 @@ export default defineComponent({
                 : null,
               renderChildren(block.id)
             ]))
+          }
+          case 'tab': {
+            return renderBlockWithOverride(block, () => {
+              const tabPanels = (childrenById[block.id] || [])
+                .map((id: string) => blocksById[id])
+                .filter(isParagraphBlock)
+                .map((panel: NotionParagraphBlock, index: number) => ({
+                  panel,
+                  index,
+                  childIds: childrenById[panel.id] || []
+                }))
+                .filter(({ childIds }) => childIds.length > 0)
+
+              if (!tabPanels.length) return null
+
+              return h('div', { key: block.id, class: cn(baseClassName, 'notion-tabs-block') }, tabPanels.map(({ panel, index, childIds }) => {
+                const inputId = `notion-tab-${block.id.replaceAll('-', '')}-${panel.id.replaceAll('-', '')}`
+                const label = getPlainTextFromRichText(panel.paragraph.rich_text).trim() || `Tab ${index + 1}`
+                const emoji = panel.paragraph.icon?.type === 'emoji' ? panel.paragraph.icon.emoji || '' : ''
+                const iconUrl = getCalloutIconUrl(panel.paragraph.icon || null)
+
+                return h('div', { key: panel.id, class: 'notion-tab-item' }, [
+                  h('input', {
+                    id: inputId,
+                    class: 'notion-tab-input',
+                    type: 'radio',
+                    name: `notion-tab-group-${block.id}`,
+                    checked: index === 0
+                  }),
+                  h('label', { for: inputId, class: 'notion-tab-label' }, [
+                    emoji
+                      ? h('span', { class: 'notion-tab-label-icon', 'aria-hidden': 'true' }, emoji)
+                      : iconUrl
+                        ? h('span', { class: 'notion-tab-label-icon', 'aria-hidden': 'true' }, [
+                            h('img', { src: iconUrl, alt: '', class: 'notion-tab-label-icon-image' })
+                          ])
+                        : null,
+                    h('span', { class: 'notion-tab-label-text' }, label)
+                  ]),
+                  h('div', { class: 'notion-tab-panel' }, renderBlockList(childIds))
+                ])
+              }))
+            })
           }
           case 'table_of_contents': {
             return renderBlockWithOverride(block, () =>

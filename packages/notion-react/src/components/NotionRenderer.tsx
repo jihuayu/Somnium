@@ -106,6 +106,10 @@ function isNumberedListItemBlock(block: NotionBlock | undefined): block is Notio
   return block?.type === 'numbered_list_item'
 }
 
+function isParagraphBlock(block: NotionBlock | undefined): block is NotionParagraphBlock {
+  return block?.type === 'paragraph'
+}
+
 export default function NotionRenderer({ model, components, renderOptions, className, style }: NotionRendererProps) {
   const resolvedRenderOptions = resolveRenderOptions(renderOptions)
   const LinkPreviewCard = components?.leaves?.LinkPreviewCard || DefaultLinkPreviewCard
@@ -398,6 +402,59 @@ export default function NotionRenderer({ model, components, renderOptions, class
             {renderChildren(block.id)}
           </div>
         ))
+      }
+      case 'tab': {
+        return renderBlockWithOverride(block, () => {
+          const tabPanels = (childrenById[block.id] || [])
+            .map(id => blocksById[id])
+            .filter(isParagraphBlock)
+            .map((panel, index) => ({
+              panel,
+              index,
+              childIds: childrenById[panel.id] || []
+            }))
+            .filter(({ childIds }) => childIds.length > 0)
+
+          if (!tabPanels.length) return null
+
+          return (
+            <div key={block.id} className={cn(baseClassName, 'notion-tabs-block')}>
+              {tabPanels.map(({ panel, index, childIds }) => {
+                const inputId = `notion-tab-${block.id.replaceAll('-', '')}-${panel.id.replaceAll('-', '')}`
+                const label = getPlainTextFromRichText(panel.paragraph.rich_text).trim() || `Tab ${index + 1}`
+                const emoji = panel.paragraph.icon?.type === 'emoji' ? panel.paragraph.icon.emoji || '' : ''
+                const iconUrl = getCalloutIconUrl(panel.paragraph.icon || null)
+
+                return (
+                  <div key={panel.id} className="notion-tab-item">
+                    <input
+                      id={inputId}
+                      className="notion-tab-input"
+                      type="radio"
+                      name={`notion-tab-group-${block.id}`}
+                      defaultChecked={index === 0}
+                    />
+                    <label htmlFor={inputId} className="notion-tab-label">
+                      {emoji
+                        ? <span className="notion-tab-label-icon" aria-hidden="true">{emoji}</span>
+                        : iconUrl
+                          ? (
+                            <span className="notion-tab-label-icon" aria-hidden="true">
+                              <img src={iconUrl} alt="" className="notion-tab-label-icon-image" />
+                            </span>
+                            )
+                          : null}
+                      <span className="notion-tab-label-text">{label}</span>
+                    </label>
+                    <div className="notion-tab-panel">
+                      {renderBlockList(childIds)}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )
+        })
       }
       case 'table_of_contents':
         return renderBlockWithOverride(block, () => (

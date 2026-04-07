@@ -6,7 +6,9 @@ import type {
   NotionDocument,
   NotionLinkToPageBlock,
   NotionNumberedListItemBlock,
+  NotionParagraphBlock,
   NotionRichText,
+  NotionTabBlock,
   NotionTableBlock,
   NotionTableRowBlock,
   NotionToDoBlock
@@ -187,6 +189,10 @@ function isTableRowBlock(block: NotionBlock | undefined): block is NotionTableRo
   return block?.type === 'table_row'
 }
 
+function isParagraphBlock(block: NotionBlock | undefined): block is NotionParagraphBlock {
+  return block?.type === 'paragraph'
+}
+
 function isListItemBlock(block: NotionBlock | undefined): block is NotionBulletedListItemBlock | NotionNumberedListItemBlock | NotionToDoBlock {
   return block?.type === 'bulleted_list_item' || block?.type === 'numbered_list_item' || block?.type === 'to_do'
 }
@@ -251,6 +257,33 @@ function renderTableHtml(
   }).join('')
 
   return `<table><tbody>${body}</tbody></table>`
+}
+
+function renderTabHtml(
+  block: NotionTabBlock,
+  blocksById: Record<string, NotionBlock>,
+  childrenById: Record<string, string[]>,
+  options: RenderNotionHtmlOptions
+): string {
+  const panels = (childrenById[block.id] || [])
+    .map(id => blocksById[id])
+    .filter(isParagraphBlock)
+    .map((panel, index) => ({
+      panel,
+      index,
+      childIds: childrenById[panel.id] || []
+    }))
+    .filter(({ childIds }) => childIds.length > 0)
+
+  if (!panels.length) return ''
+
+  return panels.map(({ panel, index, childIds }) => {
+    const titleHtml = renderRichTextHtml(panel.paragraph.rich_text, options) || escapeHtml(`Tab ${index + 1}`)
+    const emoji = panel.paragraph.icon?.type === 'emoji' ? escapeHtml(panel.paragraph.icon.emoji || '') : ''
+    const titleWithIcon = `${emoji ? `${emoji} ` : ''}${titleHtml}`
+    const body = renderBlockListHtml(childIds, blocksById, childrenById, options)
+    return body ? `<section><p><strong>${titleWithIcon}</strong></p>${body}</section>` : ''
+  }).join('')
 }
 
 function renderPageReferenceHtml(block: NotionLinkToPageBlock | Extract<NotionBlock, { type: 'child_page' | 'child_database' }>, pageHrefMap: Record<string, string>): string {
@@ -378,6 +411,8 @@ function renderBlockHtml(
     case 'synced_block':
     case 'breadcrumb':
       return childHtml
+    case 'tab':
+      return renderTabHtml(block, blocksById, childrenById, options)
     case 'table':
       return `${renderTableHtml(block, blocksById, childrenById, options)}${childHtml}`
     case 'table_row':
