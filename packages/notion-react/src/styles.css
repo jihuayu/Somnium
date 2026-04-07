@@ -362,14 +362,18 @@
 .notion-tabs-block {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 0 0.9rem;
+  align-items: flex-start;
+  gap: 0.35rem 0.55rem;
   margin: 1.5rem 0;
-  border-bottom: 1px solid rgb(228 228 231 / 0.88);
+  padding: 0.95rem 1rem 1rem;
+  border: 1px solid rgb(228 228 231 / 0.92);
+  border-radius: 1.2rem;
+  background-color: rgb(255 255 255 / 0.92);
 }
 
 .dark .notion-tabs-block {
-  border-bottom-color: rgb(63 63 70 / 0.92);
+  border-color: rgb(63 63 70 / 0.92);
+  background-color: rgb(24 24 27 / 0.9);
 }
 
 .notion-tab-item {
@@ -383,19 +387,21 @@
 }
 
 .notion-tab-label {
+  order: 0;
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  margin-bottom: -1px;
-  padding: 0.2rem 0.05rem 0.72rem;
-  border-bottom: 2px solid transparent;
+  margin: 0;
+  padding: 0.5rem 0.78rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
   color: rgb(113 113 122);
   font-size: 0.94em;
   font-weight: 600;
   line-height: 1.2;
   cursor: pointer;
   user-select: none;
-  transition: color 140ms ease, border-color 140ms ease;
+  transition: color 140ms ease, border-color 140ms ease, background-color 140ms ease;
 }
 
 .dark .notion-tab-label {
@@ -404,19 +410,24 @@
 
 .notion-tab-label:hover {
   color: rgb(63 63 70);
+  background-color: rgb(244 244 245 / 0.88);
 }
 
 .dark .notion-tab-label:hover {
   color: rgb(228 228 231);
+  background-color: rgb(39 39 42 / 0.92);
 }
 
 .notion-tab-input:checked + .notion-tab-label {
   color: inherit;
-  border-bottom-color: rgb(39 39 42);
+  border-color: rgb(228 228 231 / 0.96);
+  background-color: rgb(241 241 239);
+  box-shadow: 0 1px 1px rgb(15 23 42 / 0.04);
 }
 
 .dark .notion-tab-input:checked + .notion-tab-label {
-  border-bottom-color: rgb(244 244 245);
+  border-color: rgb(63 63 70 / 0.96);
+  background-color: rgb(47 47 47);
 }
 
 .notion-tab-label-icon {
@@ -442,15 +453,30 @@
 }
 
 .notion-tab-panel {
+  order: 1;
   display: none;
   flex: 0 0 100%;
   width: 100%;
   min-width: 0;
-  padding-top: 0.9rem;
+  margin-top: 0.3rem;
+  padding: 1rem 0.15rem 0.05rem;
+  border-top: 1px solid rgb(228 228 231 / 0.88);
 }
 
 .notion-tab-input:checked + .notion-tab-label + .notion-tab-panel {
   display: block;
+}
+
+.dark .notion-tab-panel {
+  border-top-color: rgb(63 63 70 / 0.88);
+}
+
+.notion-tab-panel > :first-child {
+  margin-top: 0;
+}
+
+.notion-tab-panel > :last-child {
+  margin-bottom: 0;
 }
 .dark .notion-url-mention-hover-description { color: rgb(212 212 216); }
 .dark .notion-url-mention-hover-footer { color: rgb(161 161 170); }
