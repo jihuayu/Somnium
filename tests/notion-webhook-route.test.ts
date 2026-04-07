@@ -105,7 +105,8 @@ test('webhook route invalidates post body caches for page.content_updated events
   assert.equal(response.status, 200)
   assert.equal(payload.revalidated, true)
   assert.deepEqual(payload.tags, ['notion-post-blocks', 'feed-post-blocks'])
-  assert.deepEqual(payload.paths, ['/feed'])
+  assert.deepEqual(payload.paths, ['/[slug]', '/feed'])
+  assert.deepEqual(payload.scheduledPrewarmPaths, [])
 })
 
 test('webhook route invalidates collection caches for page.properties_updated events', async () => {
@@ -128,4 +129,5 @@ test('webhook route invalidates collection caches for page.properties_updated ev
   assert.equal(payload.revalidated, true)
   assert.deepEqual(payload.tags, ['sitemap', 'notion-posts', 'notion-feed-posts', 'notion-og-page', 'page-link-map'])
   assert.deepEqual(payload.paths, ['/', '/search', '/feed', '/sitemap.xml', '/api/tags', '/[slug]', '/page/[page]', '/tag/[tag]'])
+  assert.deepEqual(payload.scheduledPrewarmPaths, [])
 })
