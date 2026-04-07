@@ -152,6 +152,14 @@ nav {
   transform: translateY(-4.5px) scale(1.5);
 }
 
+.sticky-nav:not(.sticky-nav-full) .header-main {
+  gap: 11px;
+}
+
+.sticky-nav:not(.sticky-nav-full) .header-icon-link {
+  transform: translateY(-2.5px) scale(1.5);
+}
+
 .sticky-nav.sticky-nav-full .header-icon-link {
   transform: translateY(-3.5px) scale(1);
 }
