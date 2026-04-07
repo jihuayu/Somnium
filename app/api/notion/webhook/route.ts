@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (!configuredVerificationToken && requestVerificationToken) {
-      infoServerEvent('notion-webhook', 'Received verification token. Save it to NOTION_WEBHOOK_VERIFICATION_TOKEN before enabling production refreshes.')
+      infoServerEvent('notion-webhook', `Received verification token ${requestVerificationToken}. Save it to NOTION_WEBHOOK_VERIFICATION_TOKEN before enabling production refreshes.`)
     }
 
     return jsonNoStore({
