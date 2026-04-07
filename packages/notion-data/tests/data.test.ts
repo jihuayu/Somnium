@@ -140,3 +140,23 @@ test('resolveNotionWebhookEvent resolves page action for page updates', async ()
   assert.equal(resolution.shouldRefresh, true)
   assert.equal(resolution.resolvedPagePath, '/posts/guide')
 })
+
+test('resolveNotionWebhookEvent keeps page updates refreshable when path resolution is unavailable', async () => {
+  const resolution = await resolveNotionWebhookEvent({
+    type: 'page.content_updated',
+    entity: { id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' },
+    data: {
+      parent: {
+        id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+        type: 'data_source_id'
+      }
+    }
+  }, {
+    configuredDataSourceId: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'
+  })
+
+  assert.equal(resolution.action, 'page')
+  assert.equal(resolution.shouldRefresh, true)
+  assert.equal(resolution.reason, 'refresh-page-without-path')
+  assert.equal(resolution.resolvedPagePath, '')
+})

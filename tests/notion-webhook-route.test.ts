@@ -86,3 +86,46 @@ test('webhook route requires signature only when configured', async () => {
     resetWebhookEnv()
   }
 })
+
+test('webhook route invalidates post body caches for page.content_updated events', async () => {
+  resetWebhookEnv()
+
+  const response = await POST(createWebhookRequest({
+    type: 'page.content_updated',
+    entity: { id: '' },
+    data: {
+      parent: {
+        id: '15b104cd-477e-80c2-84a0-c32cefba5cff',
+        type: 'data_source_id'
+      }
+    }
+  }))
+  const payload = await response.json()
+
+  assert.equal(response.status, 200)
+  assert.equal(payload.revalidated, true)
+  assert.deepEqual(payload.tags, ['notion-post-blocks', 'feed-post-blocks'])
+  assert.deepEqual(payload.paths, ['/feed'])
+})
+
+test('webhook route invalidates collection caches for page.properties_updated events', async () => {
+  resetWebhookEnv()
+
+  const response = await POST(createWebhookRequest({
+    type: 'page.properties_updated',
+    entity: { id: '' },
+    data: {
+      parent: {
+        id: '15b104cd-477e-80c2-84a0-c32cefba5cff',
+        type: 'data_source_id'
+      },
+      updated_properties: ['title']
+    }
+  }))
+  const payload = await response.json()
+
+  assert.equal(response.status, 200)
+  assert.equal(payload.revalidated, true)
+  assert.deepEqual(payload.tags, ['sitemap', 'notion-posts', 'notion-feed-posts', 'notion-og-page', 'page-link-map'])
+  assert.deepEqual(payload.paths, ['/', '/search', '/feed', '/sitemap.xml', '/api/tags', '/[slug]', '/page/[page]', '/tag/[tag]'])
+})

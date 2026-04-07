@@ -83,7 +83,7 @@ async function resolveTargetsForEvent(
       const pagePath = await resolvePagePath(payload, options)
       return pagePath
         ? { action: 'page', reason: 'refresh-page', shouldRefresh: true, resolvedPagePath: pagePath }
-        : { action: 'page', reason: 'missing-page-path', shouldRefresh: false, resolvedPagePath: '' }
+        : { action: 'page', reason: 'refresh-page-without-path', shouldRefresh: true, resolvedPagePath: '' }
     }
     case 'home-and-page': {
       const pagePath = await resolvePagePath(payload, options)

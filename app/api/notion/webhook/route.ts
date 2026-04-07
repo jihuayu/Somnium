@@ -18,6 +18,14 @@ import { buildInternalSlugHref } from '@/lib/notion/pageLinkMap'
 
 export const dynamic = 'force-dynamic'
 
+const PAGE_CONTENT_REVALIDATE_TAGS = ['notion-post-blocks', 'feed-post-blocks'] as const
+const PAGE_CONTENT_REVALIDATE_PATHS = ['/feed'] as const
+const PAGE_PROPERTIES_REVALIDATE_TAGS = ['sitemap', 'notion-posts', 'notion-feed-posts', 'notion-og-page', 'page-link-map'] as const
+
+function uniqueValues(values: Array<string | undefined>): string[] {
+  return Array.from(new Set(values.filter((value): value is string => !!value)))
+}
+
 function getConfiguredVerificationToken(): string {
   return (
     process.env.NOTION_WEBHOOK_VERIFICATION_TOKEN?.trim() ||
@@ -36,16 +44,40 @@ function getConfiguredDataSourceId(): string {
 
 function buildRevalidationTargets(result: NotionWebhookResolution): { tags: string[], paths: string[] } {
   const homePath = buildInternalSlugHref(config.path || '', '')
+  const pagePath = result.resolvedPagePath || ''
+
+  if (result.eventType === 'page.content_updated') {
+    return {
+      tags: [...PAGE_CONTENT_REVALIDATE_TAGS],
+      paths: uniqueValues([pagePath, ...PAGE_CONTENT_REVALIDATE_PATHS])
+    }
+  }
+
+  if (result.eventType === 'page.properties_updated') {
+    return {
+      tags: [...PAGE_PROPERTIES_REVALIDATE_TAGS],
+      paths: uniqueValues([homePath, pagePath, ...NOTION_WEBHOOK_REVALIDATE_PATHS])
+    }
+  }
 
   switch (result.action) {
     case 'home':
-      return { tags: [], paths: [homePath] }
+      return {
+        tags: [...PAGE_PROPERTIES_REVALIDATE_TAGS],
+        paths: uniqueValues([homePath, ...NOTION_WEBHOOK_REVALIDATE_PATHS])
+      }
     case 'page':
-      return { tags: [], paths: result.resolvedPagePath ? [result.resolvedPagePath] : [] }
+      return { tags: [], paths: uniqueValues([pagePath]) }
     case 'home-and-page':
-      return { tags: [], paths: Array.from(new Set([homePath, result.resolvedPagePath].filter(Boolean))) }
+      return {
+        tags: [...PAGE_PROPERTIES_REVALIDATE_TAGS],
+        paths: uniqueValues([homePath, pagePath, ...NOTION_WEBHOOK_REVALIDATE_PATHS])
+      }
     case 'schema':
-      return { tags: [...NOTION_WEBHOOK_REVALIDATE_TAGS], paths: [...NOTION_WEBHOOK_REVALIDATE_PATHS] }
+      return {
+        tags: [...NOTION_WEBHOOK_REVALIDATE_TAGS],
+        paths: uniqueValues([homePath, ...NOTION_WEBHOOK_REVALIDATE_PATHS])
+      }
     default:
       return { tags: [], paths: [] }
   }
