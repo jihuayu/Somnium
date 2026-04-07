@@ -107,11 +107,20 @@ export default function Header({
         <div className="header-main flex items-center md:items-end gap-2">
           <Link href={path || '/'} aria-label={siteTitle} className="header-icon-link flex items-center md:items-end justify-center shrink-0 leading-none transition-transform duration-500">
             <Image
-              src="/favicon.png"
+              src="/favicon-mark-light-64.png"
               width={26}
               height={26}
-              alt={siteTitle}
-              className="block header-icon"
+              alt=""
+              aria-hidden
+              className="block header-icon dark:hidden"
+            />
+            <Image
+              src="/favicon-mark-dark-64.png"
+              width={26}
+              height={26}
+              alt=""
+              aria-hidden
+              className="hidden header-icon dark:block"
             />
           </Link>
           <HeaderName
