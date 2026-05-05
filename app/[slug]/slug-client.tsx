@@ -2,8 +2,6 @@
 import Link from 'next/link'
 import { ARTICLE_CONTENT_MAX_WIDTH_CLASS } from '@/consts'
 import Post from '@/components/Post'
-import Comments from '@/components/Comments'
-import { config } from '@/lib/server/config'
 import type { NotionDocument, PagePreviewMap } from '@jihuayu/notion-type'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
 import type { LinkPreviewMap } from '@/lib/link-preview/types'
@@ -56,13 +54,6 @@ export default function SlugPostClient({
           ↑ {topLabel}
         </a>
       </div>
-
-      <Comments
-        frontMatter={post}
-        comment={config.comment}
-        appearance={config.appearance}
-      />
     </>
   )
 }
-
