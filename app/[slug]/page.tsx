@@ -5,11 +5,14 @@ import { unstable_cache } from 'next/cache'
 import { getAllPosts, getAllPostsWithDependencies, getPostBlocks } from '@/lib/notion'
 import loadLocale from '@/assets/i18n'
 import ContainerServer from '@/components/ContainerServer'
+import Comments from '@/components/Comments'
 import { buildNotionOgImageUrl, buildPageMetadata } from '@/lib/server/metadata'
 import { buildPageLinkMap } from '@/lib/notion/pageLinkMap'
 import { buildPostPagePreviewMap } from '@/lib/notion/postAdapter'
 import { config } from '@/lib/server/config'
+import { shouldHideCommentsForRequest } from '@/lib/server/requestGeo'
 import { FIVE_MINUTES_SECONDS } from '@/lib/server/cache'
+import { headers } from 'next/headers'
 import SlugPostClient from './slug-client'
 
 export const revalidate = 300
@@ -129,6 +132,8 @@ export default async function SlugPage({ params }: SlugPageProps) {
   const [locale] = await Promise.all([
     loadLocale('basic', config.lang)
   ])
+  const requestHeaders = await headers()
+  const showComments = !shouldHideCommentsForRequest(requestHeaders)
 
   const fullWidth = post.fullWidth ?? false
 
@@ -148,6 +153,13 @@ export default async function SlugPage({ params }: SlugPageProps) {
         pageLinkMap={pageLinkMap}
         pagePreviewMap={pagePreviewMap}
       />
+      {showComments ? (
+        <Comments
+          frontMatter={post}
+          comment={config.comment}
+          appearance={config.appearance}
+        />
+      ) : null}
     </ContainerServer>
   )
 }
