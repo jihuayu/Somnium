@@ -3,7 +3,7 @@ import 'server-only'
 const CHINA_COUNTRY_CODE = 'CN'
 
 export function normalizeCountryCode(countryCode?: string | null): string {
-  return `${countryCode || ''}`.trim().toUpperCase()
+  return (countryCode ?? '').trim().toUpperCase()
 }
 
 export function shouldHideCommentsForRequest(requestHeaders: Pick<Headers, 'get'>): boolean {
