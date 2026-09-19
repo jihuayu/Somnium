@@ -2,6 +2,8 @@ import type { NotionRenderModel, NotionRichText } from '../src'
 
 const linkedPageId = '11111111111111111111111111111111'
 
+const longCodeLine = 'export const buildFloatingCodeCardConfig = ({ expandDelayMs = 240, collapseResetMs = 520, viewportPadding = 24, overflowEpsilon = 2 } = {}) => ({ expandDelayMs, collapseResetMs, viewportPadding, overflowEpsilon })'
+
 export const demoRichText: NotionRichText[] = [
   { type: 'text', plain_text: 'Read the ', text: { content: 'Read the ' } },
   {
@@ -43,6 +45,7 @@ export const demoModel: NotionRenderModel = {
       'callout-1',
       'bookmark-1',
       'code-1',
+      'code-2',
       'toggle-1',
       'bulleted-1',
       'bulleted-2',
@@ -86,6 +89,14 @@ export const demoModel: NotionRenderModel = {
         code: {
           language: 'ts',
           rich_text: [{ type: 'text', plain_text: 'export const title = "notion-react"', text: { content: 'export const title = "notion-react"' } }]
+        }
+      },
+      'code-2': {
+        id: 'code-2',
+        type: 'code',
+        code: {
+          language: 'ts',
+          rich_text: [{ type: 'text', plain_text: longCodeLine, text: { content: longCodeLine } }]
         }
       },
       'toggle-1': {
@@ -173,6 +184,7 @@ export const demoModel: NotionRenderModel = {
         'callout-1',
         'bookmark-1',
         'code-1',
+        'code-2',
         'toggle-1',
         'bulleted-1',
         'bulleted-2',
@@ -193,6 +205,11 @@ export const demoModel: NotionRenderModel = {
   highlightedCodeByBlockId: {
     'code-1': {
       html: '<pre class="shiki"><code><span style="color:#0f172a">export const title = &quot;notion-react&quot;</span></code></pre>',
+      language: 'typescript',
+      displayLanguage: 'TypeScript'
+    },
+    'code-2': {
+      html: `<pre class="shiki"><code><span style="color:#0f172a">${longCodeLine}</span></code></pre>`,
       language: 'typescript',
       displayLanguage: 'TypeScript'
     }

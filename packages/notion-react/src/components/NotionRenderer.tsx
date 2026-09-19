@@ -60,7 +60,7 @@ import {
 } from '../utils/notion'
 import DefaultLinkPreviewCard from './LinkPreviewCard'
 import DefaultMermaidBlock from './MermaidBlock'
-import CodeBlockCopyButton from './CodeBlockCopyButton'
+import CodeBlock from './CodeBlock'
 import ImageLightbox from './ImageLightbox'
 import { RichText } from './RichText'
 
@@ -362,17 +362,11 @@ export default function NotionRenderer({ model, components, renderOptions, class
           const codeContentId = `notion-code-content-${block.id.replaceAll('-', '')}`
           return (
             <div key={block.id} className={baseClassName}>
-              <div className="notion-code-block my-5 overflow-hidden">
-                <span className="notion-code-language notion-code-language-floating">
-                  {highlighted?.displayLanguage || `${block.code.language || ''}`.trim() || 'plain text'}
-                </span>
-                <CodeBlockCopyButton codeSelector={`#${codeContentId} code`} />
-                <div
-                  id={codeContentId}
-                  className="notion-code-content"
-                  dangerouslySetInnerHTML={{ __html: highlighted?.html || renderFallbackHighlightedCodeHtml(source) }}
-                />
-              </div>
+              <CodeBlock
+                contentId={codeContentId}
+                displayLanguage={highlighted?.displayLanguage || `${block.code.language || ''}`.trim() || 'plain text'}
+                codeHtml={highlighted?.html || renderFallbackHighlightedCodeHtml(source)}
+              />
               {renderChildren(block.id)}
             </div>
           )

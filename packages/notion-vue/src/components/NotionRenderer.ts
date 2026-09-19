@@ -60,7 +60,7 @@ import {
 } from '../utils/notion'
 import DefaultLinkPreviewCard from './LinkPreviewCard'
 import DefaultMermaidBlock from './MermaidBlock'
-import CodeBlockCopyButton from './CodeBlockCopyButton'
+import CodeBlock from './CodeBlock'
 import ImageLightbox from './ImageLightbox'
 import { RichText } from './RichText'
 
@@ -379,17 +379,11 @@ export default defineComponent({
               const highlighted = model.highlightedCodeByBlockId[block.id]
               const codeContentId = `notion-code-content-${block.id.replaceAll('-', '')}`
               return h('div', { key: block.id, class: baseClassName }, [
-                h('div', { class: 'notion-code-block my-5 overflow-hidden' }, [
-                  h('span', { class: 'notion-code-language notion-code-language-floating' },
-                    highlighted?.displayLanguage || `${block.code.language || ''}`.trim() || 'plain text'
-                  ),
-                  h(CodeBlockCopyButton, { codeSelector: `#${codeContentId} code` }),
-                  h('div', {
-                    id: codeContentId,
-                    class: 'notion-code-content',
-                    innerHTML: highlighted?.html || renderFallbackHighlightedCodeHtml(source)
-                  })
-                ]),
+                h(CodeBlock, {
+                  contentId: codeContentId,
+                  displayLanguage: highlighted?.displayLanguage || `${block.code.language || ''}`.trim() || 'plain text',
+                  codeHtml: highlighted?.html || renderFallbackHighlightedCodeHtml(source)
+                }),
                 renderChildren(block.id)
               ])
             })
