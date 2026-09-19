@@ -1,133 +1,15 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { NextRequest } from 'next/server'
-import { computeNotionWebhookSignature } from '@jihuayu/notion-data'
-import { POST } from '../app/api/notion/webhook/route'
+import { GET, POST } from '../app/api/notion/webhook/route'
 
-function createWebhookRequest(body: Record<string, unknown>, headers: HeadersInit = {}): NextRequest {
-  return new NextRequest('http://localhost/api/notion/webhook', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      ...headers
-    },
-    body: JSON.stringify(body)
-  })
-}
+test('retired Notion webhook returns 410 for GET and POST', async () => {
+  const [getResponse, postResponse] = await Promise.all([
+    GET(),
+    POST()
+  ])
 
-function resetWebhookEnv() {
-  delete process.env.NOTION_WEBHOOK_VERIFICATION_TOKEN
-  delete process.env.NOTION_WEBHOOK_TOKEN
-  delete process.env.NOTION_WEBHOOK_SIGNATURE_SECRET
-}
-
-test('webhook route accepts events without auth when no auth env is configured', async () => {
-  resetWebhookEnv()
-
-  const response = await POST(createWebhookRequest({ type: 'workspace.updated' }))
-  const payload = await response.json()
-
-  assert.equal(response.status, 200)
-  assert.equal(payload.ok, true)
-  assert.equal(payload.ignored, true)
-  assert.equal(payload.reason, 'ignored-event-type')
-})
-
-test('webhook route requires verification token only when configured', async () => {
-  resetWebhookEnv()
-  process.env.NOTION_WEBHOOK_VERIFICATION_TOKEN = 'verify_secret'
-
-  try {
-    const verificationRejected = await POST(createWebhookRequest({ verification_token: 'wrong_secret' }))
-    assert.equal(verificationRejected.status, 401)
-    assert.equal((await verificationRejected.json()).error, 'Invalid verification token')
-
-    const verificationAccepted = await POST(createWebhookRequest({
-      verification_token: 'verify_secret'
-    }))
-    assert.equal(verificationAccepted.status, 200)
-    assert.equal((await verificationAccepted.json()).verification, true)
-
-    const body = { type: 'workspace.updated' }
-    const rawBody = JSON.stringify(body)
-
-    const rejected = await POST(createWebhookRequest(body))
-    assert.equal(rejected.status, 401)
-    assert.equal((await rejected.json()).error, 'Missing signature')
-
-    const accepted = await POST(createWebhookRequest(body, {
-      'x-notion-signature': computeNotionWebhookSignature(rawBody, 'verify_secret')
-    }))
-    assert.equal(accepted.status, 200)
-    assert.equal((await accepted.json()).ignored, true)
-  } finally {
-    resetWebhookEnv()
-  }
-})
-
-test('webhook route requires signature only when configured', async () => {
-  resetWebhookEnv()
-  process.env.NOTION_WEBHOOK_SIGNATURE_SECRET = 'signing_secret'
-
-  try {
-    const body = { type: 'workspace.updated' }
-    const rawBody = JSON.stringify(body)
-
-    const rejected = await POST(createWebhookRequest(body))
-    assert.equal(rejected.status, 401)
-    assert.equal((await rejected.json()).error, 'Missing signature')
-
-    const accepted = await POST(createWebhookRequest(body, {
-      'x-notion-signature': computeNotionWebhookSignature(rawBody, 'signing_secret')
-    }))
-    assert.equal(accepted.status, 200)
-    assert.equal((await accepted.json()).ignored, true)
-  } finally {
-    resetWebhookEnv()
-  }
-})
-
-test('webhook route invalidates post body caches for page.content_updated events', async () => {
-  resetWebhookEnv()
-
-  const response = await POST(createWebhookRequest({
-    type: 'page.content_updated',
-    entity: { id: '' },
-    data: {
-      parent: {
-        id: '15b104cd-477e-80c2-84a0-c32cefba5cff',
-        type: 'data_source_id'
-      }
-    }
-  }))
-  const payload = await response.json()
-
-  assert.equal(response.status, 200)
-  assert.equal(payload.revalidated, true)
-  assert.deepEqual(payload.tags, ['notion-post-blocks', 'feed-post-blocks'])
-  assert.deepEqual(payload.paths, ['/[slug]', '/feed'])
-  assert.deepEqual(payload.scheduledPrewarmPaths, [])
-})
-
-test('webhook route invalidates collection caches for page.properties_updated events', async () => {
-  resetWebhookEnv()
-
-  const response = await POST(createWebhookRequest({
-    type: 'page.properties_updated',
-    entity: { id: '' },
-    data: {
-      parent: {
-        id: '15b104cd-477e-80c2-84a0-c32cefba5cff',
-        type: 'data_source_id'
-      },
-      updated_properties: ['title']
-    }
-  }))
-  const payload = await response.json()
-
-  assert.equal(response.status, 200)
-  assert.equal(payload.revalidated, true)
-  assert.deepEqual(payload.tags, ['sitemap', 'notion-posts', 'notion-feed-posts', 'notion-og-page', 'page-link-map'])
-  assert.deepEqual(payload.paths, ['/', '/search', '/feed', '/sitemap.xml', '/api/tags', '/[slug]', '/page/[page]', '/tag/[tag]'])
-  assert.deepEqual(payload.scheduledPrewarmPaths, [])
+  assert.equal(getResponse.status, 410)
+  assert.equal(postResponse.status, 410)
+  assert.equal((await postResponse.json()).error, 'Notion webhook retired')
+  assert.equal(getResponse.headers.get('cache-control'), 'no-store')
 })

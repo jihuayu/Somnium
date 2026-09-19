@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import type { ReactElement, ReactNode } from 'react'
-import { mapPageToOgData } from '@jihuayu/notion-data'
 import { buildNotionOgImageUrl, buildPageMetadata } from '../lib/server/metadata'
-import { resolvePublishedPageOgData, resolveRenderableGoogleFontUrl } from '../lib/server/notionOg'
-import { createBufferedNotionOgImageResponse, createNotionOgImageResponse } from '../app/api/og/notion/route'
+import { getPublishedPageOgData, resolveRenderableGoogleFontUrl } from '../lib/server/notionOg'
+import { createBufferedNotionOgImageResponse, createNotionOgImageResponse } from '../lib/server/notionOgImage'
 
 const PNG_SIGNATURE_HEX = '89504e470d0a1a0a'
 const ONE_PIXEL_PNG_DATA_URL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII='
@@ -40,67 +39,6 @@ function withOgImageVersion<T>(version: string, run: () => T): T {
     }
   }
 }
-
-test('mapPageToOgData reads title summary and external cover', () => {
-  const data = mapPageToOgData({
-    id: 'page-1',
-    created_time: '2024-01-01T00:00:00.000Z',
-    last_edited_time: '2024-01-02T00:00:00.000Z',
-    parent: {
-      type: 'data_source_id',
-      data_source_id: 'source-1'
-    },
-    cover: {
-      type: 'external',
-      external: { url: 'https://example.com/cover.jpg' }
-    },
-    properties: {
-      Title: {
-        type: 'title',
-        title: [{ plain_text: '测试标题' }]
-      },
-      Summary: {
-        type: 'rich_text',
-        rich_text: [{ plain_text: '这是摘要' }]
-      }
-    }
-  })
-
-  assert.deepEqual(data, {
-    id: 'page-1',
-    title: '测试标题',
-    summary: '这是摘要',
-    coverUrl: 'https://example.com/cover.jpg',
-    coverType: 'external'
-  })
-})
-
-test('mapPageToOgData supports file covers and missing summary', () => {
-  const data = mapPageToOgData({
-    id: 'page-2',
-    created_time: '2024-01-01T00:00:00.000Z',
-    last_edited_time: '2024-01-02T00:00:00.000Z',
-    parent: {
-      type: 'data_source_id',
-      data_source_id: 'source-1'
-    },
-    cover: {
-      type: 'file',
-      file: { url: 'https://notion.so/signed-image' }
-    },
-    properties: {
-      title: {
-        type: 'title',
-        title: [{ plain_text: 'File Cover' }]
-      }
-    }
-  })
-
-  assert.equal(data.title, 'File Cover')
-  assert.equal(data.summary, '')
-  assert.equal(data.coverUrl, 'https://notion.so/signed-image')
-  assert.equal(data.coverType, 'file')
-})
 
 test('buildPageMetadata uses custom ogImageUrl when provided', () => {
   const metadata = buildPageMetadata({
@@ -153,14 +91,11 @@ test('buildPageMetadata includes twitter handles and site-level metadata for soc
   })
 })
 
-test('resolvePublishedPageOgData falls back to direct page lookup when published lookup fails', async () => {
-  const page = await resolvePublishedPageOgData('page-1', {
-    getPublishedPageOgData: async () => {
-      throw new Error('Missing required environment variable: NOTION_DATA_SOURCE_ID')
-    },
+test('getPublishedPageOgData only consumes the Atrium public OG response', async () => {
+  const page = await getPublishedPageOgData('page-1', {
     getPageOgData: async (pageId) => ({
       id: pageId,
-      title: 'Fallback',
+      title: 'Atrium title',
       summary: '',
       coverUrl: '',
       coverType: null
@@ -169,11 +104,39 @@ test('resolvePublishedPageOgData falls back to direct page lookup when published
 
   assert.deepEqual(page, {
     id: 'page-1',
-    title: 'Fallback',
+    title: 'Atrium title',
     summary: '',
     coverUrl: '',
     coverType: null
   })
+
+  await assert.rejects(
+    () => getPublishedPageOgData('page-1', {
+      getPageOgData: async () => {
+        throw new Error('Atrium unavailable')
+      }
+    }),
+    /Atrium unavailable/
+  )
+})
+
+test('getPublishedPageOgData preserves compact Notion UUID OG URLs for Atrium', async () => {
+  let receivedPageId = ''
+  const page = await getPublishedPageOgData('158D83088D4E802E8D2DC94B182259EF', {
+    getPageOgData: async (pageId) => {
+      receivedPageId = pageId
+      return {
+        id: pageId,
+        title: 'Atrium title',
+        summary: '',
+        coverUrl: '',
+        coverType: null
+      }
+    }
+  })
+
+  assert.equal(receivedPageId, '158d8308-8d4e-802e-8d2d-c94b182259ef')
+  assert.equal(page?.id, receivedPageId)
 })
 
 test('resolveRenderableGoogleFontUrl ignores woff2 fonts for OG rendering', () => {

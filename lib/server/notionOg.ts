@@ -1,13 +1,11 @@
 import cjk from '@/lib/cjk'
-import { getAllPosts } from '@/lib/notion/getAllPosts'
-import { collectNormalizedPostIds } from '@/lib/notion/postAdapter'
-import { mapPageToOgData, normalizeNotionUuid, type PageOgData } from '@jihuayu/notion-data'
+import { normalizeNotionUuid } from '@jihuayu/notion-data'
+import { getAtriumBlogClient, isAtriumBlogNotFoundError, type AtriumPageOgData } from '@/lib/server/atriumBlog'
 import { unstable_cache } from 'next/cache'
 import { parsePublicHttpUrl } from './url'
 import { config } from './config'
-import { notionClient } from './notionData'
 
-const NOTION_OG_PAGE_CACHE_REVALIDATE_SECONDS = 300
+const ATRIUM_OG_PAGE_CACHE_REVALIDATE_SECONDS = 300
 const FONT_CACHE_REVALIDATE_SECONDS = 60 * 60 * 24 * 30
 const MAX_OG_COVER_BYTES = 8 * 1024 * 1024
 const OG_COVER_FETCH_TIMEOUT_MS = 5000
@@ -23,21 +21,9 @@ interface OgFontDescriptor {
 }
 
 const getCachedOgPage = unstable_cache(
-  async (pageId: string) => {
-    const page = await notionClient.retrievePage(pageId)
-    return mapPageToOgData(page)
-  },
-  ['notion-og-page'],
-  { revalidate: NOTION_OG_PAGE_CACHE_REVALIDATE_SECONDS, tags: ['notion-posts', 'notion-og-page'] }
-)
-
-const getCachedPublishedOgPageIds = unstable_cache(
-  async () => {
-    const posts = await getAllPosts({ includePages: true })
-    return collectNormalizedPostIds(posts)
-  },
-  ['notion-og-page-allowlist'],
-  { revalidate: NOTION_OG_PAGE_CACHE_REVALIDATE_SECONDS, tags: ['notion-posts', 'notion-og-page'] }
+  async (pageId: string) => getAtriumBlogClient().getPostOg(pageId),
+  ['atrium-blog-og-page'],
+  { revalidate: ATRIUM_OG_PAGE_CACHE_REVALIDATE_SECONDS, tags: ['atrium-blog-posts', 'atrium-blog-og'] }
 )
 
 function resolveOgFontFamily(): string {
@@ -148,40 +134,23 @@ function decodeBase64ToArrayBuffer(value: string): ArrayBuffer {
   return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
 }
 
-export async function getPageOgData(pageId: string): Promise<PageOgData | null> {
-  const normalizedPageId = normalizeNotionUuid(pageId)
-  if (!normalizedPageId) return null
-  return getCachedOgPage(normalizedPageId)
-}
-
-export async function getPublishedPageOgData(pageId: string): Promise<PageOgData | null> {
-  const normalizedPageId = normalizeNotionUuid(pageId)
-  if (!normalizedPageId) return null
-
-  const publishedPageIds = await getCachedPublishedOgPageIds()
-  if (!publishedPageIds.includes(normalizedPageId)) {
-    return null
-  }
-
-  return getCachedOgPage(normalizedPageId)
-}
-
-export async function resolvePublishedPageOgData(
+export async function getPublishedPageOgData(
   pageId: string,
   dependencies: {
-    getPublishedPageOgData?: (pageId: string) => Promise<PageOgData | null>
-    getPageOgData?: (pageId: string) => Promise<PageOgData | null>
-    onPublishedLookupError?: (error: unknown) => void
+    getPageOgData?: (pageId: string) => Promise<AtriumPageOgData>
   } = {}
-): Promise<PageOgData | null> {
-  const loadPublishedPageOgData = dependencies.getPublishedPageOgData || getPublishedPageOgData
-  const loadPageOgData = dependencies.getPageOgData || getPageOgData
+): Promise<AtriumPageOgData | null> {
+  // Preserve existing OG URLs that use a compact or uppercase Notion UUID.
+  // This helper is pure normalization only; Atrium remains the sole content I/O.
+  const normalizedPageId = normalizeNotionUuid(pageId)
+  if (!normalizedPageId) return null
 
   try {
-    return await loadPublishedPageOgData(pageId)
+    const getPageOgData = dependencies.getPageOgData || getCachedOgPage
+    return await getPageOgData(normalizedPageId)
   } catch (error) {
-    dependencies.onPublishedLookupError?.(error)
-    return loadPageOgData(pageId)
+    if (isAtriumBlogNotFoundError(error)) return null
+    throw error
   }
 }
 

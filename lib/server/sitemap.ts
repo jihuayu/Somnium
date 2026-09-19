@@ -209,10 +209,10 @@ const getCachedSitemapEntries = unstable_cache(
       postsPerPage: config.postsPerPage
     })
   },
-  ['dynamic-sitemap'],
+  ['atrium-blog-dynamic-sitemap'],
   {
     revalidate: ONE_DAY_SECONDS,
-    tags: ['sitemap', 'notion-posts', 'notion-feed-posts', 'page-link-map']
+    tags: ['sitemap', 'atrium-blog-posts', 'atrium-blog-feed', 'page-link-map']
   }
 )
 

@@ -34,8 +34,6 @@ export interface BlogConfig {
     keywords: string[]
     googleSiteVerification: string
   }
-  notionDataSourceId?: string
-  notionApiVersion?: string
   comment: {
     provider: '' | 'atrium'
     atriumConfig?: {

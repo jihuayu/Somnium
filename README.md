@@ -1,18 +1,18 @@
 # Somnium
 
-`Somnium` 是我的个人博客项目，基于 Notion 作为内容后台，使用 Next.js 构建，并可直接部署到 Vercel。
+`Somnium` 是我的个人博客项目，使用 Atrium 作为公开内容后端、Next.js 负责页面渲染，并可直接部署到 Vercel。
 
 ## 项目概览
 
 - 站点名称：Somnium（浮生纪梦）
 - 语言：中文（`zh-CN`）
-- 评论系统：Utterances
-- 数据来源：Notion Data Source（官方 API）
+- 评论系统：Atrium
+- 数据来源：Atrium Blog API（Notion 同步仅在 Atrium 内部运行）
 - 技术栈：Next.js 16 + React 18 + Tailwind CSS
 
 ## 功能特性
 
-- 在 Notion 中写作，网站自动拉取内容并渲染
+- 在 Notion 中写作，由 Atrium 同步并向网站提供已发布内容
 - 归档、标签、搜索、RSS、Sitemap
 - SEO 配置与 Open Graph 支持
 - 响应式布局，支持亮色/暗色/跟随系统
@@ -30,14 +30,10 @@ pnpm install
 在项目根目录创建 `.env.local`（或使用 `.env`）：
 
 ```bash
-NOTION_INTEGRATION_TOKEN=your_notion_integration_token
-NOTION_DATA_SOURCE_ID=your_notion_data_source_id
-NOTION_ACTIVE_USER=your_notion_user_id
-NOTION_PAGE_ID=your_home_page_id
-# 可选，不填时默认 2025-09-03
-NOTION_API_VERSION=2025-09-03
-# 可选：Notion Webhook 首次验证后保存下来的 token
-NOTION_WEBHOOK_VERIFICATION_TOKEN=your_notion_webhook_verification_token
+# 必填：Atrium 对外的博客 API 根路径
+ATRIUM_BLOG_API_URL=https://atrium.jihuayu.com/api/v1/blog
+# 必填：仅用于验证 Atrium 的缓存失效回调，不能在浏览器暴露
+CACHE_REVALIDATE_TOKEN=replace_with_a_dedicated_secret
 ```
 
 ### 3. 配置站点信息
@@ -69,39 +65,40 @@ pnpm start
 
 1. 将仓库导入 Vercel
 2. 在 Vercel 项目中配置环境变量（与本地一致）
-3. 执行部署
-4. 后续在 Notion 更新内容后，页面会按 ISR 策略增量更新；未配置 Webhook 时，内容相关页面默认会在 5 分钟内完成下一轮刷新
+3. 在构建和运行环境配置 `ATRIUM_BLOG_API_URL`，并在运行环境配置 `CACHE_REVALIDATE_TOKEN`
+4. 执行部署
+5. Atrium 提交新内容后，会通知本站立即失效相关页面与数据缓存
 
-## Notion Webhook 刷新缓存
+## Atrium 缓存失效回调
 
-项目提供了一个 Notion Webhook 入口：
+Notion Webhook 由 Atrium 的 `POST /api/v1/blog/webhooks/notion` 接收、验证和同步。Somnium 的旧入口 `/api/notion/webhook` 已退役并固定返回 `410 Gone`。
+
+Atrium 在内容 revision 提交后调用：
 
 ```text
-POST /api/notion/webhook
+POST /api/cache/revalidate
+Authorization: Bearer $CACHE_REVALIDATE_TOKEN
 ```
 
-建议在 Notion 集成的 Webhooks 配置中至少订阅这些事件：
+请求体必须是固定的语义契约，Somnium 不接受调用方指定 cache tag 或路径：
 
-- `page.created`
-- `page.properties_updated`
-- `page.content_updated`
-- `page.deleted`
-- `page.undeleted`（不用）
-- `data_source.content_updated` （不用）
-- `data_source.schema_updated` （如果没有结构变更也不用）
-- `data_source.created`
-- `data_source.deleted`
+```json
+{
+  "notificationId": "outbox-uuid",
+  "revision": "184",
+  "scope": "pages",
+  "changes": [
+    {
+      "pageId": "page-id",
+      "oldSlug": "previous-slug",
+      "newSlug": "current-slug",
+      "kind": "properties"
+    }
+  ]
+}
+```
 
-首次创建订阅时，Notion 会向这个地址发送一个只包含 `verification_token` 的请求。你需要：
-
-1. 先把 webhook URL 指向站点的 `/api/notion/webhook`
-2. 在服务日志中拿到这次请求里的 `verification_token`
-3. 把它保存到 `NOTION_WEBHOOK_VERIFICATION_TOKEN`
-4. 回到 Notion 集成后台完成 Verify
-
-后续正式事件不会再把 `verification_token` 放进请求体；Notion 会改为在每次请求里附带 `X-Notion-Signature`。当前实现默认使用 `NOTION_WEBHOOK_VERIFICATION_TOKEN` 来校验这个签名；如果你有兼容性需求，也可以显式设置 `NOTION_WEBHOOK_SIGNATURE_SECRET` 进行覆盖。
-
-之后，当 Notion 页面内容、页面属性、Data Source 内容或结构发生变化时，站点会自动刷新相关缓存，包括首页、文章页、分页页、标签页、RSS、Sitemap 和 Tags API。
+`scope=site` 可带空的 `changes` 数组，用于批量或结构性刷新；较大的变更应使用该 scope 或由 Atrium 拆分通知。成功响应为 `{ "ok": true, "notificationId": "...", "revision": "..." }`。失效失败会返回失败响应，Atrium 必须保留 outbox 项并重试。
 
 ## 常用脚本
 
