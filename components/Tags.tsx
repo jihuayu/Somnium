@@ -1,43 +1,38 @@
 import Link from 'next/link'
+import cn from 'classnames'
 
 interface TagsProps {
   tags: Record<string, number>
   currentTag?: string
+  className?: string
 }
 
-const Tags = ({ tags, currentTag }: TagsProps) => {
-  if (!tags) return null
+const Tags = ({ tags, currentTag, className }: TagsProps) => {
+  const names = Object.keys(tags || {}).sort((left, right) => left.localeCompare(right))
+  if (names.length === 0) return null
+
   return (
-    <div className="tag-container">
-      <ul className="flex max-w-full mt-4 overflow-x-auto">
-        {Object.keys(tags).map(key => {
-          const selected = key === currentTag
-          return (
-            <li
-              key={key}
-              className={`mr-3 font-medium border whitespace-nowrap rounded-md transition-colors duration-150 ease-out ${
-                selected
-                  ? 'text-white bg-stone-900 border-stone-900 dark:bg-stone-100 dark:text-stone-900 dark:border-stone-100'
-                  : 'bg-transparent border-stone-200 text-stone-500 hover:border-stone-300 hover:text-stone-900 dark:border-stone-700 dark:text-stone-400 dark:hover:border-stone-500 dark:hover:text-stone-100'
-              }`}
-            >
-              <Link
-                key={key}
-                href={
-                  selected
-                    ? '/search'
-                    : `/tag/${encodeURIComponent(key)}`
-                }
-                prefetch={false}
-                className="px-4 py-2 block"
-              >
-                {`${key} (${tags[key]})`}
-              </Link>
-            </li>
-          )
-        })}
-      </ul>
-    </div>
+    <nav className={cn('flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm text-stone-400 dark:text-stone-500', className)}>
+      {names.map(name => {
+        const selected = name === currentTag
+        return (
+          <Link
+            key={name}
+            href={selected ? '/search' : `/tag/${encodeURIComponent(name)}`}
+            prefetch={false}
+            aria-current={selected ? 'page' : undefined}
+            className={cn(
+              'transition-colors duration-150 ease-out',
+              selected
+                ? 'text-stone-900 dark:text-stone-100'
+                : 'hover:text-stone-800 dark:hover:text-stone-200'
+            )}
+          >
+            {name}
+          </Link>
+        )
+      })}
+    </nav>
   )
 }
 

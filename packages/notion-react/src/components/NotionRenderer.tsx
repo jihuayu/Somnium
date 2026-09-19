@@ -308,7 +308,7 @@ export default function NotionRenderer({ model, components, renderOptions, class
       case 'quote': {
         return renderBlockWithOverride(block, () => (
           <div key={block.id} className={baseClassName}>
-            <blockquote className="notion-quote border-l-4 border-stone-300 dark:border-stone-600 text-stone-700 dark:text-stone-300 rounded-r-md whitespace-pre-wrap">
+            <blockquote className="notion-quote border-l-2 border-stone-300 dark:border-stone-600 text-stone-700 dark:text-stone-300 whitespace-pre-wrap">
               {renderRichText(block.quote.rich_text)}
             </blockquote>
             {renderChildren(block.id)}

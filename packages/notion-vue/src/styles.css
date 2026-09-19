@@ -4,7 +4,7 @@
   --no-leading: 1.75;
   --notion-font-family: inherit;
   --notion-font-size: clamp(16.5px, 1rem + 0.16vw, 18px);
-  --notion-letter-spacing: 0.012em;
+  --notion-letter-spacing: 0;
   --notion-paragraph-spacing: 0.64em;
   --notion-text-color: rgb(40, 37, 35);
   --notion-text-color-dark: rgb(214, 211, 209);
@@ -81,7 +81,9 @@
   font-size: var(--notion-font-size);
   font-weight: 400;
   line-height: var(--no-leading);
-  letter-spacing: var(--notion-letter-spacing);
+  letter-spacing: normal;
+  text-autospace: ideograph-alpha ideograph-numeric;
+  text-spacing-trim: space-first;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow-wrap: break-word;
@@ -392,17 +394,17 @@
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  gap: 0.35rem 0.55rem;
+  gap: 0 1.15rem;
   margin: 1.5rem 0;
-  padding: 0.95rem 1rem 1rem;
-  border: 1px solid rgb(231 229 228 / 0.92);
-  border-radius: 0.75rem;
-  background-color: rgb(255 255 255 / 0.92);
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
 }
 
 .dark .notion-tabs-block {
-  border-color: rgb(68 64 60 / 0.92);
-  background-color: rgb(28 25 23 / 0.9);
+  border-color: transparent;
+  background-color: transparent;
 }
 
 .notion-tab-item {
@@ -421,16 +423,17 @@
   align-items: center;
   gap: 0.45rem;
   margin: 0;
-  padding: 0.5rem 0.78rem;
-  border: 1px solid transparent;
-  border-radius: 999px;
+  padding: 0.2rem 0 0.55rem;
+  border: none;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
   color: rgb(120 113 108);
   font-size: 0.94em;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.2;
   cursor: pointer;
   user-select: none;
-  transition: color 140ms ease, border-color 140ms ease, background-color 140ms ease;
+  transition: color 140ms ease, border-color 140ms ease;
 }
 
 .dark .notion-tab-label {
@@ -439,24 +442,24 @@
 
 .notion-tab-label:hover {
   color: rgb(68 64 60);
-  background-color: rgb(245 245 244 / 0.88);
+  background-color: transparent;
 }
 
 .dark .notion-tab-label:hover {
   color: rgb(231 229 228);
-  background-color: rgb(41 37 36 / 0.92);
+  background-color: transparent;
 }
 
 .notion-tab-input:checked + .notion-tab-label {
   color: inherit;
-  border-color: rgb(231 229 228 / 0.96);
-  background-color: rgb(245 245 244);
-  box-shadow: 0 1px 1px rgb(28 25 23 / 0.04);
+  border-bottom-color: rgb(28 25 23);
+  background-color: transparent;
+  box-shadow: none;
 }
 
 .dark .notion-tab-input:checked + .notion-tab-label {
-  border-color: rgb(68 64 60 / 0.96);
-  background-color: rgb(41 37 36);
+  border-bottom-color: rgb(231 229 228);
+  background-color: transparent;
 }
 
 .notion-tab-label-icon {
@@ -609,7 +612,12 @@
   letter-spacing: 0.02em;
 }
 
-.notion-code-content { margin: 0; overflow-x: auto; }
+.notion-code-content {
+  margin: 0;
+  overflow-x: auto;
+  text-autospace: no-autospace;
+  text-spacing-trim: space-all;
+}
 
 .notion-code-copy-button {
   position: absolute;

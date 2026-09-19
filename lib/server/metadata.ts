@@ -13,7 +13,7 @@ interface PageMetadataOptions {
 
 const OG_IMAGE_WIDTH = 1200
 const OG_IMAGE_HEIGHT = 630
-const FALLBACK_OG_IMAGE_VERSION = '20260507'
+const FALLBACK_OG_IMAGE_VERSION = '20260819'
 
 function trimSlashes(value: string): string {
   return value.replace(/^\/+|\/+$/g, '')

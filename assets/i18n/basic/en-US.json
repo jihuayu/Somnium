@@ -11,11 +11,26 @@
   },
   "POST": {
     "BACK": "Back",
-    "TOP": "Top"
+    "TOP": "Top",
+    "TOC": "Contents",
+    "TOC_CLOSE": "Close"
   },
   "PAGE": {
     "ERROR_404": {
       "MESSAGE": "Nothing here"
     }
+  },
+  "SEARCH": {
+    "PLACEHOLDER": "Search articles",
+    "PLACEHOLDER_TAG": "Search in #{tag}",
+    "LABEL": "Search articles",
+    "LABEL_TAG": "Search posts in {tag}",
+    "HINT": "Type keywords to search articles",
+    "HINT_SHORT": "Type at least {n} characters",
+    "SEARCHING": "Searching",
+    "EMPTY": "No posts found",
+    "FAILED": "Search failed",
+    "TAGS": "Tags",
+    "CLEAR_TAG": "Show all posts"
   }
 }

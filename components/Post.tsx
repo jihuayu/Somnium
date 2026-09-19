@@ -25,6 +25,8 @@ interface PostProps {
   linkPreviewMap?: LinkPreviewMap
   pageLinkMap?: PageLinkMap
   pagePreviewMap?: PagePreviewMap
+  tocLabel?: string
+  tocCloseLabel?: string
 }
 
 export function getPostFormatClassNames(post: Pick<PostData, 'formats'>): string[] {
@@ -36,13 +38,22 @@ export function getPostFormatClassNames(post: Pick<PostData, 'formats'>): string
 }
 
 export default function Post(props: PostProps) {
-  const { post, document, fullWidth = false, linkPreviewMap = {}, pageLinkMap = {}, pagePreviewMap = {} } = props
+  const {
+    post,
+    document,
+    fullWidth = false,
+    linkPreviewMap = {},
+    pageLinkMap = {},
+    pagePreviewMap = {},
+    tocLabel,
+    tocCloseLabel
+  } = props
   const contentWidthClass = fullWidth ? ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS : ARTICLE_CONTENT_MAX_WIDTH_CLASS
 
   return (
-    <article className={cn('flex flex-col items-center', getPostFormatClassNames(post))}>
+    <article id="post-article" className={cn('flex flex-col items-center', getPostFormatClassNames(post))}>
       <h1 className={cn(
-        'w-full font-serif font-semibold text-[2rem] leading-tight tracking-[-0.025em] text-stone-900 dark:text-stone-100',
+        'w-full font-serif font-semibold text-[2.35rem] md:text-[2.6rem] leading-[1.18] text-stone-900 dark:text-stone-100',
         contentWidthClass,
         'px-4'
       )}>
@@ -50,26 +61,24 @@ export default function Post(props: PostProps) {
       </h1>
       {post.type[0] !== 'Page' && (
         <nav className={cn(
-          'w-full flex mt-6 items-start text-sm text-stone-400 dark:text-stone-500',
+          'w-full flex flex-wrap items-baseline mt-6 mb-4 text-sm text-stone-400 dark:text-stone-500',
           contentWidthClass,
           'px-4'
         )}>
-          <div className="flex mb-4">
-            <a href={config.socialLink || '#'} className="flex hover:text-stone-700 dark:hover:text-stone-300 transition-colors duration-150 ease-out">
-              <p className="ml-2 md:block">{config.author}</p>
-            </a>
-            <span className="block">&nbsp;/&nbsp;</span>
-          </div>
-          <div className="mr-2 mb-4 md:ml-0">
-            {formatDate(post.date, config.lang, config.timezone)}
-          </div>
-          {post.tags && (
-            <div className="flex flex-nowrap max-w-full overflow-x-auto article-tags">
-              {post.tags.map(tag => (
-                <TagItem key={tag} tag={tag} />
-              ))}
-            </div>
-          )}
+          <a
+            href={config.socialLink || '#'}
+            className="hover:text-stone-700 dark:hover:text-stone-300 transition-colors duration-150 ease-out"
+          >
+            {config.author}
+          </a>
+          <span aria-hidden="true">&nbsp;/&nbsp;</span>
+          <time>{formatDate(post.date, config.lang, config.timezone)}</time>
+          {(post.tags || []).map(tag => (
+            <span key={tag}>
+              <span aria-hidden="true">&nbsp;/&nbsp;</span>
+              <TagItem tag={tag} />
+            </span>
+          ))}
         </nav>
       )}
       <div className="self-stretch -mt-4 relative">
@@ -86,12 +95,19 @@ export default function Post(props: PostProps) {
           >
             <TableOfContents
               toc={document?.toc || []}
+              label={tocLabel}
               className="sticky pt-3 overflow-y-auto"
               style={{ top: `${ARTICLE_TOC_TOP_PX}px`, maxHeight: `min(${ARTICLE_TOC_MAX_HEIGHT}, 100%)` }}
             />
           </div>
         )}
-        {fullWidth && <WideTableOfContents toc={document?.toc || []} />}
+        {fullWidth && (
+          <WideTableOfContents
+            toc={document?.toc || []}
+            openLabel={tocLabel}
+            closeLabel={tocCloseLabel}
+          />
+        )}
       </div>
     </article>
   )

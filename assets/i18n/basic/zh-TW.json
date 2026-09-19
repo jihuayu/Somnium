@@ -11,11 +11,26 @@
   },
   "POST": {
     "BACK": "返回",
-    "TOP": "回到頂端"
+    "TOP": "回到頂端",
+    "TOC": "目錄",
+    "TOC_CLOSE": "關閉"
   },
   "PAGE": {
     "ERROR_404": {
       "MESSAGE": "這裡什麼都沒有"
     }
+  },
+  "SEARCH": {
+    "PLACEHOLDER": "搜尋文章",
+    "PLACEHOLDER_TAG": "在 #{tag} 中搜尋",
+    "LABEL": "搜尋文章",
+    "LABEL_TAG": "在 {tag} 中搜尋文章",
+    "HINT": "輸入關鍵詞，搜尋文章",
+    "HINT_SHORT": "至少輸入 {n} 個字",
+    "SEARCHING": "正在搜尋",
+    "EMPTY": "沒有找到文章",
+    "FAILED": "搜尋失敗",
+    "TAGS": "標籤",
+    "CLEAR_TAG": "顯示全部文章"
   }
 }

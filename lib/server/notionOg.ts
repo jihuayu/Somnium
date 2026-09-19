@@ -40,19 +40,19 @@ const getCachedPublishedOgPageIds = unstable_cache(
   { revalidate: NOTION_OG_PAGE_CACHE_REVALIDATE_SECONDS, tags: ['notion-posts', 'notion-og-page'] }
 )
 
-function resolveOgFontFamily(): string {
+export function resolveOgFontFamily(): string {
   const cjkVariant = cjk(config)
   switch (cjkVariant) {
     case 'SC':
-      return 'Noto Sans SC'
+      return 'Noto Serif SC'
     case 'TC':
-      return 'Noto Sans TC'
+      return 'Noto Serif TC'
     case 'JP':
-      return 'Noto Sans JP'
+      return 'Noto Serif JP'
     case 'KR':
-      return 'Noto Sans KR'
+      return 'Noto Serif KR'
     default:
-      return 'IBM Plex Sans'
+      return 'Source Serif 4'
   }
 }
 

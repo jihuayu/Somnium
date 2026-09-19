@@ -15,6 +15,8 @@ interface SlugPostClientProps {
   homePath: string
   backLabel: string
   topLabel: string
+  tocLabel: string
+  tocCloseLabel: string
   linkPreviewMap?: LinkPreviewMap
   pageLinkMap?: PageLinkMap
   pagePreviewMap?: PagePreviewMap
@@ -27,6 +29,8 @@ export default function SlugPostClient({
   homePath,
   backLabel,
   topLabel,
+  tocLabel,
+  tocCloseLabel,
   linkPreviewMap = {},
   pageLinkMap = {},
   pagePreviewMap = {}
@@ -43,6 +47,8 @@ export default function SlugPostClient({
         linkPreviewMap={linkPreviewMap}
         pageLinkMap={pageLinkMap}
         pagePreviewMap={pagePreviewMap}
+        tocLabel={tocLabel}
+        tocCloseLabel={tocCloseLabel}
       />
 
       <div

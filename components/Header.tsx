@@ -98,18 +98,9 @@ export default function Header({
       <HeaderBehavior useSticky={!autoCollapsedNavBar} fullWidth={fullWidth} />
       <div className="observer-element h-4 md:h-12" id="header-sentinel" />
       <div
-        className={`sticky-nav group m-auto w-full h-6 flex flex-row justify-between items-center md:items-end mb-1 md:mb-6 py-8 px-4 ${contentWidthClass}`}
+        className={`sticky-nav m-auto w-full h-6 flex flex-row justify-between items-center md:items-end mb-1 md:mb-6 py-8 px-4 ${contentWidthClass}`}
         id="sticky-nav"
       >
-        <svg
-          viewBox="0 0 24 24"
-          className="caret w-6 h-6 absolute inset-x-0 bottom-0 mx-auto pointer-events-none opacity-30 group-hover:opacity-100 transition duration-100"
-        >
-          <path
-            d="M12 10.828l-4.95 4.95-1.414-1.414L12 8l6.364 6.364-1.414 1.414z"
-            className="fill-black dark:fill-white"
-          />
-        </svg>
         <div className="header-main flex items-center md:items-end gap-2">
           <Link href={path || '/'} aria-label={siteTitle} className="header-icon-link flex items-center md:items-end justify-center shrink-0 leading-none transition-transform duration-500">
             <Image

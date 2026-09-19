@@ -12,11 +12,22 @@ export default function ReadingProgress() {
       rafId = null
       const bar = barRef.current
       if (!bar) return
-      const scrollTop = window.scrollY
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight
-      const progress = docHeight <= 0
-        ? 0
-        : Math.min(1, Math.max(0, scrollTop / docHeight))
+
+      const article = document.getElementById('post-article')
+      if (!article) {
+        bar.style.transform = 'scaleX(0)'
+        return
+      }
+
+      const viewport = window.innerHeight
+      const articleTop = article.offsetTop
+      const articleHeight = article.offsetHeight
+      const start = articleTop
+      const end = articleTop + articleHeight - viewport
+      const progress = end <= start
+        ? (window.scrollY >= start ? 1 : 0)
+        : Math.min(1, Math.max(0, (window.scrollY - start) / (end - start)))
+
       bar.style.transform = `scaleX(${progress})`
     }
 
@@ -38,10 +49,10 @@ export default function ReadingProgress() {
   }, [])
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 h-0.5 pointer-events-none">
+    <div className="fixed top-0 left-0 right-0 z-50 h-px pointer-events-none">
       <div
         ref={barRef}
-        className="h-full bg-stone-400 dark:bg-stone-500 transition-transform duration-75 ease-out will-change-transform"
+        className="h-full bg-stone-300/80 dark:bg-stone-600/70 transition-transform duration-75 ease-out will-change-transform"
         style={{ transform: 'scaleX(0)', transformOrigin: 'left center' }}
       />
     </div>

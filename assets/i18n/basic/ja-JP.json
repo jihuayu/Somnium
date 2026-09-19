@@ -11,11 +11,26 @@
   },
   "POST": {
     "BACK": "戻る",
-    "TOP": "トップに戻る"
+    "TOP": "トップに戻る",
+    "TOC": "目次",
+    "TOC_CLOSE": "閉じる"
   },
   "PAGE": {
     "ERROR_404": {
       "MESSAGE": "ここにはいない"
     }
+  },
+  "SEARCH": {
+    "PLACEHOLDER": "記事を検索",
+    "PLACEHOLDER_TAG": "#{tag} を検索",
+    "LABEL": "記事を検索",
+    "LABEL_TAG": "{tag} の記事を検索",
+    "HINT": "キーワードを入力して記事を検索",
+    "HINT_SHORT": "少なくとも {n} 文字入力してください",
+    "SEARCHING": "検索中",
+    "EMPTY": "記事が見つかりません",
+    "FAILED": "検索に失敗しました",
+    "TAGS": "タグ",
+    "CLEAR_TAG": "すべての記事を表示"
   }
 }

@@ -11,11 +11,26 @@
   },
   "POST": {
     "BACK": "Atrás",
-    "TOP": "Arriba"
+    "TOP": "Arriba",
+    "TOC": "Índice",
+    "TOC_CLOSE": "Cerrar"
   },
   "PAGE": {
     "ERROR_404": {
       "MESSAGE": "No hay nada aquí"
     }
+  },
+  "SEARCH": {
+    "PLACEHOLDER": "Buscar artículos",
+    "PLACEHOLDER_TAG": "Buscar en #{tag}",
+    "LABEL": "Buscar artículos",
+    "LABEL_TAG": "Buscar en {tag}",
+    "HINT": "Escribe palabras clave para buscar",
+    "HINT_SHORT": "Escribe al menos {n} caracteres",
+    "SEARCHING": "Buscando",
+    "EMPTY": "No hay artículos",
+    "FAILED": "Error de búsqueda",
+    "TAGS": "Etiquetas",
+    "CLEAR_TAG": "Ver todos los artículos"
   }
 }

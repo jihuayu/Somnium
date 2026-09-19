@@ -1,10 +1,12 @@
 'use client'
 
 import { useDeferredValue, useEffect, useId, useMemo, useState, type ReactNode } from 'react'
+import Link from 'next/link'
 import BlogPost from '@/components/BlogPost'
 import Tags from '@/components/Tags'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
 import { MIN_SEARCH_QUERY_LENGTH } from '@/lib/search/constants'
+import type { Locale } from '@/lib/locale'
 
 interface SearchClientProps {
   tags: Record<string, number>
@@ -17,6 +19,7 @@ interface SearchClientProps {
   timezone?: string
   tagsSlot?: ReactNode
   initialResultsCount?: number
+  copy: Locale['SEARCH']
   children?: ReactNode
 }
 
@@ -35,6 +38,7 @@ export default function SearchClient({
   timezone,
   tagsSlot,
   initialResultsCount = 0,
+  copy,
   children
 }: SearchClientProps) {
   const searchInputId = useId()
@@ -159,17 +163,19 @@ export default function SearchClient({
   const showNotionSearchHint = shouldUseNotionSearch && !showInitialResults && (isQueryEmpty || isQueryTooShort) && !isSearching && !searchError
   const showEmptyState = !showNotionSearchHint && !showInitialResults && !isSearching && !searchError && !filteredBlogPosts.length
   const notionSearchHint = isQueryTooShort
-    ? `Type at least ${MIN_SEARCH_QUERY_LENGTH} characters to search posts in Notion.`
-    : 'Type keywords to search posts in Notion.'
-  const searchLabel = currentTag ? `Search posts in ${currentTag}` : 'Search articles'
+    ? copy.HINT_SHORT.replace('{n}', String(MIN_SEARCH_QUERY_LENGTH))
+    : copy.HINT
+  const searchLabel = currentTag
+    ? copy.LABEL_TAG.replace('{tag}', currentTag)
+    : copy.LABEL
   const statusMessage = isSearching
-    ? 'Searching posts.'
+    ? copy.SEARCHING
     : searchError
-      ? `Search failed: ${searchError}`
+      ? `${copy.FAILED}: ${searchError}`
       : showNotionSearchHint
         ? notionSearchHint
         : showEmptyState
-          ? 'No posts found.'
+          ? copy.EMPTY
           : ''
   const describedBy = [
     showNotionSearchHint ? searchHintId : '',
@@ -180,7 +186,7 @@ export default function SearchClient({
 
   return (
     <>
-      <div className="relative">
+      <div>
         <label htmlFor={searchInputId} className="sr-only">
           {searchLabel}
         </label>
@@ -190,33 +196,27 @@ export default function SearchClient({
           value={searchValue}
           aria-describedby={describedBy || undefined}
           placeholder={
-            currentTag ? `Search in #${currentTag}` : 'Search Articles'
+            currentTag
+              ? copy.PLACEHOLDER_TAG.replace('{tag}', currentTag)
+              : copy.PLACEHOLDER
           }
-          className="block w-full rounded-md border px-4 py-2 border-stone-300 bg-transparent text-stone-900 placeholder:text-stone-400 transition-colors duration-150 ease-out focus:border-stone-400 dark:border-stone-700 dark:text-stone-100 dark:placeholder:text-stone-500 dark:focus:border-stone-500"
+          className="block w-full appearance-none rounded-none border-0 border-b border-stone-200 bg-transparent px-0 py-2 text-stone-900 shadow-none placeholder:text-stone-400 outline-none transition-colors duration-150 ease-out focus:border-stone-800 dark:border-stone-700 dark:text-stone-100 dark:placeholder:text-stone-500 dark:focus:border-stone-300"
           onChange={e => setSearchValue(e.target.value)}
         />
-        <svg
-          className="absolute right-3 top-3 h-5 w-5 text-stone-400 dark:text-stone-500"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          aria-hidden="true"
-          focusable="false"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-          ></path>
-        </svg>
       </div>
-      {tagsSlot || (
-        <Tags
-          tags={displayTags}
-          currentTag={currentTag}
-        />
+      {currentTag && (
+        <p className="mt-3 text-sm text-stone-400 dark:text-stone-500">
+          <Link
+            href="/search"
+            prefetch={false}
+            title={copy.CLEAR_TAG}
+            className="transition-colors duration-150 ease-out hover:text-stone-800 dark:hover:text-stone-200"
+          >
+            {copy.TAGS}
+          </Link>
+          <span aria-hidden="true">&nbsp;/&nbsp;</span>
+          <span aria-current="page" className="text-stone-900 dark:text-stone-100">{currentTag}</span>
+        </p>
       )}
       <div className="article-container my-8">
         {statusMessage && (
@@ -228,19 +228,25 @@ export default function SearchClient({
           <p id={searchHintId} className="text-stone-500 dark:text-stone-400">{notionSearchHint}</p>
         )}
         {isSearching && (
-          <p className="text-stone-500 dark:text-stone-400" role="status">Searching...</p>
+          <p className="text-stone-500 dark:text-stone-400" role="status">{copy.SEARCHING}</p>
         )}
         {!isSearching && !!searchError && (
           <p className="text-stone-600 dark:text-stone-300 font-medium" role="alert">{searchError}</p>
         )}
         {showEmptyState && (
-          <p className="text-stone-500 dark:text-stone-400" role="status">No posts found.</p>
+          <p className="text-stone-500 dark:text-stone-400" role="status">{copy.EMPTY}</p>
         )}
         {showInitialResults && children}
         {filteredBlogPosts.slice(0, 20).map(post => (
           <BlogPost key={post.id} post={post} blogPath={blogPath} lang={lang} timezone={timezone} />
         ))}
       </div>
+      {tagsSlot || (
+        <Tags
+          tags={displayTags}
+          currentTag={currentTag}
+        />
+      )}
     </>
   )
 }

@@ -328,7 +328,7 @@ export default defineComponent({
           case 'quote': {
             return renderBlockWithOverride(block, () => h('div', { key: block.id, class: baseClassName }, [
               h('blockquote', {
-                class: 'notion-quote border-l-4 border-stone-300 dark:border-stone-600 text-stone-700 dark:text-stone-300 rounded-r-md whitespace-pre-wrap'
+                class: 'notion-quote border-l-2 border-stone-300 dark:border-stone-600 text-stone-700 dark:text-stone-300 whitespace-pre-wrap'
               }, [renderRichText(block.quote.rich_text)]),
               renderChildren(block.id)
             ]))

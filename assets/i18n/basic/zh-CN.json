@@ -11,11 +11,26 @@
   },
   "POST": {
     "BACK": "返回",
-    "TOP": "回到顶部"
+    "TOP": "回到顶部",
+    "TOC": "目录",
+    "TOC_CLOSE": "关闭"
   },
   "PAGE": {
     "ERROR_404": {
       "MESSAGE": "什么也没有"
     }
+  },
+  "SEARCH": {
+    "PLACEHOLDER": "搜索文章",
+    "PLACEHOLDER_TAG": "在 #{tag} 中搜索",
+    "LABEL": "搜索文章",
+    "LABEL_TAG": "在 {tag} 中搜索文章",
+    "HINT": "输入关键词，搜索文章",
+    "HINT_SHORT": "至少输入 {n} 个字",
+    "SEARCHING": "正在搜索",
+    "EMPTY": "没有找到文章",
+    "FAILED": "搜索失败",
+    "TAGS": "标签",
+    "CLEAR_TAG": "显示全部文章"
   }
 }

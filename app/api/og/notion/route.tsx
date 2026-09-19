@@ -10,18 +10,14 @@ const IMAGE_HEIGHT = 630
 const CACHE_CONTROL = 'public, max-age=0, s-maxage=300, stale-while-revalidate=86400'
 const MINIMAL_PNG_FALLBACK = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII='
 const SVG_SYSTEM_FONT_STACK = [
-  'Noto Sans SC',
-  'Noto Sans TC',
-  'Noto Sans JP',
-  'PingFang SC',
-  'PingFang TC',
-  'Hiragino Sans GB',
-  'Microsoft YaHei',
-  'system-ui',
-  '-apple-system',
-  'BlinkMacSystemFont',
-  'Segoe UI',
-  'sans-serif'
+  'Noto Serif SC',
+  'Noto Serif TC',
+  'Noto Serif JP',
+  'Source Serif 4',
+  'Source Serif',
+  'Georgia',
+  'Songti SC',
+  'serif'
 ].join(', ')
 
 function normalizeText(value: string, limit: number): string {
@@ -208,10 +204,10 @@ function renderTitleOgImage({
           style={{
             display: 'flex',
             maxWidth: '980px',
-            fontSize: 78,
-            lineHeight: 1.08,
-            fontWeight: 700,
-            letterSpacing: '-0.045em',
+            fontSize: 72,
+            lineHeight: 1.15,
+            fontWeight: 600,
+            letterSpacing: '0.02em',
             flexDirection: 'column',
             width: '100%'
           }}
@@ -221,10 +217,8 @@ function renderTitleOgImage({
         <div
           style={{
             display: 'flex',
-            fontSize: 24,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            color: 'rgba(24, 24, 27, 0.72)'
+            fontSize: 22,
+            color: 'rgba(28, 25, 23, 0.55)'
           }}
         >
           {config.title}
@@ -348,7 +342,7 @@ function createSvgFallbackMarkup({
 </svg>`
       })()
     : (() => {
-        const titleLineHeight = 82
+        const titleLineHeight = 84
         const titleStartY = 320 - (((titleLines.length - 1) * titleLineHeight) / 2)
         return `<svg xmlns="http://www.w3.org/2000/svg" width="${IMAGE_WIDTH}" height="${IMAGE_HEIGHT}" viewBox="0 0 ${IMAGE_WIDTH} ${IMAGE_HEIGHT}">
 <rect width="1200" height="630" fill="${escapeSvgText(config.lightBackground || '#ffffff')}"/>
@@ -360,11 +354,11 @@ ${buildSvgTextElements({
   x: 72,
   startY: titleStartY,
   lineHeight: titleLineHeight,
-  fontSize: 68,
-  fontWeight: 700,
+  fontSize: 64,
+  fontWeight: 600,
   fill: '#1c1917'
 })}
-<text x="72" y="558" fill="rgba(24,24,27,0.72)" font-family="${escapeSvgText(SVG_SYSTEM_FONT_STACK)}" font-size="24" letter-spacing="4">${safeSiteTitle}</text>
+<text x="72" y="558" fill="rgba(28,25,23,0.55)" font-family="${escapeSvgText(SVG_SYSTEM_FONT_STACK)}" font-size="22">${safeSiteTitle}</text>
 </svg>`
       })()
 }
@@ -485,7 +479,7 @@ export async function GET(request: Request) {
     console.error(`[og] Failed to load OG fonts for page ${pageId}:`, error)
   }
 
-  const fontFamily = fonts.length ? 'NotionOgSans' : 'sans-serif'
+  const fontFamily = fonts.length ? 'NotionOgSerif' : 'serif'
 
   return createBufferedNotionOgImageResponse({
     title,

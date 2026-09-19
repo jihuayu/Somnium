@@ -125,6 +125,8 @@ export default async function SlugPage({ params }: SlugPageProps) {
         homePath={config.path || '/'}
         backLabel={locale.POST.BACK}
         topLabel={locale.POST.TOP}
+        tocLabel={locale.POST.TOC}
+        tocCloseLabel={locale.POST.TOC_CLOSE}
         pageLinkMap={pageLinkMap}
         pagePreviewMap={pagePreviewMap}
       />

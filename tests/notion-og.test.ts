@@ -3,7 +3,7 @@ import test from 'node:test'
 import type { ReactElement, ReactNode } from 'react'
 import { mapPageToOgData } from '@jihuayu/notion-data'
 import { buildNotionOgImageUrl, buildPageMetadata } from '../lib/server/metadata'
-import { resolvePublishedPageOgData, resolveRenderableGoogleFontUrl } from '../lib/server/notionOg'
+import { resolveOgFontFamily, resolvePublishedPageOgData, resolveRenderableGoogleFontUrl } from '../lib/server/notionOg'
 import { createBufferedNotionOgImageResponse, createNotionOgImageResponse } from '../app/api/og/notion/route'
 
 const PNG_SIGNATURE_HEX = '89504e470d0a1a0a'
@@ -340,4 +340,8 @@ test('createBufferedNotionOgImageResponse png fallback keeps cover imagery when 
   })
 
   await assertPngResponse(response)
+})
+
+test('resolveOgFontFamily uses a serif family for Chinese titles', () => {
+  assert.equal(resolveOgFontFamily(), 'Noto Serif SC')
 })
