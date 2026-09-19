@@ -17,7 +17,23 @@ const BLOG = {
   postsPerPage: 7,
   sortByDate: true,
   showAbout: true,
+  showMe: true,
   showArchive: true,
+  profile: {
+    greeting: '你好，我是',
+    name: '纪华裕',
+    tagline: '写一点代码，记一点日子。',
+    quote: '大梦一场，浮生今歇。',
+    avatar: 'https://avatars.githubusercontent.com/u/32858525?v=4',
+    recentPostCount: 5,
+    showGuestbook: true,
+    socials: [
+      { label: 'GitHub', href: 'https://github.com/jihuayu' },
+      { label: 'X', href: 'https://twitter.com/jihuayu123' },
+      { label: '邮件', href: 'mailto:jihuayu123@gmail.com' },
+      { label: 'RSS', href: '/feed' }
+    ]
+  },
   autoCollapsedNavBar: false,
   ogImageGenerateURL: 'https://og-image-craigary.vercel.app',
   socialLink: 'https://twitter.com/jihuayu123',

@@ -64,6 +64,7 @@ test('buildSitemapEntries includes site routes and excludes api routes', () => {
   const urls = entries.map(entry => entry.url)
 
   assert.ok(urls.includes('https://example.com'))
+  assert.ok(urls.includes('https://example.com/me'))
   assert.ok(urls.includes('https://example.com/search'))
   assert.ok(urls.includes('https://example.com/feed'))
   assert.ok(urls.includes('https://example.com/post-1'))
@@ -111,7 +112,22 @@ test('buildSitemapEntries prefixes configured basePath', () => {
   const urls = entries.map(entry => entry.url)
 
   assert.ok(urls.includes('https://example.com/blog'))
+  assert.ok(urls.includes('https://example.com/blog/me'))
   assert.ok(urls.includes('https://example.com/blog/search'))
   assert.ok(urls.includes('https://example.com/blog/feed'))
   assert.ok(urls.includes('https://example.com/blog/post-1'))
+})
+
+test('buildSitemapEntries can omit the me page', () => {
+  const entries = buildSitemapEntries({
+    siteOrigin: 'https://example.com',
+    basePath: '',
+    postsPerPage: 10,
+    includeMePage: false,
+    allPosts: [],
+    publishedPosts: []
+  })
+
+  const urls = entries.map(entry => entry.url)
+  assert.equal(urls.some(url => url === 'https://example.com/me' || url.endsWith('/me')), false)
 })

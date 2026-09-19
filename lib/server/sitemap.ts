@@ -14,6 +14,7 @@ interface BuildSitemapEntriesInput {
   allPosts: PostData[]
   publishedPosts: PostData[]
   postsPerPage: number
+  includeMePage?: boolean
 }
 
 function trimSlashes(value: string): string {
@@ -119,7 +120,8 @@ export function buildSitemapEntries({
   basePath,
   allPosts,
   publishedPosts,
-  postsPerPage
+  postsPerPage,
+  includeMePage = true
 }: BuildSitemapEntriesInput): MetadataRoute.Sitemap {
   const entriesByUrl = new Map<string, SitemapEntry>()
   const now = new Date()
@@ -130,6 +132,12 @@ export function buildSitemapEntries({
     entriesByUrl,
     createEntry(siteOrigin, buildSiteRelativePath(basePath, '/'), latestPublishedDate, 'daily', 1)
   )
+  if (includeMePage) {
+    upsertSitemapEntry(
+      entriesByUrl,
+      createEntry(siteOrigin, buildSiteRelativePath(basePath, '/me'), latestPublishedDate, 'weekly', 0.9)
+    )
+  }
   upsertSitemapEntry(
     entriesByUrl,
     createEntry(siteOrigin, buildSiteRelativePath(basePath, '/search'), latestPublishedDate, 'daily', 0.6)
@@ -206,7 +214,8 @@ const getCachedSitemapEntries = unstable_cache(
       basePath: config.path || '',
       allPosts,
       publishedPosts,
-      postsPerPage: config.postsPerPage
+      postsPerPage: config.postsPerPage,
+      includeMePage: config.showMe
     })
   },
   ['dynamic-sitemap'],

@@ -1,9 +1,28 @@
 {
   "NAV": {
     "INDEX": "ブログ",
+    "ME": "私",
     "RSS": "購読",
     "SEARCH": "検索",
     "ABOUT": "このサイトについて"
+  },
+  "ME": {
+    "RECENT": "最近の文章",
+    "RECENT_KICKER": "Recent Writing",
+    "GUESTBOOK": "ひとこと残す",
+    "POSTS": "本",
+    "DAYS": "日",
+    "VIEW_ALL": "すべての記事",
+    "WELCOME": "便りをどうぞ",
+    "SUBSCRIBE": "購読",
+    "SUBSCRIBE_HINT": "手紙を見逃さない",
+    "WRITING": "記事",
+    "SEASON": {
+      "SPRING": "春のあいさつ",
+      "SUMMER": "夏のご挨拶",
+      "AUTUMN": "秋のあいさつ",
+      "WINTER": "冬のご挨拶"
+    }
   },
   "PAGINATION": {
     "PREV": "前ページ",

@@ -1,9 +1,28 @@
 {
   "NAV": {
     "INDEX": "Blog",
+    "ME": "Me",
     "RSS": "RSS",
     "SEARCH": "Search",
     "ABOUT": "About"
+  },
+  "ME": {
+    "RECENT": "Recent writing",
+    "RECENT_KICKER": "Recent Writing",
+    "GUESTBOOK": "Leave a mark",
+    "POSTS": "posts",
+    "DAYS": "days",
+    "VIEW_ALL": "All posts",
+    "WELCOME": "Welcome to write",
+    "SUBSCRIBE": "Subscribe",
+    "SUBSCRIBE_HINT": "Never miss a letter",
+    "WRITING": "Post",
+    "SEASON": {
+      "SPRING": "Spring greetings",
+      "SUMMER": "Midsummer peace",
+      "AUTUMN": "Early autumn greetings",
+      "WINTER": "Winter greetings"
+    }
   },
   "PAGINATION": {
     "PREV": "Prev",

@@ -1,9 +1,28 @@
 {
   "NAV": {
     "INDEX": "網誌",
+    "ME": "我",
     "RSS": "訂閱",
     "SEARCH": "搜尋",
     "ABOUT": "關於"
+  },
+  "ME": {
+    "RECENT": "近期寫作",
+    "RECENT_KICKER": "Recent Writing",
+    "GUESTBOOK": "留個記號",
+    "POSTS": "篇",
+    "DAYS": "天",
+    "VIEW_ALL": "全部文章",
+    "WELCOME": "歡迎來信",
+    "SUBSCRIBE": "訂閱",
+    "SUBSCRIBE_HINT": "唔好錯過每一封信",
+    "WRITING": "文章",
+    "SEASON": {
+      "SPRING": "春日問候",
+      "SUMMER": "夏日安好",
+      "AUTUMN": "秋日致意",
+      "WINTER": "冬日安好"
+    }
   },
   "PAGINATION": {
     "PREV": "上一頁",

@@ -5,6 +5,7 @@ import { formatDate } from '@/lib/formatDate'
 import { decodePossiblyEncoded } from '@/lib/url/decodePossiblyEncoded'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
 import type { NotionBlock, NotionDocument, NotionRichText } from '@jihuayu/notion-type'
+import { buildProfileMarkdown, ME_PAGE_SLUG } from '@/lib/profile'
 
 function absolute(path: string): string {
   return buildSiteAbsoluteUrl(
@@ -251,6 +252,25 @@ async function searchMarkdown(): Promise<string> {
   ].join('\n')
 }
 
+async function meMarkdown(): Promise<string> {
+  const posts = await getAllPosts({ includePages: false })
+  const profile = config.profile
+  const recentCount = Math.max(1, Math.floor(profile.recentPostCount) || 5)
+  return buildProfileMarkdown({
+    name: escapeMarkdown(profile.name || config.author),
+    tagline: escapeMarkdown(profile.tagline || config.description || ''),
+    quote: escapeMarkdown(profile.quote || ''),
+    canonicalUrl: absolute(`/${ME_PAGE_SLUG}`),
+    postsHeading: 'Recent writing',
+    posts: posts.slice(0, recentCount).map(post => ({
+      title: escapeMarkdown(post.title),
+      href: absolute(`/${post.slug}`),
+      date: formatDate(post.date, config.lang, config.timezone),
+      summary: post.summary ? escapeMarkdown(post.summary) : undefined
+    }))
+  })
+}
+
 async function postMarkdown(slug: string): Promise<string | null> {
   const posts = await getAllPosts({ includePages: true })
   const post = posts.find(row => row.slug === slug)
@@ -277,6 +297,7 @@ export async function markdownForAgentPath(path: string[] = []): Promise<string 
   if (path[0] === 'page' && path.length === 2) return paginatedMarkdown(Number(path[1]))
   if (path[0] === 'tag' && path.length === 2) return tagMarkdown(path[1])
   if (path[0] === 'search' && path.length === 1) return searchMarkdown()
+  if (path[0] === ME_PAGE_SLUG && path.length === 1) return meMarkdown()
   if (path.length === 1) return postMarkdown(decodePossiblyEncoded(path[0]))
   return null
 }

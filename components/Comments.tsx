@@ -1,5 +1,5 @@
 import cn from 'classnames'
-import { CommentBox } from '@jihuayu/somnium-comments'
+import { CommentBox, type CommentBoxLabels } from '@jihuayu/somnium-comments'
 import { ARTICLE_CONTENT_MAX_WIDTH_CLASS, ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS } from '@/consts'
 import { config } from '@/lib/server/config'
 import type { BlogConfig } from '@/lib/config'
@@ -9,6 +9,8 @@ import { buildInternalSlugHref } from '@/lib/notion/pageLinkMap'
 interface CommentsProps {
   frontMatter: PostData
   comment: BlogConfig['comment']
+  compact?: boolean
+  labels?: CommentBoxLabels
 }
 
 function buildCommentPageUrl(slug: string): string | undefined {
@@ -22,7 +24,7 @@ function buildCommentPageUrl(slug: string): string | undefined {
   }
 }
 
-const Comments = ({ frontMatter, comment }: CommentsProps) => {
+const Comments = ({ frontMatter, comment, compact = false, labels }: CommentsProps) => {
   const fullWidth = frontMatter.fullWidth ?? false
   const contentWidthClass = fullWidth ? ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS : ARTICLE_CONTENT_MAX_WIDTH_CLASS
   const atriumConfig = comment?.atriumConfig
@@ -39,9 +41,10 @@ const Comments = ({ frontMatter, comment }: CommentsProps) => {
       pageTitle={frontMatter.title}
       pageUrl={commentPageUrl}
       locale={config.lang}
+      labels={labels}
       className={cn(
-        'px-4',
-        `mx-auto ${contentWidthClass}`
+        !compact && 'px-4',
+        !compact && `mx-auto ${contentWidthClass}`
       )}
     />
   )

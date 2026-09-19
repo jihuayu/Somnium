@@ -17,6 +17,7 @@ export const DEFAULT_CACHE_REVALIDATE_TAGS = [
 
 export const DEFAULT_CACHE_REVALIDATE_PATHS = [
   '/',
+  '/me',
   '/search',
   '/feed',
   '/sitemap.xml'
@@ -35,6 +36,7 @@ export const NOTION_WEBHOOK_REVALIDATE_TAGS = [
 
 export const NOTION_WEBHOOK_REVALIDATE_PATHS = [
   '/',
+  '/me',
   '/search',
   '/feed',
   '/sitemap.xml',

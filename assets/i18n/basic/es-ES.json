@@ -1,9 +1,28 @@
 {
   "NAV": {
     "INDEX": "Blog",
+    "ME": "Yo",
     "RSS": "RSS",
     "SEARCH": "Buscar",
     "ABOUT": "Acerca de mí"
+  },
+  "ME": {
+    "RECENT": "Escritos recientes",
+    "RECENT_KICKER": "Recent Writing",
+    "GUESTBOOK": "Deja una marca",
+    "POSTS": "notas",
+    "DAYS": "días",
+    "VIEW_ALL": "Todas las notas",
+    "WELCOME": "Bienvenido a escribir",
+    "SUBSCRIBE": "Suscribirse",
+    "SUBSCRIBE_HINT": "No te pierdas ninguna carta",
+    "WRITING": "Nota",
+    "SEASON": {
+      "SPRING": "Saludos de primavera",
+      "SUMMER": "Saludos de verano",
+      "AUTUMN": "Saludos de otoño",
+      "WINTER": "Saludos de invierno"
+    }
   },
   "PAGINATION": {
     "PREV": "Anterior",

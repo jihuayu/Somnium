@@ -14,6 +14,7 @@
 
 - 在 Notion 中写作，网站自动拉取内容并渲染
 - 归档、标签、搜索、RSS、Sitemap
+- `/me` 个人主页（简介、近作、留言；若 Notion 中也有 slug 为 `me` 的页面，以该路由为准）
 - SEO 配置与 Open Graph 支持
 - 响应式布局，支持亮色/暗色/跟随系统
 
@@ -46,6 +47,7 @@ NOTION_WEBHOOK_VERIFICATION_TOKEN=your_notion_webhook_verification_token
 
 - `title` / `author` / `link`
 - `description`
+- `profile` / `showMe`（`/me` 个人主页文案与社交链接）
 - `seo.keywords`
 - `comment`（如 Utterances）
 - `linkPreview.useOgProxy` / `linkPreview.ogProxyBaseUrl`（开启并指定外部 OG 代理）

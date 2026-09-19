@@ -11,6 +11,7 @@ import { buildPageLinkMap } from '@/lib/notion/pageLinkMap'
 import { buildPostPagePreviewMap } from '@/lib/notion/postAdapter'
 import { config } from '@/lib/server/config'
 import { FIVE_MINUTES_SECONDS } from '@/lib/server/cache'
+import { ME_PAGE_SLUG } from '@/lib/profile'
 import SlugPostClient from './slug-client'
 
 export const revalidate = 300
@@ -73,9 +74,11 @@ const resolveSlugPageState = cache(async (slug: string) => {
 
 export async function generateStaticParams() {
   const { posts } = await getSlugPageState()
-  return posts.map(row => ({
-    slug: row.slug
-  }))
+  return posts
+    .filter(row => row.slug !== ME_PAGE_SLUG)
+    .map(row => ({
+      slug: row.slug
+    }))
 }
 
 interface SlugPageProps {

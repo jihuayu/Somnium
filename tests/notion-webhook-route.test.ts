@@ -128,6 +128,6 @@ test('webhook route invalidates collection caches for page.properties_updated ev
   assert.equal(response.status, 200)
   assert.equal(payload.revalidated, true)
   assert.deepEqual(payload.tags, ['sitemap', 'notion-posts', 'notion-feed-posts', 'notion-og-page', 'page-link-map'])
-  assert.deepEqual(payload.paths, ['/', '/search', '/feed', '/sitemap.xml', '/api/tags', '/[slug]', '/page/[page]', '/tag/[tag]'])
+  assert.deepEqual(payload.paths, ['/', '/me', '/search', '/feed', '/sitemap.xml', '/api/tags', '/[slug]', '/page/[page]', '/tag/[tag]'])
   assert.deepEqual(payload.scheduledPrewarmPaths, [])
 })

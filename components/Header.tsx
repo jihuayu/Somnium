@@ -5,6 +5,7 @@ import HeaderBehavior from '@/components/HeaderBehavior'
 
 interface NavLocale {
   INDEX: string
+  ME: string
   ABOUT: string
   RSS: string
   SEARCH: string
@@ -12,16 +13,18 @@ interface NavLocale {
 
 interface NavBarProps {
   path: string
+  showMe: boolean
   showAbout: boolean
   locale: NavLocale
 }
 
-const NavBar = ({ path, showAbout, locale }: NavBarProps) => {
+const NavBar = ({ path, showMe, showAbout, locale }: NavBarProps) => {
   const links = [
     { id: 0, name: locale.INDEX, to: path || '/', show: true },
-    { id: 1, name: locale.ABOUT, to: '/about', show: showAbout },
-    { id: 2, name: locale.RSS, to: '/feed', show: true, external: true },
-    { id: 3, name: locale.SEARCH, to: '/search', show: true }
+    { id: 1, name: locale.ME, to: '/me', show: showMe },
+    { id: 2, name: locale.ABOUT, to: '/about', show: showAbout },
+    { id: 3, name: locale.RSS, to: '/feed', show: true, external: true },
+    { id: 4, name: locale.SEARCH, to: '/search', show: true }
   ]
 
   return (
@@ -55,6 +58,7 @@ interface HeaderProps {
   siteTitle: string
   siteDescription: string
   path: string
+  showMe: boolean
   showAbout: boolean
   autoCollapsedNavBar: boolean
   navLocale: NavLocale
@@ -87,6 +91,7 @@ export default function Header({
   siteTitle,
   siteDescription,
   path,
+  showMe,
   showAbout,
   autoCollapsedNavBar,
   navLocale
@@ -127,7 +132,7 @@ export default function Header({
             postTitle={navBarTitle}
           />
         </div>
-        <NavBar path={path} showAbout={showAbout} locale={navLocale} />
+        <NavBar path={path} showMe={showMe} showAbout={showAbout} locale={navLocale} />
       </div>
     </>
   )
