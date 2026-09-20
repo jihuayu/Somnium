@@ -146,6 +146,31 @@ function writeHighlightCache(key: string, value: { html: string, language: strin
   highlightHtmlCache.set(key, value)
 }
 
+// Shell grammars can split placeholder tokens like `<task>` into `tas` + `k` before `>`.
+const BASH_ANGLE_PLACEHOLDER_SPLIT_RE = /(<span style="([^"]+)">)([a-zA-Z0-9_-]+)(<\/span>)(<span style="([^"]+)">)([a-zA-Z0-9_-])(<\/span>)(?=<span style="[^"]+">(?:&#x3E;|>)<\/span>)/g
+
+function harmonizeBashAngleBracketHtml(html: string): string {
+  let result = html
+  let previous = ''
+
+  while (result !== previous) {
+    previous = result
+    result = result.replace(
+      BASH_ANGLE_PLACEHOLDER_SPLIT_RE,
+      (match, openSpan, firstStyle, prefix, closeFirstSpan, trailingOpenSpan, secondStyle, suffix, closeSecondSpan) => {
+        if (firstStyle === secondStyle) return match
+
+        const combined = `${prefix}${suffix}`
+        if (!/^[a-zA-Z][a-zA-Z0-9_-]*$/.test(combined)) return match
+
+        return `${openSpan}${combined}${closeFirstSpan}`
+      }
+    )
+  }
+
+  return result
+}
+
 export async function highlightCodeToHtml(source: string, rawLanguage: string): Promise<HighlightedCode> {
   const displayLanguage = `${rawLanguage || ''}`.trim() || 'plain text'
   const normalized = normalizeCodeLanguage(rawLanguage)
@@ -176,13 +201,17 @@ export async function highlightCodeToHtml(source: string, rawLanguage: string): 
     const highlighter = SHIKI_EXTENDED_LANGUAGE_SET.has(language)
       ? await getExtendedHighlighter()
       : await getBaseHighlighter()
-    const html = highlighter.codeToHtml(source, {
+    let html = highlighter.codeToHtml(source, {
       lang: language as BundledLanguage | SpecialLanguage,
       themes: {
         light: 'vitesse-light',
         dark: 'vitesse-dark'
       }
     })
+
+    if (language === 'bash') {
+      html = harmonizeBashAngleBracketHtml(html)
+    }
 
     const result = {
       html,
