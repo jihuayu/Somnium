@@ -21,6 +21,12 @@ function escapeTableCell(value: string): string {
   return escapeMarkdown(value).replace(/\|/g, '\\|').replace(/\r?\n/g, '<br>')
 }
 
+export function toMarkdownBlockquote(content: string): string {
+  const normalized = `${content || ''}`.replace(/\r\n/g, '\n').replace(/\n+$/, '')
+  if (!normalized) return '> '
+  return normalized.split('\n').map(line => `> ${line}`).join('\n')
+}
+
 function richTextPlainText(items: NotionRichText[] = []): string {
   return items.map(item => item.plain_text || '').join('')
 }
@@ -99,10 +105,10 @@ function blockToMarkdown(document: NotionDocument, blockId: string): string {
     case 'heading_3':
       return `### ${richTextToMarkdown(block.heading_3.rich_text)}`
     case 'quote':
-      return `> ${richTextToMarkdown(block.quote.rich_text)}`
+      return toMarkdownBlockquote(richTextToMarkdown(block.quote.rich_text))
     case 'callout': {
       const icon = block.callout.icon?.type === 'emoji' ? `${block.callout.icon.emoji} ` : ''
-      return withChildren(document, block, `> ${icon}${richTextToMarkdown(block.callout.rich_text)}`)
+      return withChildren(document, block, toMarkdownBlockquote(`${icon}${richTextToMarkdown(block.callout.rich_text)}`))
     }
     case 'equation':
       return `$$\n${block.equation.expression || ''}\n$$`
@@ -264,7 +270,7 @@ async function postMarkdown(slug: string): Promise<string | null> {
     `Published: ${formatDate(post.date, config.lang, config.timezone)}`,
     post.tags?.length ? `Tags: ${post.tags.map(escapeMarkdown).join(', ')}` : '',
     '',
-    post.summary ? `> ${escapeMarkdown(post.summary)}` : '',
+    post.summary ? toMarkdownBlockquote(escapeMarkdown(post.summary)) : '',
     '',
     body,
     '',
