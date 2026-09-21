@@ -71,7 +71,11 @@ pnpm start
 
 ## Atrium 缓存失效回调
 
-Notion Webhook 由 Atrium 的 `POST /api/v1/blog/webhooks/notion` 接收、验证和同步。Somnium 的旧入口 `/api/notion/webhook` 已退役并固定返回 `410 Gone`。
+现有 Notion 订阅保留 `/api/notion/webhook`。Vercel 用原来的 `NOTION_WEBHOOK_VERIFICATION_TOKEN`（也兼容 `NOTION_WEBHOOK_SIGNATURE_SECRET` / `NOTION_WEBHOOK_TOKEN`）验证签名，然后将未经改写的请求体转发到 `${ATRIUM_BLOG_API_URL}/webhooks/notion`。Vercel 不再读取 Notion 数据或提前清缓存；同步、去重和持久化均由 Atrium 完成。
+
+原始 Notion 密钥留在 Vercel。转发签名使用独立用途派生密钥：`HMAC-SHA256(key=CACHE_REVALIDATE_TOKEN, message="somnium:notion-webhook-relay:v1")` 的小写 hex 字符串。把这个派生值配置为 Atrium 的 `NOTION_WEBHOOK_VERIFICATION_TOKEN`。两端必须使用同一个缓存回调密钥；轮换时也要同步更新派生值。它不是原 Notion 密钥，不能直接用于 Notion 到 Atrium 的订阅。不要把这两个密钥输出到日志或提交到仓库。
+
+旧订阅已经验证，不需要重新登记。缺少配置返回 503、错误签名返回 401、请求体上限 1 MiB、上游超时 10 秒。不跟随上游重定向、不转发浏览器 Cookie/Authorization；Atrium 的失败状态和 Retry-After 会返回给 Notion，以保留重试语义。只有 Atrium 确认接收后才返回成功。GET 返回 405。
 
 Atrium 在内容 revision 提交后调用：
 
