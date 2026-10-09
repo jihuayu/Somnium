@@ -38,17 +38,21 @@ export function getPostFormatClassNames(post: Pick<PostData, 'formats'>): string
 export default function Post(props: PostProps) {
   const { post, document, fullWidth = false, linkPreviewMap = {}, pageLinkMap = {}, pagePreviewMap = {} } = props
   const contentWidthClass = fullWidth ? ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS : ARTICLE_CONTENT_MAX_WIDTH_CLASS
+  const isPage = post.type[0] === 'Page'
+  const hasTitle = typeof post.title === 'string' && post.title.trim().length > 0
 
   return (
     <article className={cn('flex flex-col items-center', getPostFormatClassNames(post))}>
-      <h1 className={cn(
-        'w-full font-serif font-semibold text-[2rem] leading-tight tracking-[-0.025em] text-stone-900 dark:text-stone-100',
-        contentWidthClass,
-        'px-4'
-      )}>
-        {post.title}
-      </h1>
-      {post.type[0] !== 'Page' && (
+      {hasTitle && (
+        <h1 className={cn(
+          'w-full font-serif font-semibold text-[2rem] leading-tight tracking-[-0.025em] text-stone-900 dark:text-stone-100',
+          contentWidthClass,
+          'px-4'
+        )}>
+          {post.title}
+        </h1>
+      )}
+      {!isPage && (
         <nav className={cn(
           'w-full flex mt-6 items-start text-sm text-stone-400 dark:text-stone-500',
           contentWidthClass,
@@ -72,7 +76,7 @@ export default function Post(props: PostProps) {
           )}
         </nav>
       )}
-      <div className="self-stretch -mt-4 relative">
+      <div className={cn('self-stretch relative', isPage ? hasTitle && 'mt-4 md:mt-6' : '-mt-4')}>
         <div className={`mx-auto w-full ${contentWidthClass} px-4`}>
           <NotionRenderer document={document} linkPreviewMap={linkPreviewMap} pageLinkMap={pageLinkMap} pagePreviewMap={pagePreviewMap} />
         </div>
