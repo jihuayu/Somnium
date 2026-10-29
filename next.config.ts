@@ -14,6 +14,11 @@ const markdownAccept = {
 const HTML_PAGE_SOURCE = '/((?!api/|_next/|\\.well-known/|feed$|.*\\.[^/]*$).*)'
 
 const nextConfig: NextConfig = {
+  experimental: {
+    // 构建时逐页读取 Atrium，避免默认每个 worker 同时预渲染 8 页压满上游。
+    // https://nextjs.org/docs/app/api-reference/config/next-config-js/staticGeneration
+    staticGenerationMaxConcurrency: 1
+  },
   typescript: {
     tsconfigPath: './tsconfig.build.json'
   },
