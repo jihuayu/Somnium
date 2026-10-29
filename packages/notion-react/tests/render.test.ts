@@ -151,6 +151,15 @@ const model: NotionRenderModel = {
   }
 }
 
+const githubPreview = {
+  url: 'https://github.com/jihuayu/Somnium',
+  hostname: 'github.com',
+  title: 'jihuayu/Somnium',
+  description: 'A static blog build on top of Notion and NextJS, deployed on Vercel. - jihuayu/Somnium',
+  image: 'https://opengraph.githubassets.com/hash/repo',
+  icon: 'https://github.com/fluidicon.png'
+}
+
 test('NotionRenderer renders normalized model', () => {
   const html = renderToStaticMarkup(React.createElement(NotionRenderer, { model }))
   assert.match(html, /Title/)
@@ -171,3 +180,45 @@ test('NotionRenderer renders normalized model', () => {
   assert.match(html, /Second tab body/)
   assert.doesNotMatch(html, /Empty tab/)
 })
+
+test('in-page bookmark cards keep the original layout and ignore hover presentation', () => {
+  const html = renderToStaticMarkup(React.createElement(NotionRenderer, {
+    model: {
+      document: {
+        pageId: 'page-1',
+        rootIds: ['bookmark', 'link-preview'],
+        blocksById: {
+          bookmark: {
+            id: 'bookmark',
+            type: 'bookmark',
+            bookmark: { url: githubPreview.url }
+          },
+          'link-preview': {
+            id: 'link-preview',
+            type: 'link_preview',
+            link_preview: { url: githubPreview.url }
+          }
+        },
+        childrenById: {
+          'page-1': ['bookmark', 'link-preview']
+        }
+      },
+      toc: [],
+      highlightedCodeByBlockId: {},
+      linkPreviewMap: {
+        [githubPreview.url]: githubPreview
+      },
+      pageHrefMap: {},
+      pagePreviewMap: {}
+    }
+  }))
+
+  assert.match(html, /data-link-preview-card="true"/)
+  assert.match(html, /h-\[110px\]/)
+  assert.match(html, /https:\/\/github.com\/jihuayu\/Somnium/)
+  assert.equal((html.match(/data-link-preview-card="true"/g) || []).length, 2)
+  assert.doesNotMatch(html, /github\.com · repo/)
+  assert.doesNotMatch(html, /notion-url-mention-hover-card/)
+  assert.doesNotMatch(html, /data-preview-kind/)
+})
+

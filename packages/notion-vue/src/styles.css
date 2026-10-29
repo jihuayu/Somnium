@@ -28,7 +28,7 @@
   --notion-purple_background: rgba(244, 240, 247, 0.8);
   --notion-pink_background: rgba(249, 238, 243, 0.8);
   --notion-red_background: rgb(253, 235, 236);
-  --notion-url-hover-width: 280px;
+  --notion-url-hover-width: 360px;
   --notion-url-hover-viewport-padding: 24px;
   --notion-url-hover-radius: 0.5rem;
   --notion-url-hover-border: rgb(231 229 228 / 0.95);
@@ -37,9 +37,12 @@
     0 4px 14px rgb(28 25 23 / 0.08),
     0 1px 3px rgb(28 25 23 / 0.06);
   --notion-url-hover-cover-bg: rgb(245 245 244);
-  --notion-url-hover-body-px: calc(0.6rem + 5px);
-  --notion-url-hover-body-pt: calc(0.5rem + 5px);
-  --notion-url-hover-body-pb: calc(0.55rem + 5px);
+  --notion-url-hover-body-px: 0.75rem;
+  --notion-url-hover-body-pt: 0.65rem;
+  --notion-url-hover-body-pb: 0.7rem;
+  --notion-url-hover-title: var(--notion-text-color);
+  --notion-url-hover-description: rgb(68 64 60);
+  --notion-url-hover-muted: rgb(87 83 78);
 }
 
 :root.dark {
@@ -67,6 +70,9 @@
     0 4px 14px rgb(0 0 0 / 0.34),
     0 1px 3px rgb(0 0 0 / 0.22);
   --notion-url-hover-cover-bg: rgb(41 37 36);
+  --notion-url-hover-title: rgb(245 245 244);
+  --notion-url-hover-description: rgb(214 211 209);
+  --notion-url-hover-muted: rgb(168 162 158);
 }
 
 .notion {
@@ -272,6 +278,7 @@
   color: rgb(245 245 244);
 }
 
+/* Floating UrlMention hover card only. In-page bookmarks use .link-preview-card. */
 .notion-url-mention-hover-card {
   position: fixed;
   width: min(var(--notion-url-hover-width), calc(100vw - var(--notion-url-hover-viewport-padding)));
@@ -289,16 +296,30 @@
 }
 
 .notion-url-mention-hover-cover {
+  position: relative;
   display: block;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 1.91 / 1;
   background-color: var(--notion-url-hover-cover-bg);
+  overflow: hidden;
+}
+
+.notion-url-mention-hover-card[data-preview-kind='github-repo'] .notion-url-mention-hover-cover {
+  aspect-ratio: 2 / 1;
 }
 
 .notion-url-mention-hover-cover img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   display: block;
   object-fit: cover;
+}
+
+.notion-url-mention-hover-card[data-preview-kind='github-repo'] .notion-url-mention-hover-cover img {
+  object-fit: contain;
+  object-position: center top;
+  background-color: var(--notion-url-hover-cover-bg);
 }
 
 .notion-url-mention-hover-body {
@@ -308,37 +329,41 @@
 
 .notion-url-mention-hover-title {
   display: block;
-  font-size: 0.78rem;
-  line-height: 1.3;
+  min-width: 0;
+  font-size: 0.875rem;
+  line-height: 1.35;
   font-weight: 600;
-  color: rgb(41 37 36);
+  color: var(--notion-url-hover-title);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .notion-url-mention-hover-description {
   display: -webkit-box;
   margin: 0.28rem 0 0;
-  font-size: 0.68rem;
-  line-height: 1.35;
-  color: rgb(68 64 60);
-  -webkit-line-clamp: 2;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--notion-url-hover-description);
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
 .notion-url-mention-hover-footer {
-  margin-top: 0.45rem;
+  margin-top: 0.5rem;
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  color: rgb(87 83 78);
-  font-size: 0.63rem;
+  color: var(--notion-url-hover-muted);
+  font-size: 0.75rem;
   line-height: 1.2;
 }
 
 .notion-url-mention-hover-provider-icon {
-  width: 0.86rem;
-  height: 0.86rem;
-  border-radius: 9999px;
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 0.25rem;
   overflow: hidden;
   display: inline-flex;
   align-items: center;
@@ -354,10 +379,14 @@
 }
 
 .notion-url-mention-hover-provider {
-  text-transform: lowercase;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.dark .notion-url-mention-hover-title { color: rgb(245 245 244); }
+.notion-url-mention-hover-title-owner { font-weight: 400; }
+.notion-url-mention-hover-title-name { font-weight: 600; }
 
 .notion-tabs-block {
   display: flex;
@@ -478,9 +507,6 @@
 .notion-tab-panel > :last-child {
   margin-bottom: 0;
 }
-.dark .notion-url-mention-hover-description { color: rgb(214 211 209); }
-.dark .notion-url-mention-hover-footer { color: rgb(168 162 158); }
-
 .notion-file-block {
   display: flex;
   align-items: center;

@@ -17,6 +17,7 @@ import type {
 import {
   extractNotionPageIdFromUrl,
   getAnnotationColorClasses,
+  getUrlMentionLabel,
   isInternalHref,
   normalizeRichTextUrl,
   parseUrl,
@@ -25,35 +26,6 @@ import {
 } from '../utils/notion'
 import DefaultDateMention from './DateMention'
 import DefaultUrlMention from './UrlMention'
-
-function isGithubUrl(url: string | null): boolean {
-  const parsed = parseUrl(url)
-  if (!parsed) return false
-  const hostname = parsed.hostname.toLowerCase()
-  return hostname === 'github.com' || hostname === 'www.github.com'
-}
-
-function looksLikeHttpUrl(text: string): boolean {
-  return /^https?:\/\//i.test(text.trim())
-}
-
-function decodePathSegment(segment: string): string {
-  if (!segment) return ''
-  try { return decodeURIComponent(segment) } catch { return segment }
-}
-
-function getUrlMentionLabel(href: string, textContent: string): string {
-  const trimmedText = textContent.trim()
-  if (trimmedText && !looksLikeHttpUrl(trimmedText)) return trimmedText
-
-  const parsed = parseUrl(href)
-  if (!parsed) return trimmedText || 'link'
-
-  const segments = parsed.pathname.split('/').filter(Boolean)
-  if (isGithubUrl(href) && segments.length >= 2) return decodePathSegment(segments[1])
-  if (segments.length >= 1) return decodePathSegment(segments[segments.length - 1])
-  return parsed.hostname || 'link'
-}
 
 function getMentionPayload(item: NotionRichText): Record<string, unknown> | null {
   const mention = (item as { mention?: unknown }).mention
@@ -247,8 +219,7 @@ export const RichText = defineComponent({
             href,
             label,
             iconUrl,
-            preview: getUrlMentionPreviewData(item, href, label, props.linkPreviewMap),
-            isGithub: isGithubUrl(href)
+            preview: getUrlMentionPreviewData(item, href, label, props.linkPreviewMap)
           })
         }
 
@@ -261,7 +232,6 @@ export const RichText = defineComponent({
             label,
             iconUrl: '',
             preview,
-            isGithub: false,
             variant: 'inline'
           }, { default: () => content })
         }

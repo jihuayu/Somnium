@@ -170,7 +170,7 @@ export interface UrlMentionProps {
   label: string
   iconUrl?: string
   preview: UrlMentionPreviewData | null
-  isGithub: boolean
+  isGithub?: boolean
   variant?: 'mention' | 'inline'
 }
 

@@ -131,20 +131,8 @@ function sanitizeThemeColor(value: string, fallback: string): string {
 export const metadata: Metadata = {
   ...defaultMetadata,
   icons: {
-    icon: [
-      {
-        url: '/favicon-mark-light-512.png',
-        type: 'image/png',
-        sizes: '512x512',
-        media: '(prefers-color-scheme: light)'
-      },
-      {
-        url: '/favicon-mark-dark-512.png',
-        type: 'image/png',
-        sizes: '512x512',
-        media: '(prefers-color-scheme: dark)'
-      }
-    ]
+    icon: [{ url: '/favicon.svg', type: 'image/svg+xml', sizes: 'any' }],
+    apple: [{ url: '/favicon-180.png', type: 'image/png', sizes: '180x180' }]
   },
   alternates: {
     ...defaultMetadata.alternates,

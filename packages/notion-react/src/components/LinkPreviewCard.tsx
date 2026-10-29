@@ -2,6 +2,11 @@ import cn from 'classnames'
 import type { LinkPreviewCardProps } from '../types'
 import { buildFallbackLinkPreview, normalizePreviewUrl, toOgProxyImageUrl } from '../utils/notion'
 
+/**
+ * EN: In-page Notion bookmark / link_preview card. Do not reuse UrlMentionHoverCard styles here.
+ * ZH: 正文里的书签 / link_preview 卡片。不要复用悬浮预览 UrlMentionHoverCard 的结构和样式。
+ */
+
 export default function LinkPreviewCard({ url, className, preview }: LinkPreviewCardProps) {
   const normalizedUrl = normalizePreviewUrl(url) || ''
   const fallback = buildFallbackLinkPreview(normalizedUrl || url)

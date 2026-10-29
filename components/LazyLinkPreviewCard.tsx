@@ -72,6 +72,10 @@ function loadPreview(url: string): Promise<LinkPreviewData | null> {
   return request
 }
 
+/**
+ * EN: In-page bookmark card with lazy OG fetch. Keep the 110px horizontal layout; hover cards live in UrlMention.
+ * ZH: 正文里的懒加载书签卡，保持 110px 横向布局。GitHub 风格只属于 UrlMention 悬浮预览。
+ */
 export default function LazyLinkPreviewCard({ url, className, preview }: LinkPreviewCardProps) {
   const hostRef = useRef<HTMLAnchorElement | null>(null)
   const normalizedUrl = normalizePreviewUrl(url) || ''

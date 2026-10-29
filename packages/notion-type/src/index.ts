@@ -30,6 +30,22 @@ export {
   resolvePageHref,
   rewriteNotionPageHref
 } from './utils/notion'
+export {
+  buildLinkPreviewPresentationContext,
+  createLinkPreviewPresentationResolver,
+  defaultLinkPreviewPresentationAdapter,
+  getLinkPreviewPresentation,
+  getUrlMentionLabel,
+  githubLinkPreviewPresentationAdapter,
+  linkPreviewPresentationAdapters
+} from './link-preview-presentation'
+export type {
+  LinkPreviewKind,
+  LinkPreviewPresentation,
+  LinkPreviewPresentationAdapter,
+  LinkPreviewPresentationContext,
+  LinkPreviewPresentationResolver
+} from './link-preview-presentation'
 export type {
   LinkPreviewData,
   LinkPreviewMap,

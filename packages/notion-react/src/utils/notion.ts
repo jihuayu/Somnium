@@ -9,6 +9,8 @@ export {
   extractNotionPageIdFromUrl,
   getFileBlockName,
   getFileBlockUrl,
+  getLinkPreviewPresentation,
+  getUrlMentionLabel,
   getLinkToPageLabel,
   getPlainTextFromRichText,
   isInternalHref,
@@ -27,6 +29,19 @@ const OG_PROXY_IMAGE_URL = 'https://og-proxy.raw2.cc/proxy/image'
 const OG_PROXY_IMAGE_HOSTNAME = 'og-proxy.raw2.cc'
 const OG_PROXY_IMAGE_PATHNAME = '/proxy/image'
 const OG_PROXY_IMAGE_TRANSFORM_PARAMS = ['q', 'f', 'fit']
+
+export interface OgProxyImageOptions {
+  format?: 'png' | 'jpeg' | 'webp'
+  quality?: number
+}
+
+function applyOgProxyImageTransforms(parsed: URL, options?: OgProxyImageOptions) {
+  for (const param of OG_PROXY_IMAGE_TRANSFORM_PARAMS) {
+    parsed.searchParams.delete(param)
+  }
+  if (options?.format) parsed.searchParams.set('f', options.format)
+  if (typeof options?.quality === 'number') parsed.searchParams.set('q', String(options.quality))
+}
 
 export function getBlockClassName(blockId: string): string {
   return `notion-block-${blockId.replaceAll('-', '')}`
@@ -48,7 +63,7 @@ export function getCalloutIconUrl(icon: unknown): string {
   return ''
 }
 
-export function toOgProxyImageUrl(rawImageUrl: string, referer = ''): string {
+export function toOgProxyImageUrl(rawImageUrl: string, referer = '', options?: OgProxyImageOptions): string {
   if (!rawImageUrl) return ''
 
   try {
@@ -56,19 +71,22 @@ export function toOgProxyImageUrl(rawImageUrl: string, referer = ''): string {
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return rawImageUrl
 
     if (parsed.hostname === OG_PROXY_IMAGE_HOSTNAME && parsed.pathname === OG_PROXY_IMAGE_PATHNAME) {
-      for (const param of OG_PROXY_IMAGE_TRANSFORM_PARAMS) {
-        parsed.searchParams.delete(param)
-      }
+      applyOgProxyImageTransforms(parsed, options)
       return parsed.toString()
     }
 
     const proxyUrl = new URL(OG_PROXY_IMAGE_URL)
     proxyUrl.searchParams.set('url', parsed.toString())
     if (referer) proxyUrl.searchParams.set('referer', referer)
+    applyOgProxyImageTransforms(proxyUrl, options)
     return proxyUrl.toString()
   } catch {
     return rawImageUrl
   }
+}
+
+export function toOgProxyPreviewImageUrl(rawImageUrl: string, referer = ''): string {
+  return toOgProxyImageUrl(rawImageUrl, referer, { format: 'png' })
 }
 
 export function renderFallbackHighlightedCodeHtml(source: string): string {

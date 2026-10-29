@@ -75,7 +75,6 @@ const createFeedContent = async (post: PostData, pageLinkMap: PageLinkMap): Prom
 }
 
 export async function generateRss(posts: PostData[], siteOrigin?: string): Promise<string> {
-  const { Feed } = await import('feed')
   const year = new Date().getFullYear()
   const siteUrl = resolveSiteUrl(siteOrigin)
   const pageLinkMap = await getCachedFeedPageLinkMap()

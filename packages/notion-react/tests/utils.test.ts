@@ -7,7 +7,8 @@ import {
   getCalloutIconUrl,
   getHeadingAnchorId,
   renderFallbackHighlightedCodeHtml,
-  toOgProxyImageUrl
+  toOgProxyImageUrl,
+  toOgProxyPreviewImageUrl
 } from '../src/utils/notion'
 
 test('react utils build stable identifiers', () => {
@@ -31,6 +32,17 @@ test('react utils route external images through og proxy', () => {
     'https://og-proxy.raw2.cc/proxy/image?url=https%3A%2F%2Fgithub.com%2Ffluidicon.png'
   )
   assert.equal(toOgProxyImageUrl('/local.png'), '/local.png')
+})
+
+test('react utils keep preview images as png through og proxy', () => {
+  assert.equal(
+    toOgProxyPreviewImageUrl('https://opengraph.githubassets.com/hash/repo', 'https://github.com/jihuayu/Somnium'),
+    'https://og-proxy.raw2.cc/proxy/image?url=https%3A%2F%2Fopengraph.githubassets.com%2Fhash%2Frepo&referer=https%3A%2F%2Fgithub.com%2Fjihuayu%2FSomnium&f=png'
+  )
+  assert.equal(
+    toOgProxyPreviewImageUrl('https://og-proxy.raw2.cc/proxy/image?url=https%3A%2F%2Fopengraph.githubassets.com%2Fhash%2Frepo&q=80&f=jpeg&fit=scale-down'),
+    'https://og-proxy.raw2.cc/proxy/image?url=https%3A%2F%2Fopengraph.githubassets.com%2Fhash%2Frepo&f=png'
+  )
 })
 
 test('react utils renderFallbackHighlightedCodeHtml escapes text', () => {
