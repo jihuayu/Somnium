@@ -31,8 +31,8 @@ const getCachedPageMaps = unstable_cache(
     const allPosts = await getAllPosts({ includePages: true })
     return buildPageMaps(allPosts)
   },
-  ['page-maps-v1'],
-  { revalidate: PAGE_LINK_MAP_CACHE_REVALIDATE_SECONDS, tags: ['page-link-map'] }
+  ['atrium-blog-page-maps-v1'],
+  { revalidate: PAGE_LINK_MAP_CACHE_REVALIDATE_SECONDS, tags: ['atrium-blog-posts', 'page-link-map'] }
 )
 const getSlugPageState = cache(async () => {
   const posts = await getAllPosts({ includePages: true })

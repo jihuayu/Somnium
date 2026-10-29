@@ -1,51 +1,30 @@
-import { config as BLOG } from '@/lib/server/config'
-import { notionClient } from '@/lib/server/notionData'
 import { FIVE_MINUTES_SECONDS } from '@/lib/server/cache'
+import { getAtriumBlogClient, type AtriumBlogClient } from '@/lib/server/atriumBlog'
 import { unstable_cache } from 'next/cache'
-import { queryAllDataSourceEntries, type NotionClient } from '@jihuayu/notion-data'
-import filterPublishedPosts, { PostData } from './filterPublishedPosts'
-import { mapNotionPageToPost, normalizeNotionUuid } from './postAdapter'
+import type { PostData } from './filterPublishedPosts'
 
 const POSTS_CACHE_REVALIDATE_SECONDS = FIVE_MINUTES_SECONDS
 
-interface NotionPostsDependencies {
-  apiClient?: Pick<NotionClient, 'queryAllDataSourcePages'>
-  dataSourceId?: string
-  sortByDate?: boolean
+export interface AtriumPostsDependencies {
+  client?: Pick<AtriumBlogClient, 'listAllPosts'>
 }
 
 async function fetchAllPosts(includePages: boolean, {
-  apiClient = notionClient,
-  dataSourceId: rawDataSourceId = process.env.NOTION_DATA_SOURCE_ID,
-  sortByDate = BLOG.sortByDate
-}: NotionPostsDependencies = {}): Promise<PostData[]> {
-  const dataSourceId = normalizeNotionUuid(rawDataSourceId)
-  if (!dataSourceId) {
-    throw new Error('Missing required environment variable: NOTION_DATA_SOURCE_ID')
-  }
-
-  const data = await queryAllDataSourceEntries(apiClient as NotionClient, {
-    dataSourceId,
-    mapPage: mapNotionPageToPost,
-    filterEntry: (post) => !!post?.id,
-    sortEntries: sortByDate ? (left, right) => right.date - left.date : undefined
-  })
-
-  const posts = filterPublishedPosts({ posts: data, includePages })
-
-  return posts
+  client = getAtriumBlogClient()
+}: AtriumPostsDependencies = {}): Promise<PostData[]> {
+  return client.listAllPosts({ kind: includePages ? 'all' : 'post' })
 }
 
 const getCachedPostsOnly = unstable_cache(
   async () => fetchAllPosts(false),
-  ['notion-posts-only'],
-  { revalidate: POSTS_CACHE_REVALIDATE_SECONDS, tags: ['notion-posts', 'notion-feed-posts'] }
+  ['atrium-blog-posts-only'],
+  { revalidate: POSTS_CACHE_REVALIDATE_SECONDS, tags: ['atrium-blog-posts', 'atrium-blog-feed'] }
 )
 
 const getCachedPostsAndPages = unstable_cache(
   async () => fetchAllPosts(true),
-  ['notion-posts-and-pages'],
-  { revalidate: POSTS_CACHE_REVALIDATE_SECONDS, tags: ['notion-posts', 'notion-feed-posts'] }
+  ['atrium-blog-posts-and-pages'],
+  { revalidate: POSTS_CACHE_REVALIDATE_SECONDS, tags: ['atrium-blog-posts', 'atrium-blog-feed'] }
 )
 
 /**
@@ -60,7 +39,7 @@ export async function getAllPosts({ includePages = false }: { includePages: bool
 
 export async function getAllPostsWithDependencies(
   { includePages = false }: { includePages: boolean },
-  dependencies: NotionPostsDependencies
+  dependencies: AtriumPostsDependencies
 ): Promise<PostData[]> {
   return fetchAllPosts(includePages, dependencies)
 }

@@ -1,31 +1,27 @@
 import { NextResponse } from 'next/server'
-import { getAllPosts, getAllTagsFromPosts } from '@/lib/notion'
-import { FIVE_MINUTES_SECONDS, ONE_HOUR_SECONDS } from '@/lib/server/cache'
+import { getAtriumBlogClient } from '@/lib/server/atriumBlog'
 
-const TAGS_BROWSER_CACHE_SECONDS = ONE_HOUR_SECONDS
-const TAGS_EDGE_CACHE_SECONDS = FIVE_MINUTES_SECONDS
-const TAGS_STALE_SECONDS = FIVE_MINUTES_SECONDS
-export const revalidate = 300
+export const dynamic = 'force-dynamic'
+
+function toTagRecord(tags: Array<{ name: string, count: number }>): Record<string, number> {
+  return Object.fromEntries(tags.map(tag => [tag.name, tag.count]))
+}
 
 export async function GET() {
   try {
-    const posts = await getAllPosts({ includePages: false })
-    const tags = getAllTagsFromPosts(posts)
+    const tags = toTagRecord(await getAtriumBlogClient().getTags())
     return NextResponse.json(
       { tags },
       {
-        headers: {
-          'Cache-Control': `public, max-age=${TAGS_BROWSER_CACHE_SECONDS}, s-maxage=${TAGS_EDGE_CACHE_SECONDS}, stale-while-revalidate=${TAGS_STALE_SECONDS}`
-        }
+        headers: { 'Cache-Control': 'no-store' }
       }
     )
-  } catch (error: unknown) {
+  } catch {
     return NextResponse.json(
       {
-        tags: {},
-        error: error instanceof Error ? error.message : 'Failed to load tags'
+        error: 'Blog tags unavailable'
       },
-      { status: 500 }
+      { status: 503, headers: { 'Cache-Control': 'no-store' } }
     )
   }
 }
