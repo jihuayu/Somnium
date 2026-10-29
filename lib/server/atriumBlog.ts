@@ -1,6 +1,7 @@
 import 'server-only'
 import type { NotionDocument } from '@jihuayu/notion-type'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
+import { traceAtriumRequest } from './atriumNetworkDiagnostics'
 
 const DEFAULT_PAGE_SIZE = 100
 const DEFAULT_MAX_TRAVERSAL_ATTEMPTS = 2
@@ -337,15 +338,16 @@ export function createAtriumBlogClient({
   ): Promise<AtriumEnvelope<T>> {
     const requestSignal = combineAbortSignals(options.signal, safeRequestTimeoutMs)
     const requestStartedAt = Date.now()
+    const networkTimeline = { startedAt: requestStartedAt }
     let requestPhase: 'headers' | 'body' = 'headers'
     let responseStatus: number | undefined
     try {
-      const response = await fetchImplementation(`${normalizedBaseUrl}${path}${searchParams.size ? `?${searchParams.toString()}` : ''}`, {
+      const response = await traceAtriumRequest(networkTimeline, () => fetchImplementation(`${normalizedBaseUrl}${path}${searchParams.size ? `?${searchParams.toString()}` : ''}`, {
         method: 'GET',
         cache: 'no-store',
         headers: { Accept: 'application/json' },
         signal: requestSignal.signal
-      })
+      }))
       requestPhase = 'body'
       responseStatus = response.status
       const payload = await readJson(response)
@@ -363,7 +365,8 @@ export function createAtriumBlogClient({
           path,
           phase: requestPhase,
           elapsedMs: Date.now() - requestStartedAt,
-          status: responseStatus
+          status: responseStatus,
+          network: networkTimeline
         })
       }
       throw error
