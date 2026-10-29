@@ -38,8 +38,8 @@ function buildUrl(baseUrl: string, path?: string): string {
 
 const getCachedFeedDocument = unstable_cache(
   async (postId: string) => buildNotionDocument(postId, { includeToc: false }),
-  ['feed-post-blocks-v3'],
-  { revalidate: FEED_POST_BLOCKS_CACHE_SECONDS, tags: ['feed-post-blocks'] }
+  ['atrium-blog-feed-post-blocks-v1'],
+  { revalidate: FEED_POST_BLOCKS_CACHE_SECONDS, tags: ['atrium-blog-feed-documents'] }
 )
 
 const getCachedFeedPageLinkMap = unstable_cache(
@@ -47,8 +47,8 @@ const getCachedFeedPageLinkMap = unstable_cache(
     const allPosts = await getAllPosts({ includePages: true })
     return buildPageLinkMap(allPosts, config.path || '')
   },
-  ['feed-page-link-map-v1'],
-  { revalidate: FEED_POST_BLOCKS_CACHE_SECONDS, tags: ['feed-post-blocks', 'page-link-map'] }
+  ['atrium-blog-feed-page-link-map-v1'],
+  { revalidate: FEED_POST_BLOCKS_CACHE_SECONDS, tags: ['atrium-blog-feed', 'page-link-map'] }
 )
 
 interface FeedContentPayload {

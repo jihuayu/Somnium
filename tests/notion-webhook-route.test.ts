@@ -1,133 +1,84 @@
 import assert from 'node:assert/strict'
+import { createHmac } from 'node:crypto'
 import test from 'node:test'
-import { NextRequest } from 'next/server'
-import { computeNotionWebhookSignature } from '@jihuayu/notion-data'
-import { POST } from '../app/api/notion/webhook/route'
+import { GET, POST } from '../app/api/notion/webhook/route'
 
-function createWebhookRequest(body: Record<string, unknown>, headers: HeadersInit = {}): NextRequest {
-  return new NextRequest('http://localhost/api/notion/webhook', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      ...headers
-    },
-    body: JSON.stringify(body)
-  })
-}
+const notionSecret = 'test-notion-secret'
+const callbackSecret = 'test-callback-secret'
+const sign = (body: string, secret = notionSecret) => `sha256=${createHmac('sha256', secret).update(body).digest('hex')}`
+const request = (body: string, signature = sign(body)) => new Request('https://blog.example/api/notion/webhook', {
+  method: 'POST', body, headers: { 'x-notion-signature': signature, authorization: 'do-not-forward', cookie: 'private=1' }
+})
 
-function resetWebhookEnv() {
-  delete process.env.NOTION_WEBHOOK_VERIFICATION_TOKEN
-  delete process.env.NOTION_WEBHOOK_TOKEN
+test('Notion compatibility proxy', async (t) => {
+  const previous = { ...process.env }
+  process.env.NOTION_WEBHOOK_VERIFICATION_TOKEN = notionSecret
+  process.env.CACHE_REVALIDATE_TOKEN = callbackSecret
+  process.env.ATRIUM_BLOG_API_URL = 'https://atrium.example/api/v1/blog'
   delete process.env.NOTION_WEBHOOK_SIGNATURE_SECRET
-}
+  delete process.env.NOTION_WEBHOOK_TOKEN
+  t.after(() => { process.env = previous })
 
-test('webhook route accepts events without auth when no auth env is configured', async () => {
-  resetWebhookEnv()
+  await t.test('forwards exact bytes only after authentication with an independently verifiable relay signature', async (t) => {
+    const body = '{ "id": "event-one", "type": "page.content_updated", "text": "照片 🌄" }\n'
+    const relaySecret = createHmac('sha256', callbackSecret).update('somnium:notion-webhook-relay:v1').digest('hex')
+    const calls = t.mock.method(globalThis, 'fetch', async (url, init) => {
+      assert.equal(String(url), 'https://atrium.example/api/v1/blog/webhooks/notion')
+      assert.deepEqual(init?.body, Buffer.from(body))
+      const headers = new Headers(init?.headers)
+      assert.equal(headers.get('x-notion-signature'), sign(body, relaySecret))
+      assert.equal(headers.get('authorization'), null)
+      assert.equal(headers.get('cookie'), null)
+      assert.equal(init?.redirect, 'manual')
+      return Response.json({ data: { duplicate: false, jobId: 'durable-job' } }, { status: 202 })
+    })
+    const response = await POST(request(body))
+    assert.equal(response.status, 202)
+    assert.equal((await response.json()).data.jobId, 'durable-job')
+    assert.equal(response.headers.get('cache-control'), 'no-store')
+    assert.equal(calls.mock.callCount(), 1)
+  })
 
-  const response = await POST(createWebhookRequest({ type: 'workspace.updated' }))
-  const payload = await response.json()
-
-  assert.equal(response.status, 200)
-  assert.equal(payload.ok, true)
-  assert.equal(payload.ignored, true)
-  assert.equal(payload.reason, 'ignored-event-type')
-})
-
-test('webhook route requires verification token only when configured', async () => {
-  resetWebhookEnv()
-  process.env.NOTION_WEBHOOK_VERIFICATION_TOKEN = 'verify_secret'
-
-  try {
-    const verificationRejected = await POST(createWebhookRequest({ verification_token: 'wrong_secret' }))
-    assert.equal(verificationRejected.status, 401)
-    assert.equal((await verificationRejected.json()).error, 'Invalid verification token')
-
-    const verificationAccepted = await POST(createWebhookRequest({
-      verification_token: 'verify_secret'
-    }))
-    assert.equal(verificationAccepted.status, 200)
-    assert.equal((await verificationAccepted.json()).verification, true)
-
-    const body = { type: 'workspace.updated' }
-    const rawBody = JSON.stringify(body)
-
-    const rejected = await POST(createWebhookRequest(body))
-    assert.equal(rejected.status, 401)
-    assert.equal((await rejected.json()).error, 'Missing signature')
-
-    const accepted = await POST(createWebhookRequest(body, {
-      'x-notion-signature': computeNotionWebhookSignature(rawBody, 'verify_secret')
-    }))
-    assert.equal(accepted.status, 200)
-    assert.equal((await accepted.json()).ignored, true)
-  } finally {
-    resetWebhookEnv()
-  }
-})
-
-test('webhook route requires signature only when configured', async () => {
-  resetWebhookEnv()
-  process.env.NOTION_WEBHOOK_SIGNATURE_SECRET = 'signing_secret'
-
-  try {
-    const body = { type: 'workspace.updated' }
-    const rawBody = JSON.stringify(body)
-
-    const rejected = await POST(createWebhookRequest(body))
-    assert.equal(rejected.status, 401)
-    assert.equal((await rejected.json()).error, 'Missing signature')
-
-    const accepted = await POST(createWebhookRequest(body, {
-      'x-notion-signature': computeNotionWebhookSignature(rawBody, 'signing_secret')
-    }))
-    assert.equal(accepted.status, 200)
-    assert.equal((await accepted.json()).ignored, true)
-  } finally {
-    resetWebhookEnv()
-  }
-})
-
-test('webhook route invalidates post body caches for page.content_updated events', async () => {
-  resetWebhookEnv()
-
-  const response = await POST(createWebhookRequest({
-    type: 'page.content_updated',
-    entity: { id: '' },
-    data: {
-      parent: {
-        id: '15b104cd-477e-80c2-84a0-c32cefba5cff',
-        type: 'data_source_id'
-      }
+  await t.test('rejects missing, wrong and tampered signatures without forwarding', async (t) => {
+    const calls = t.mock.method(globalThis, 'fetch', async () => { throw new Error('must not forward') })
+    for (const signature of ['', 'sha256=bad', sign('{}', 'wrong'), sign('{ }')]) {
+      assert.equal((await POST(request('{}', signature))).status, 401)
     }
-  }))
-  const payload = await response.json()
+    assert.equal(calls.mock.callCount(), 0)
+  })
 
-  assert.equal(response.status, 200)
-  assert.equal(payload.revalidated, true)
-  assert.deepEqual(payload.tags, ['notion-post-blocks', 'feed-post-blocks'])
-  assert.deepEqual(payload.paths, ['/[slug]', '/feed'])
-  assert.deepEqual(payload.scheduledPrewarmPaths, [])
-})
-
-test('webhook route invalidates collection caches for page.properties_updated events', async () => {
-  resetWebhookEnv()
-
-  const response = await POST(createWebhookRequest({
-    type: 'page.properties_updated',
-    entity: { id: '' },
-    data: {
-      parent: {
-        id: '15b104cd-477e-80c2-84a0-c32cefba5cff',
-        type: 'data_source_id'
-      },
-      updated_properties: ['title']
+  await t.test('fails closed without secrets or a valid HTTPS upstream', async (t) => {
+    const calls = t.mock.method(globalThis, 'fetch', async () => { throw new Error('must not forward') })
+    delete process.env.NOTION_WEBHOOK_VERIFICATION_TOKEN
+    assert.equal((await POST(request('{}'))).status, 503)
+    process.env.NOTION_WEBHOOK_VERIFICATION_TOKEN = notionSecret
+    const upstream = process.env.ATRIUM_BLOG_API_URL
+    for (const value of ['', 'http://atrium.example/api/v1/blog', 'https://blog.example/api/v1/blog', 'https://user:pass@atrium.example']) {
+      process.env.ATRIUM_BLOG_API_URL = value
+      assert.equal((await POST(request('{}'))).status, 503)
     }
-  }))
-  const payload = await response.json()
+    process.env.ATRIUM_BLOG_API_URL = upstream
+    assert.equal(calls.mock.callCount(), 0)
+  })
 
-  assert.equal(response.status, 200)
-  assert.equal(payload.revalidated, true)
-  assert.deepEqual(payload.tags, ['sitemap', 'notion-posts', 'notion-feed-posts', 'notion-og-page', 'page-link-map'])
-  assert.deepEqual(payload.paths, ['/', '/search', '/feed', '/sitemap.xml', '/api/tags', '/[slug]', '/page/[page]', '/tag/[tag]'])
-  assert.deepEqual(payload.scheduledPrewarmPaths, [])
+  await t.test('preserves retryable upstream failures instead of acknowledging them', async (t) => {
+    t.mock.method(globalThis, 'fetch', async () => Response.json({ error: 'busy' }, { status: 503, headers: { 'Retry-After': '30' } }))
+    const response = await POST(request('{}'))
+    assert.equal(response.status, 503)
+    assert.equal(response.headers.get('retry-after'), '30')
+  })
+
+  await t.test('rejects redirects and maps connection/timeout failures', async (t) => {
+    const mock = t.mock.method(globalThis, 'fetch', async () => new Response(null, { status: 307, headers: { Location: 'https://elsewhere.example' } }))
+    assert.equal((await POST(request('{}'))).status, 502)
+    mock.mock.mockImplementation(async () => { throw new Error('connection') })
+    assert.equal((await POST(request('{}'))).status, 502)
+    mock.mock.mockImplementation(async () => { throw new DOMException('timeout', 'TimeoutError') })
+    assert.equal((await POST(request('{}'))).status, 504)
+  })
+
+  await t.test('bounds payload size and rejects GET', async () => {
+    assert.equal((await POST(request('x'.repeat(1024 * 1024 + 1)))).status, 413)
+    assert.equal((await GET()).status, 405)
+  })
 })

@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "pnpm run comments:build && pnpm run notion:build && next dev",
     "build": "pnpm run comments:build && pnpm run notion:build && next build",
+    "fixture:atrium": "node tests/fixtures/atrium-blog-fixture.mjs",
     "start": "next start",
     "test": "node --import tsx --test tests/**/*.test.ts packages/*/tests/**/*.test.ts",
     "test:packages": "node --import tsx --test packages/*/tests/**/*.test.ts",
