@@ -336,6 +336,9 @@ export function createAtriumBlogClient({
     assertData: (data: unknown) => asserts data is T
   ): Promise<AtriumEnvelope<T>> {
     const requestSignal = combineAbortSignals(options.signal, safeRequestTimeoutMs)
+    const requestStartedAt = Date.now()
+    let requestPhase: 'headers' | 'body' = 'headers'
+    let responseStatus: number | undefined
     try {
       const response = await fetchImplementation(`${normalizedBaseUrl}${path}${searchParams.size ? `?${searchParams.toString()}` : ''}`, {
         method: 'GET',
@@ -343,6 +346,8 @@ export function createAtriumBlogClient({
         headers: { Accept: 'application/json' },
         signal: requestSignal.signal
       })
+      requestPhase = 'body'
+      responseStatus = response.status
       const payload = await readJson(response)
 
       if (!response.ok) {
@@ -351,6 +356,17 @@ export function createAtriumBlogClient({
 
       assertEnvelope(payload, assertData)
       return payload
+    } catch (error) {
+      if (requestSignal.signal.aborted && requestSignal.signal.reason?.name === 'TimeoutError') {
+        // 只记录服务内部固定路径及阶段，不记录查询参数、凭据或响应正文。
+        console.error('[atrium-blog] Request timed out', {
+          path,
+          phase: requestPhase,
+          elapsedMs: Date.now() - requestStartedAt,
+          status: responseStatus
+        })
+      }
+      throw error
     } finally {
       // Keep the timeout live until the body has been fully consumed. fetch()
       // can resolve when headers arrive while a stalled upstream body remains.
