@@ -18,7 +18,6 @@ const BLOG = {
   sortByDate: true,
   showAbout: true,
   showArchive: true,
-  autoCollapsedNavBar: false,
   ogImageGenerateURL: 'https://og-image-craigary.vercel.app',
   socialLink: 'https://twitter.com/jihuayu123',
   linkPreview: {

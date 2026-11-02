@@ -38,13 +38,13 @@ export default function SearchClient({
   children
 }: SearchClientProps) {
   const searchInputId = useId()
-  const searchHintId = useId()
   const searchStatusId = useId()
   const [searchValue, setSearchValue] = useState('')
   const deferredSearchValue = useDeferredValue(searchValue)
   const [displayTags, setDisplayTags] = useState<Record<string, number>>(tags || {})
   const [remotePosts, setRemotePosts] = useState<PostData[]>([])
   const [isSearching, setIsSearching] = useState(false)
+  const [attempt, setAttempt] = useState(0)
   const [searchError, setSearchError] = useState('')
   const shouldUseNotionSearch = useNotionSearch
   const searchablePosts = useMemo(
@@ -101,9 +101,10 @@ export default function SearchClient({
     }
 
     const controller = new AbortController()
+    setIsSearching(true)
+    setSearchError('')
+    setRemotePosts([])
     const timer = window.setTimeout(async () => {
-      setIsSearching(true)
-      setSearchError('')
       try {
         const searchParams = new URLSearchParams({
           q: keyword,
@@ -121,10 +122,10 @@ export default function SearchClient({
           throw new Error(payload?.error || 'Search request failed')
         }
         setRemotePosts(Array.isArray(payload?.posts) ? payload.posts : [])
-      } catch (error: unknown) {
+      } catch {
         if (controller.signal.aborted) return
         setRemotePosts([])
-        setSearchError(error instanceof Error ? error.message : 'Search failed')
+        setSearchError('搜索暂时不可用，请重试。')
       } finally {
         if (!controller.signal.aborted) {
           setIsSearching(false)
@@ -136,7 +137,7 @@ export default function SearchClient({
       window.clearTimeout(timer)
       controller.abort()
     }
-  }, [searchValue, shouldUseNotionSearch, currentTag])
+  }, [searchValue, shouldUseNotionSearch, currentTag, attempt])
 
   const trimmedQuery = deferredSearchValue.trim()
   const isQueryEmpty = !trimmedQuery
@@ -159,24 +160,11 @@ export default function SearchClient({
   const showNotionSearchHint = shouldUseNotionSearch && !showInitialResults && (isQueryEmpty || isQueryTooShort) && !isSearching && !searchError
   const showEmptyState = !showNotionSearchHint && !showInitialResults && !isSearching && !searchError && !filteredBlogPosts.length
   const notionSearchHint = isQueryTooShort
-    ? `Type at least ${MIN_SEARCH_QUERY_LENGTH} characters to search posts in Notion.`
-    : 'Type keywords to search posts in Notion.'
-  const searchLabel = currentTag ? `Search posts in ${currentTag}` : 'Search articles'
-  const statusMessage = isSearching
-    ? 'Searching posts.'
-    : searchError
-      ? `Search failed: ${searchError}`
-      : showNotionSearchHint
-        ? notionSearchHint
-        : showEmptyState
-          ? 'No posts found.'
-          : ''
-  const describedBy = [
-    showNotionSearchHint ? searchHintId : '',
-    statusMessage ? searchStatusId : ''
-  ]
-    .filter(Boolean)
-    .join(' ')
+    ? `请输入至少 ${MIN_SEARCH_QUERY_LENGTH} 个字符。`
+    : '输入关键词，查找文章。'
+  const searchLabel = currentTag ? `在「${currentTag}」中搜索文章` : '搜索文章'
+  const statusMessage = isSearching ? '正在搜索…' : searchError ||
+    (showNotionSearchHint ? notionSearchHint : showEmptyState ? '没有找到相关文章，试试其他关键词。' : '')
 
   return (
     <>
@@ -188,29 +176,17 @@ export default function SearchClient({
           id={searchInputId}
           type="text"
           value={searchValue}
-          aria-describedby={describedBy || undefined}
-          placeholder={
-            currentTag ? `Search in #${currentTag}` : 'Search Articles'
-          }
-          className="block w-full rounded-md border px-4 py-2 border-stone-300 bg-transparent text-stone-900 placeholder:text-stone-400 transition-colors duration-150 ease-out focus:border-stone-400 dark:border-stone-700 dark:text-stone-100 dark:placeholder:text-stone-500 dark:focus:border-stone-500"
+          aria-describedby={searchStatusId}
+          placeholder="搜索文章"
+          className="search-input"
           onChange={e => setSearchValue(e.target.value)}
         />
-        <svg
-          className="absolute right-3 top-3 h-5 w-5 text-stone-400 dark:text-stone-500"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          aria-hidden="true"
-          focusable="false"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-          ></path>
-        </svg>
+        {searchValue && (
+          <button type="button" className="search-clear" onClick={() => {
+            setSearchValue('')
+            document.getElementById(searchInputId)?.focus()
+          }}>清空</button>
+        )}
       </div>
       {tagsSlot || (
         <Tags
@@ -219,23 +195,8 @@ export default function SearchClient({
         />
       )}
       <div className="article-container my-8">
-        {statusMessage && (
-          <p id={searchStatusId} className="sr-only" aria-live="polite" aria-atomic="true">
-            {statusMessage}
-          </p>
-        )}
-        {showNotionSearchHint && (
-          <p id={searchHintId} className="text-stone-500 dark:text-stone-400">{notionSearchHint}</p>
-        )}
-        {isSearching && (
-          <p className="text-stone-500 dark:text-stone-400" role="status">Searching...</p>
-        )}
-        {!isSearching && !!searchError && (
-          <p className="text-stone-600 dark:text-stone-300 font-medium" role="alert">{searchError}</p>
-        )}
-        {showEmptyState && (
-          <p className="text-stone-500 dark:text-stone-400" role="status">No posts found.</p>
-        )}
+        <p id={searchStatusId} role="status" className="search-status">{statusMessage}</p>
+        {searchError && <button type="button" className="min-h-11 underline" onClick={() => setAttempt(n => n + 1)}>重试</button>}
         {showInitialResults && children}
         {filteredBlogPosts.slice(0, 20).map(post => (
           <BlogPost key={post.id} post={post} blogPath={blogPath} lang={lang} timezone={timezone} />

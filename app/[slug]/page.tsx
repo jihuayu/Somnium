@@ -115,7 +115,6 @@ export default async function SlugPage({ params }: SlugPageProps) {
   return (
     <ContainerServer
       layout="blog"
-      title={post.title}
       fullWidth={fullWidth}
     >
       <SlugPostClient

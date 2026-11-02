@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import cn from 'classnames'
 import {
   ARTICLE_CONTENT_MAX_WIDTH_CLASS,
@@ -59,9 +60,9 @@ export default function Post(props: PostProps) {
           'px-4'
         )}>
           <div className="flex mb-4">
-            <a href={config.socialLink || '#'} className="flex hover:text-stone-700 dark:hover:text-stone-300 transition-colors duration-150 ease-out">
+            <Link href="/about" className="flex hover:text-stone-700 dark:hover:text-stone-300 transition-colors duration-150 ease-out">
               <p className="ml-2 md:block">{config.author}</p>
-            </a>
+            </Link>
             <span className="block">&nbsp;/&nbsp;</span>
           </div>
           <div className="mr-2 mb-4 md:ml-0">

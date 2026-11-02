@@ -16,7 +16,6 @@ export interface BlogConfig {
   sortByDate: boolean
   showAbout: boolean
   showArchive: boolean
-  autoCollapsedNavBar: boolean
   ogImageGenerateURL: string
   socialLink: string
   linkPreview?: {
