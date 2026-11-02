@@ -1,10 +1,7 @@
+import Link from 'next/link'
 import cn from 'classnames'
 import {
   ARTICLE_CONTENT_MAX_WIDTH_CLASS,
-  ARTICLE_TOC_LEFT,
-  ARTICLE_TOC_MAX_HEIGHT,
-  ARTICLE_TOC_TOP_PX,
-  ARTICLE_TOC_WIDTH_PX,
   ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS
 } from '@/consts'
 import { config } from '@/lib/server/config'
@@ -12,11 +9,11 @@ import { formatDate } from '@/lib/formatDate'
 import TagItem from '@/components/TagItem'
 import NotionRenderer from '@/components/NotionRenderer'
 import TableOfContents from '@/components/TableOfContents'
-import WideTableOfContents from '@/components/WideTableOfContents'
 import type { NotionDocument, PagePreviewMap } from '@jihuayu/notion-type'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
 import type { LinkPreviewMap } from '@/lib/link-preview/types'
 import type { PageLinkMap } from '@/lib/notion/pageLinkMap'
+import { shouldShowTableOfContents, type RelatedPostLink } from '@/lib/postNavigation'
 
 interface PostProps {
   post: PostData
@@ -25,6 +22,7 @@ interface PostProps {
   linkPreviewMap?: LinkPreviewMap
   pageLinkMap?: PageLinkMap
   pagePreviewMap?: PagePreviewMap
+  relatedPosts?: RelatedPostLink[]
 }
 
 export function getPostFormatClassNames(post: Pick<PostData, 'formats'>): string[] {
@@ -36,67 +34,56 @@ export function getPostFormatClassNames(post: Pick<PostData, 'formats'>): string
 }
 
 export default function Post(props: PostProps) {
-  const { post, document, fullWidth = false, linkPreviewMap = {}, pageLinkMap = {}, pagePreviewMap = {} } = props
+  const { post, document, fullWidth = false, linkPreviewMap = {}, pageLinkMap = {}, pagePreviewMap = {}, relatedPosts = [] } = props
   const contentWidthClass = fullWidth ? ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS : ARTICLE_CONTENT_MAX_WIDTH_CLASS
   const isPage = post.type[0] === 'Page'
   const hasTitle = typeof post.title === 'string' && post.title.trim().length > 0
 
+  const toc = document.toc || []
+  const showToc = shouldShowTableOfContents(toc, config.tocOverrides?.[post.slug])
+
   return (
-    <article className={cn('flex flex-col items-center', getPostFormatClassNames(post))}>
-      {hasTitle && (
-        <h1 className={cn(
-          'w-full font-serif font-semibold text-[2rem] leading-tight tracking-[-0.025em] text-stone-900 dark:text-stone-100',
-          contentWidthClass,
-          'px-4'
-        )}>
-          {post.title}
-        </h1>
-      )}
+    <article className={cn('reading-post', contentWidthClass, getPostFormatClassNames(post))}>
+      {hasTitle && <h1 className="article-title font-sans">{post.title}</h1>}
       {!isPage && (
-        <nav className={cn(
-          'w-full flex mt-6 items-start text-sm text-stone-400 dark:text-stone-500',
-          contentWidthClass,
-          'px-4'
-        )}>
-          <div className="flex mb-4">
-            <a href={config.socialLink || '#'} className="flex hover:text-stone-700 dark:hover:text-stone-300 transition-colors duration-150 ease-out">
-              <p className="ml-2 md:block">{config.author}</p>
-            </a>
-            <span className="block">&nbsp;/&nbsp;</span>
-          </div>
-          <div className="mr-2 mb-4 md:ml-0">
-            {formatDate(post.date, config.lang, config.timezone)}
-          </div>
-          {post.tags && (
-            <div className="flex flex-nowrap max-w-full overflow-x-auto article-tags">
-              {post.tags.map(tag => (
-                <TagItem key={tag} tag={tag} />
-              ))}
-            </div>
-          )}
-        </nav>
+        <p className="article-meta">
+          <Link href="/about">{config.author}</Link>
+          <span aria-hidden="true"> · </span>
+          <time>{formatDate(post.date, config.lang, config.timezone)}</time>
+        </p>
       )}
-      <div className={cn('self-stretch relative', isPage ? hasTitle && 'mt-4 md:mt-6' : '-mt-4')}>
-        <div className={`mx-auto w-full ${contentWidthClass} px-4`}>
-          <NotionRenderer document={document} linkPreviewMap={linkPreviewMap} pageLinkMap={pageLinkMap} pagePreviewMap={pagePreviewMap} />
-        </div>
-        {!fullWidth && (
-          <div
-            className="hidden xl:block absolute top-0 bottom-0"
-            style={{
-              left: ARTICLE_TOC_LEFT,
-              width: `${ARTICLE_TOC_WIDTH_PX}px`
-            }}
-          >
-            <TableOfContents
-              toc={document?.toc || []}
-              className="sticky pt-3 overflow-y-auto"
-              style={{ top: `${ARTICLE_TOC_TOP_PX}px`, maxHeight: `min(${ARTICLE_TOC_MAX_HEIGHT}, 100%)` }}
-            />
-          </div>
+      <div className="reading-body">
+        {showToc && (
+          <>
+            <details className="inline-toc">
+              <summary>目录</summary>
+              <TableOfContents toc={toc} />
+            </details>
+            <aside className="side-toc">
+              <div><p>目录</p><TableOfContents toc={toc} /></div>
+            </aside>
+          </>
         )}
-        {fullWidth && <WideTableOfContents toc={document?.toc || []} />}
+        <NotionRenderer document={document} linkPreviewMap={linkPreviewMap} pageLinkMap={pageLinkMap} pagePreviewMap={pagePreviewMap} />
       </div>
+      {!isPage && (!!post.tags?.length || !!relatedPosts.length) && (
+        <footer className="article-end">
+          {!!relatedPosts.length && (
+            <nav aria-label="后续阅读" className="related-posts">
+              <ul>
+                {relatedPosts.map(link => (
+                  <li key={link.href}><Link href={link.href} title={link.title}>{link.label}</Link></li>
+                ))}
+              </ul>
+            </nav>
+          )}
+          {!!post.tags?.length && (
+            <nav aria-label="文章标签" className="article-tags flex flex-wrap gap-2">
+              {post.tags.map(tag => <TagItem key={tag} tag={tag} />)}
+            </nav>
+          )}
+        </footer>
+      )}
     </article>
   )
 }

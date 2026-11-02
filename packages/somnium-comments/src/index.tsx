@@ -166,7 +166,7 @@ let browserLocationPatched = false
 
 const defaultLabels: Required<Omit<CommentBoxLabels, 'commentsCount'>> = {
   title: '评论',
-  caption: '读完之后，可以在这里继续这段讨论。',
+  caption: '',
   loading: '正在读取评论',
   empty: '还没有评论。',
   signIn: '登录',
@@ -1513,17 +1513,19 @@ export function CommentBox({
       )}
     >
       <header className="mb-5">
-        <h2 id="comments-title" className="font-serif text-xl font-semibold tracking-tight text-stone-900 dark:text-stone-100">
+        <h2 id="comments-title" className="font-sans text-xl font-medium text-stone-900 dark:text-stone-100">
           <span>{copy.title}</span>
-          {status === 'ready' && (
-            <span className="ml-2 align-middle text-sm font-normal text-stone-400 dark:text-stone-500">
+          {status === 'ready' && totalCount > 0 && (
+            <span className="ml-2 align-middle text-sm font-normal text-stone-600 dark:text-stone-400">
               {commentsCountLabel(totalCount)}
             </span>
           )}
         </h2>
-        <p className="mt-1 text-sm leading-6 text-stone-500 dark:text-stone-500">
-          {copy.caption}
-        </p>
+        {copy.caption && (
+          <p className="mt-1 text-sm leading-6 text-stone-600 dark:text-stone-400">
+            {copy.caption}
+          </p>
+        )}
       </header>
 
       <div
@@ -1568,7 +1570,7 @@ export function CommentBox({
           <>
             <div className="divide-y divide-stone-200/70 dark:divide-stone-800/80">
               {comments.length === 0 ? (
-                <p className="px-5 py-6 text-sm text-stone-500 dark:text-stone-500">
+                <p className="px-5 py-6 text-sm text-stone-600 dark:text-stone-400">
                   {copy.empty}
                 </p>
               ) : comments.map(comment => renderCommentArticle(comment, true))}

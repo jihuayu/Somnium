@@ -3,41 +3,35 @@ import Link from 'next/link'
 interface TagsProps {
   tags: Record<string, number>
   currentTag?: string
+  query?: string
 }
 
-const Tags = ({ tags, currentTag }: TagsProps) => {
-  if (!tags) return null
+const Tags = ({ tags, currentTag, query = '' }: TagsProps) => {
+  if (!tags || !Object.keys(tags).length) return null
+  const queryString = query ? `?${new URLSearchParams({ q: query })}` : ''
+
   return (
-    <div className="tag-container">
-      <ul className="flex max-w-full mt-4 overflow-x-auto">
+    <nav className="search-tags" aria-label="按标签浏览">
+      <ul>
+        <li>
+          <Link href={`/search${queryString}`} prefetch={false} aria-current={!currentTag ? 'page' : undefined}>全部</Link>
+        </li>
         {Object.keys(tags).map(key => {
           const selected = key === currentTag
           return (
-            <li
-              key={key}
-              className={`mr-3 font-medium border whitespace-nowrap rounded-md transition-colors duration-150 ease-out ${
-                selected
-                  ? 'text-white bg-stone-900 border-stone-900 dark:bg-stone-100 dark:text-stone-900 dark:border-stone-100'
-                  : 'bg-transparent border-stone-200 text-stone-500 hover:border-stone-300 hover:text-stone-900 dark:border-stone-700 dark:text-stone-400 dark:hover:border-stone-500 dark:hover:text-stone-100'
-              }`}
-            >
+            <li key={key}>
               <Link
-                key={key}
-                href={
-                  selected
-                    ? '/search'
-                    : `/tag/${encodeURIComponent(key)}`
-                }
+                href={`/tag/${encodeURIComponent(key)}${queryString}`}
                 prefetch={false}
-                className="px-4 py-2 block"
+                aria-current={selected ? 'page' : undefined}
               >
-                {`${key} (${tags[key]})`}
+                {key} <span className="tag-count">({tags[key]})</span>
               </Link>
             </li>
           )
         })}
       </ul>
-    </div>
+    </nav>
   )
 }
 

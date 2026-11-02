@@ -11,6 +11,7 @@ import { buildPageLinkMap } from '@/lib/notion/pageLinkMap'
 import { buildPostPagePreviewMap } from '@/lib/notion/postAdapter'
 import { config } from '@/lib/server/config'
 import { FIVE_MINUTES_SECONDS } from '@/lib/server/cache'
+import { resolveRelatedPosts } from '@/lib/postNavigation'
 import SlugPostClient from './slug-client'
 
 export const revalidate = 300
@@ -67,7 +68,8 @@ const resolveSlugPageState = cache(async (slug: string) => {
   return {
     post: cachedPost || null,
     pageLinkMap: state.pageLinkMap,
-    pagePreviewMap: state.pagePreviewMap
+    pagePreviewMap: state.pagePreviewMap,
+    relatedPosts: resolveRelatedPosts(slug, config.relatedPosts?.[slug] || [], state.posts, config.path || '')
   }
 })
 
@@ -100,7 +102,7 @@ export async function generateMetadata({ params }: SlugPageProps): Promise<Metad
 
 export default async function SlugPage({ params }: SlugPageProps) {
   const { slug } = await params
-  const { post, pageLinkMap, pagePreviewMap } = await resolveSlugPageState(slug)
+  const { post, pageLinkMap, pagePreviewMap, relatedPosts } = await resolveSlugPageState(slug)
 
   if (!post) notFound()
 
@@ -115,7 +117,6 @@ export default async function SlugPage({ params }: SlugPageProps) {
   return (
     <ContainerServer
       layout="blog"
-      title={post.title}
       fullWidth={fullWidth}
     >
       <SlugPostClient
@@ -127,6 +128,7 @@ export default async function SlugPage({ params }: SlugPageProps) {
         topLabel={locale.POST.TOP}
         pageLinkMap={pageLinkMap}
         pagePreviewMap={pagePreviewMap}
+        relatedPosts={relatedPosts}
       />
       <Comments
         frontMatter={post}

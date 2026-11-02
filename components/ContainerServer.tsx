@@ -10,10 +10,10 @@ interface ContainerServerProps {
   children: ReactNode
   layout?: string
   fullWidth?: boolean
-  title?: string
+  home?: boolean
 }
 
-export default async function ContainerServer({ children, layout, fullWidth, title }: ContainerServerProps) {
+export default async function ContainerServer({ children, layout, fullWidth, home }: ContainerServerProps) {
   const locale = await loadLocale('basic', config.lang)
   const contentWidthClass = fullWidth ? ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS : ARTICLE_CONTENT_MAX_WIDTH_CLASS
 
@@ -21,19 +21,16 @@ export default async function ContainerServer({ children, layout, fullWidth, tit
     <div id="top">
       <div className={`wrapper ${config.font === 'serif' ? 'font-serif' : 'font-sans'}`}>
         <Header
-          navBarTitle={layout === 'blog' ? title || config.title : null}
-          fullWidth={fullWidth}
           siteTitle={config.title}
-          siteDescription={config.description}
+          siteDescription={home ? config.description : undefined}
           path={config.path || '/'}
           showAbout={config.showAbout}
-          autoCollapsedNavBar={config.autoCollapsedNavBar}
           navLocale={locale.NAV}
         />
         <main
           className={cn(
-            'flex-grow transition-all',
-            layout !== 'blog' && ['self-center w-full px-4', contentWidthClass]
+            'flex-grow min-w-0',
+            layout !== 'blog' && ['self-center w-full px-5', contentWidthClass]
           )}
         >
           {children}

@@ -1,3 +1,5 @@
+import type { RelatedPostReference } from '@/lib/postNavigation'
+
 export interface BlogConfig {
   title: string
   author: string
@@ -15,8 +17,9 @@ export interface BlogConfig {
   postsPerPage: number
   sortByDate: boolean
   showAbout: boolean
+  tocOverrides?: Record<string, boolean>
+  relatedPosts?: Record<string, RelatedPostReference[]>
   showArchive: boolean
-  autoCollapsedNavBar: boolean
   ogImageGenerateURL: string
   socialLink: string
   linkPreview?: {

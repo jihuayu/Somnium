@@ -156,8 +156,8 @@ export default async function RootLayout({
   const colorSchemeClass = initialColorScheme[config.appearance] || ''
 
   const dayBg = sanitizeThemeColor(config.lightBackground, '#ffffff')
-  const nightBg = sanitizeThemeColor(config.darkBackground, '#0c0a09')
-  const nightText = 'rgb(214, 211, 209)'
+  const nightBg = sanitizeThemeColor(config.darkBackground, '#111315')
+  const nightText = '#e5e7eb'
   const themeBootstrapScript = `(() => {
     const appearance = ${JSON.stringify(config.appearance)};
     const root = document.documentElement;
@@ -192,7 +192,7 @@ export default async function RootLayout({
           __html: `
             .color-scheme-unset, .color-scheme-unset body {
               background-color: ${dayBg} !important;
-              color: rgb(55, 53, 47);
+              color: #26282b;
               color-scheme: light;
             }
             @media (prefers-color-scheme: dark) {

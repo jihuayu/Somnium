@@ -65,6 +65,7 @@ test('buildSitemapEntries includes site routes and excludes api routes', () => {
 
   assert.ok(urls.includes('https://example.com'))
   assert.ok(urls.includes('https://example.com/search'))
+  assert.ok(urls.includes('https://example.com/archive'))
   assert.ok(urls.includes('https://example.com/feed'))
   assert.ok(urls.includes('https://example.com/post-1'))
   assert.ok(urls.includes('https://example.com/about'))
@@ -112,6 +113,7 @@ test('buildSitemapEntries prefixes configured basePath', () => {
 
   assert.ok(urls.includes('https://example.com/blog'))
   assert.ok(urls.includes('https://example.com/blog/search'))
+  assert.ok(urls.includes('https://example.com/blog/archive'))
   assert.ok(urls.includes('https://example.com/blog/feed'))
   assert.ok(urls.includes('https://example.com/blog/post-1'))
 })

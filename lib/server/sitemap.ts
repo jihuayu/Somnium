@@ -136,6 +136,10 @@ export function buildSitemapEntries({
   )
   upsertSitemapEntry(
     entriesByUrl,
+    createEntry(siteOrigin, buildSiteRelativePath(basePath, '/archive'), latestPublishedDate, 'daily', 0.6)
+  )
+  upsertSitemapEntry(
+    entriesByUrl,
     createEntry(siteOrigin, buildSiteRelativePath(basePath, '/feed'), latestPublishedDate, 'daily', 0.4)
   )
 

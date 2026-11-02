@@ -11,14 +11,23 @@ const BLOG = {
   appearance: 'auto',
   font: 'sans-serif',
   lightBackground: '#ffffff',
-  darkBackground: '#0c0a09',
+  darkBackground: '#111315',
   path: '',
   since: 2024,
   postsPerPage: 7,
   sortByDate: true,
   showAbout: true,
+  // 用文章 slug 指定 true 或 false，可覆盖默认的目录显示规则。
+  tocOverrides: {},
+  relatedPosts: {
+    'personal-software-development': [
+      { slug: 'personal-software-update-261014', label: '这次调整之后的软件开发进展' }
+    ],
+    'personal-software-update-261014': [
+      { slug: 'personal-software-development', label: '此前对个人软件开发过程的思考' }
+    ]
+  },
   showArchive: true,
-  autoCollapsedNavBar: false,
   ogImageGenerateURL: 'https://og-image-craigary.vercel.app',
   socialLink: 'https://twitter.com/jihuayu123',
   linkPreview: {
