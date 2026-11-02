@@ -15,6 +15,7 @@ export interface BlogConfig {
   postsPerPage: number
   sortByDate: boolean
   showAbout: boolean
+  tocOverrides?: Record<string, boolean>
   showArchive: boolean
   ogImageGenerateURL: string
   socialLink: string

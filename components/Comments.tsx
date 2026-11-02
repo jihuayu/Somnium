@@ -40,7 +40,7 @@ const Comments = ({ frontMatter, comment }: CommentsProps) => {
       pageUrl={commentPageUrl}
       locale={config.lang}
       className={cn(
-        'px-4',
+        'px-5',
         `mx-auto ${contentWidthClass}`
       )}
     />

@@ -30,7 +30,7 @@ export default async function ContainerServer({ children, layout, fullWidth, hom
         <main
           className={cn(
             'flex-grow min-w-0',
-            layout !== 'blog' && ['self-center w-full px-4', contentWidthClass]
+            layout !== 'blog' && ['self-center w-full px-5', contentWidthClass]
           )}
         >
           {children}

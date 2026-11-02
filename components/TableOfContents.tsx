@@ -1,14 +1,10 @@
-import cn from 'classnames'
-import type { CSSProperties } from 'react'
 import type { TocItem } from '@/lib/notion/getPostBlocks'
 
 interface TableOfContentsProps {
   toc: TocItem[]
-  className?: string
-  style?: CSSProperties
 }
 
-export default function TableOfContents({ toc, className, style }: TableOfContentsProps) {
+export default function TableOfContents({ toc }: TableOfContentsProps) {
   if (!toc || !toc.length) return null
 
   function buildTargetId(id: string) {
@@ -17,15 +13,13 @@ export default function TableOfContents({ toc, className, style }: TableOfConten
 
   return (
     <nav
-      aria-label="Table of contents"
-      className={cn(className, 'pl-2 text-sm text-stone-400 dark:text-stone-500')}
-      style={style}
+      aria-label="文章目录"
+      className="article-toc"
     >
       {toc.map(node => (
         <div key={node.id}>
           <a
             href={`#${buildTargetId(node.id)}`}
-            className="block w-full py-1 text-left whitespace-nowrap overflow-hidden text-ellipsis hover:text-stone-900 dark:hover:text-stone-100 cursor-pointer transition-colors duration-150 ease-out"
             style={{ paddingLeft: (node.indentLevel * 16) + 'px' }}
             title={node.text}
           >

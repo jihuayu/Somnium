@@ -90,6 +90,64 @@ body { color: var(--ink); }
 .search-clear { position: absolute; inset: 0 .5rem 0 auto; padding: 0 .75rem; color: var(--muted); }
 @media (min-width: 48rem) { .site-header { margin-bottom: 3.5rem; } }
 
+:root {
+  --reading-gutter: 1.25rem;
+  --reading-width: 42.5rem;
+  --wide-width: 57.5rem;
+}
+.reading-column, .reading-column-wide {
+  --column-width: var(--reading-width);
+  max-width: calc(var(--column-width) + 2 * var(--reading-gutter));
+}
+.reading-column-wide { --column-width: var(--wide-width); }
+.post-entry { margin-bottom: 1.5rem; }
+.entry-heading h2 { font-size: 1.125rem; font-weight: 500; line-height: 1.6; overflow-wrap: anywhere; }
+.entry-heading a:hover, .article-actions a:hover, .article-meta a:hover { text-decoration: underline; text-underline-offset: .2em; }
+.entry-heading time, .entry-summary, .article-meta, .article-actions, .article-toc, .inline-toc { color: var(--muted); }
+.entry-heading time { font-size: .875rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.entry-summary { margin-top: .25rem; font-size: .9375rem; line-height: 1.65; }
+.reading-post { margin-inline: auto; width: 100%; padding-inline: var(--reading-gutter); }
+.article-title { font-size: 1.5625rem; font-weight: 500; line-height: 1.4; overflow-wrap: anywhere; }
+.article-meta { margin-top: .625rem; font-size: .875rem; }
+.reading-body { position: relative; margin-top: 1.75rem; }
+.reading-body .notion {
+  --notion-font-size: 1.0625rem;
+  --no-leading: 1.8;
+  --notion-text-color: var(--ink);
+  --notion-text-color-dark: var(--ink);
+}
+.reading-body .notion :is(h1,h2,h3,h4) {
+  font-family: inherit; font-size: 1.375rem; font-weight: 500; line-height: 1.45;
+}
+.reading-body .notion :is(h3,h4) { font-size: 1.1875rem; }
+.article-end, .reading-post:not(:has(.article-end)) + .article-actions { margin-top: 3.25rem; }
+.article-end { margin-bottom: .75rem; }
+.inline-toc { margin-bottom: 1.5rem; font-size: .875rem; }
+.inline-toc summary { cursor: pointer; padding-block: .75rem; }
+.article-toc { font-size: .875rem; line-height: 1.6; }
+.article-toc a { display: block; padding-block: .25rem; overflow-wrap: anywhere; }
+.article-toc a:hover { color: var(--ink); text-decoration: underline; }
+.side-toc { display: none; }
+@media (min-width: 48rem) {
+  .post-entry { margin-bottom: 1.75rem; }
+  .entry-heading { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: .75rem; }
+  .entry-heading h2 { font-size: 1.1875rem; }
+  .article-title { font-size: 1.75rem; }
+  .reading-body .notion { --no-leading: 1.85; }
+}
+/* 目录紧邻实际正文列；视口不足以容纳侧栏时改用文内折叠目录。 */
+@media (min-width: 80rem) {
+  .reading-column .side-toc { display: block; }
+  .reading-column .inline-toc { display: none; }
+}
+@media (min-width: 92rem) {
+  .reading-column-wide .side-toc { display: block; }
+  .reading-column-wide .inline-toc { display: none; }
+}
+.side-toc { position: absolute; inset-block: 0; left: calc(100% + 1.75rem); width: 13rem; }
+.side-toc > div { position: sticky; top: 1.5rem; max-height: calc(100vh - 3rem); overflow: auto; padding: .25rem; }
+.side-toc p { font-size: .875rem; font-weight: 500; margin-bottom: .5rem; }
+
 /* somnium-comments: minimal prose styling for rendered comment Markdown.
    Kept monochrome to match the site's stone-based palette. */
 .comment-body > :first-child { margin-top: 0; }
