@@ -13,6 +13,7 @@ import type { NotionDocument, PagePreviewMap } from '@jihuayu/notion-type'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
 import type { LinkPreviewMap } from '@/lib/link-preview/types'
 import type { PageLinkMap } from '@/lib/notion/pageLinkMap'
+import { shouldShowTableOfContents, type RelatedPostLink } from '@/lib/postNavigation'
 
 interface PostProps {
   post: PostData
@@ -21,6 +22,7 @@ interface PostProps {
   linkPreviewMap?: LinkPreviewMap
   pageLinkMap?: PageLinkMap
   pagePreviewMap?: PagePreviewMap
+  relatedPosts?: RelatedPostLink[]
 }
 
 export function getPostFormatClassNames(post: Pick<PostData, 'formats'>): string[] {
@@ -32,15 +34,13 @@ export function getPostFormatClassNames(post: Pick<PostData, 'formats'>): string
 }
 
 export default function Post(props: PostProps) {
-  const { post, document, fullWidth = false, linkPreviewMap = {}, pageLinkMap = {}, pagePreviewMap = {} } = props
+  const { post, document, fullWidth = false, linkPreviewMap = {}, pageLinkMap = {}, pagePreviewMap = {}, relatedPosts = [] } = props
   const contentWidthClass = fullWidth ? ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS : ARTICLE_CONTENT_MAX_WIDTH_CLASS
   const isPage = post.type[0] === 'Page'
   const hasTitle = typeof post.title === 'string' && post.title.trim().length > 0
 
   const toc = document.toc || []
-  const primaryLevel = Math.min(...toc.map(item => item.indentLevel))
-  const showToc = toc.length > 0 && (config.tocOverrides?.[post.slug] ??
-    toc.filter(item => item.indentLevel === primaryLevel).length >= 4)
+  const showToc = shouldShowTableOfContents(toc, config.tocOverrides?.[post.slug])
 
   return (
     <article className={cn('reading-post', contentWidthClass, getPostFormatClassNames(post))}>
@@ -66,10 +66,23 @@ export default function Post(props: PostProps) {
         )}
         <NotionRenderer document={document} linkPreviewMap={linkPreviewMap} pageLinkMap={pageLinkMap} pagePreviewMap={pagePreviewMap} />
       </div>
-      {!isPage && !!post.tags?.length && (
-        <nav aria-label="文章标签" className="article-end flex flex-wrap gap-2">
-          {post.tags.map(tag => <TagItem key={tag} tag={tag} />)}
-        </nav>
+      {!isPage && (!!post.tags?.length || !!relatedPosts.length) && (
+        <footer className="article-end">
+          {!!relatedPosts.length && (
+            <nav aria-label="后续阅读" className="related-posts">
+              <ul>
+                {relatedPosts.map(link => (
+                  <li key={link.href}><Link href={link.href} title={link.title}>{link.label}</Link></li>
+                ))}
+              </ul>
+            </nav>
+          )}
+          {!!post.tags?.length && (
+            <nav aria-label="文章标签" className="article-tags flex flex-wrap gap-2">
+              {post.tags.map(tag => <TagItem key={tag} tag={tag} />)}
+            </nav>
+          )}
+        </footer>
       )}
     </article>
   )

@@ -17,11 +17,14 @@ export default function FooterServer({ fullWidth }: FooterServerProps) {
     >
       <hr className="border-stone-200 dark:border-stone-800" />
       <div className="my-4 text-sm leading-6">
-        <div className="flex align-baseline justify-between flex-wrap">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
           <p>
             © {config.author} {since === currentYear || !since ? currentYear : `${since} - ${currentYear}`}
           </p>
-          <Link href="/feed">订阅</Link>
+          <nav aria-label="页脚导航" className="footer-links">
+            {config.showArchive && <Link href="/archive">全部文章</Link>}
+            <Link href="/feed">订阅</Link>
+          </nav>
         </div>
       </div>
     </div>

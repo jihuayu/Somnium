@@ -7,6 +7,7 @@ import type { NotionDocument, PagePreviewMap } from '@jihuayu/notion-type'
 import type { PostData } from '@/lib/notion/filterPublishedPosts'
 import type { LinkPreviewMap } from '@/lib/link-preview/types'
 import type { PageLinkMap } from '@/lib/notion/pageLinkMap'
+import type { RelatedPostLink } from '@/lib/postNavigation'
 
 interface SlugPostClientProps {
   post: PostData
@@ -18,6 +19,7 @@ interface SlugPostClientProps {
   linkPreviewMap?: LinkPreviewMap
   pageLinkMap?: PageLinkMap
   pagePreviewMap?: PagePreviewMap
+  relatedPosts?: RelatedPostLink[]
 }
 
 export default function SlugPostClient({
@@ -29,7 +31,8 @@ export default function SlugPostClient({
   topLabel,
   linkPreviewMap = {},
   pageLinkMap = {},
-  pagePreviewMap = {}
+  pagePreviewMap = {},
+  relatedPosts = []
 }: SlugPostClientProps) {
   const contentWidthClass = fullWidth ? ARTICLE_WIDE_CONTENT_MAX_WIDTH_CLASS : ARTICLE_CONTENT_MAX_WIDTH_CLASS
 
@@ -43,6 +46,7 @@ export default function SlugPostClient({
         linkPreviewMap={linkPreviewMap}
         pageLinkMap={pageLinkMap}
         pagePreviewMap={pagePreviewMap}
+        relatedPosts={relatedPosts}
       />
 
       <div

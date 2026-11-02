@@ -15,7 +15,7 @@ export default async function Pagination({ page, showNext }: PaginationProps) {
   if (currentPage !== 1 && !showNext) additionalClassName = 'justify-start'
 
   return (
-    <div className={`flex font-medium text-stone-500 dark:text-stone-400 ${additionalClassName}`}>
+    <nav aria-label="文章分页" className={`pagination flex text-sm ${additionalClassName}`}>
       {currentPage !== 1 && (
         <Link
           href={
@@ -25,9 +25,9 @@ export default async function Pagination({ page, showNext }: PaginationProps) {
           }
           prefetch={false}
           rel="prev"
-          className="group flex items-center gap-1.5 cursor-pointer hover:text-stone-900 dark:hover:text-stone-100 transition-colors duration-150 ease-out"
+          className="flex items-center gap-1.5 transition-colors duration-150 ease-out"
         >
-          <span className="transition-transform duration-150 ease-out group-hover:-translate-x-0.5">←</span>
+          <span aria-hidden="true">←</span>
           {locale.PAGINATION.PREV}
         </Link>
       )}
@@ -36,12 +36,12 @@ export default async function Pagination({ page, showNext }: PaginationProps) {
           href={`/page/${currentPage + 1}`}
           prefetch={false}
           rel="next"
-          className="group flex items-center gap-1.5 cursor-pointer hover:text-stone-900 dark:hover:text-stone-100 transition-colors duration-150 ease-out"
+          className="flex items-center gap-1.5 transition-colors duration-150 ease-out"
         >
           {locale.PAGINATION.NEXT}
-          <span className="transition-transform duration-150 ease-out group-hover:translate-x-0.5">→</span>
+          <span aria-hidden="true">→</span>
         </Link>
       )}
-    </div>
+    </nav>
   )
 }
