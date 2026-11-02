@@ -24,6 +24,29 @@ def check_viewport(page, width):
 
 with sync_playwright() as playwright:
     browser = playwright.chromium.launch(channel="chrome", headless=True)
+    hydration_context = browser.new_context()
+    pending_scripts = []
+    scripts_released = {"value": False}
+
+    def hold_script(route):
+        if scripts_released["value"]:
+            route.continue_()
+        else:
+            pending_scripts.append(route)
+
+    hydration_context.route("**/_next/static/**/*.js*", hold_script)
+    hydration_page = hydration_context.new_page()
+    hydration_page.goto(f"{base_url}/search", wait_until="commit")
+    hydration_search = hydration_page.get_by_role("searchbox")
+    expect(hydration_search).to_be_disabled()
+    scripts_released["value"] = True
+    for pending_script in pending_scripts:
+        pending_script.continue_()
+    expect(hydration_search).to_be_enabled(timeout=30000)
+    hydration_search.fill("影评")
+    expect(hydration_page.locator(".post-entry").first).to_be_visible()
+    expect(hydration_search).to_have_value("影评")
+    hydration_context.close()
     for width, theme in [(320, "light"), (390, "light"), (390, "dark"), (1440, "light"), (1440, "dark")]:
         context = browser.new_context(viewport={"width": width, "height": 844}, color_scheme=theme)
         comment_fixture = {"has_comment": False}

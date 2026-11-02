@@ -46,6 +46,7 @@ export default function SearchClient({
   const searchStatusId = useId()
   const searchTitleId = useId()
   const inputRef = useRef<HTMLInputElement>(null)
+  const [isReady, setIsReady] = useState(false)
   const [searchValue, setSearchValue] = useState('')
   const [displayTags, setDisplayTags] = useState<Record<string, number>>(tags || {})
   const [result, setResult] = useState<SearchResult | null>(null)
@@ -69,6 +70,7 @@ export default function SearchClient({
   useEffect(() => {
     const restoreQuery = () => setSearchValue(new URL(window.location.href).searchParams.get('q') || '')
     restoreQuery()
+    setIsReady(true)
     window.addEventListener('popstate', restoreQuery)
     return () => window.removeEventListener('popstate', restoreQuery)
   }, [])
@@ -187,7 +189,7 @@ export default function SearchClient({
   return (
     <section className="search-page" aria-labelledby={searchTitleId}>
       <h1 id={searchTitleId} className="page-title">{currentTag || '搜索'}</h1>
-      <form role="search" className="search-form" onSubmit={event => {
+      <form role="search" className="search-form" aria-busy={!isReady} onSubmit={event => {
         event.preventDefault()
         setAttempt(current => current + 1)
       }}>
@@ -199,6 +201,7 @@ export default function SearchClient({
             ref={inputRef}
             id={searchInputId}
             type="search"
+            disabled={!isReady}
             value={searchValue}
             aria-describedby={searchStatusId}
             placeholder="搜索文章"
@@ -213,7 +216,7 @@ export default function SearchClient({
             }}>清空</button>
           )}
         </div>
-        <button type="submit" className="search-submit">搜索</button>
+        <button type="submit" className="search-submit" disabled={!isReady}>搜索</button>
       </form>
       <div className="search-filters">
         <Tags

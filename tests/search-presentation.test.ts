@@ -18,6 +18,7 @@ test('搜索具有页面标题、可提交表单和独立输入标签', () => {
   assert.match(html, /<form[^>]*role="search"/)
   assert.match(html, /<label[^>]*>搜索文章<\/label>/)
   assert.match(html, /type="submit"/)
+  assert.match(html, /<input[^>]*disabled/)
   assert.match(html, /输入关键词，查找文章。/)
   assert.doesNotMatch(html, /Notion|Searching|No posts/)
 })
